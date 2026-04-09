@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Resident Internal Record - Barangay Nazareth</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#d8dadc",
+                    "on-primary-fixed-variant": "#7a3000",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e0e3e5",
+                    "surface-tint": "#a04100",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#9ccaff",
+                    "inverse-primary": "#ffb693",
+                    "tertiary-container": "#059eff",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#ffdbcc",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface": "#191c1e",
+                    "primary": "#a04100",
+                    "secondary-fixed-dim": "#ffb693",
+                    "tertiary-fixed": "#d0e4ff",
+                    "tertiary": "#0062a1",
+                    "inverse-surface": "#2d3133",
+                    "on-tertiary-fixed-variant": "#00497b",
+                    "secondary-container": "#fe9a69",
+                    "primary-fixed-dim": "#ffb693",
+                    "on-tertiary-fixed": "#001d35",
+                    "on-secondary-container": "#763006",
+                    "on-primary-fixed": "#351000",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#ff6b00",
+                    "background": "#f7f9fb",
+                    "on-background": "#191c1e",
+                    "surface-container-low": "#f2f4f6",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#5a4136",
+                    "on-tertiary-container": "#003357",
+                    "secondary-fixed": "#ffdbcc",
+                    "on-primary-container": "#572000",
+                    "surface": "#f7f9fb",
+                    "on-secondary-fixed-variant": "#783207",
+                    "outline": "#8e7164",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#e6e8ea",
+                    "on-secondary-fixed": "#351000",
+                    "error": "#ba1a1a",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary": "#96481e",
+                    "outline-variant": "#e2bfb0",
+                    "surface-bright": "#f7f9fb",
+                    "surface-container": "#eceef0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Public Sans"],
+                    "body": ["Public Sans"],
+                    "label": ["Public Sans"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        font-family: 'Public Sans', sans-serif;
+      }
+      .ghost-shadow {
+        box-shadow: 0 12px 40px rgba(25, 28, 30, 0.06);
+      }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar Shell -->
+<aside class="fixed inset-y-0 left-0 flex flex-col h-screen w-64 bg-slate-50 dark:bg-slate-900 font-public-sans text-sm font-medium z-50">
+<div class="p-6 flex flex-col gap-1">
+<div class="w-12 h-12 bg-surface-container-high rounded-lg flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-primary text-3xl">account_balance</span>
+</div>
+<h1 class="text-lg font-bold text-slate-900 dark:text-slate-50">Barangay Nazareth</h1>
+<p class="text-xs text-slate-500 uppercase tracking-widest font-bold">Internal Systems</p>
+</div>
+<nav class="flex-1 mt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+        Dashboard
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+        Resident Directory
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-r-full font-semibold translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="gavel">gavel</span>
+        Lupon Registry
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+        Case Files
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+        Ordinances
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+        Analytics
+      </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+        System Logs
+      </a>
+</nav>
+<div class="p-6 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">person</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-900 dark:text-slate-50">Admin User</span>
+<span class="text-[10px] text-slate-500 uppercase">Lupon Officer</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 right-0 left-64 h-16 flex justify-between items-center px-8 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="w-full bg-surface-container-highest border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20" placeholder="Search internal records..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<button class="text-slate-500 hover:text-orange-500 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-slate-500 hover:text-orange-500 transition-colors">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+<div class="h-8 w-[1px] bg-slate-200"></div>
+<button class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:opacity-90">
+<span class="material-symbols-outlined text-sm">download</span>
+        Export Dossier
+      </button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 p-8 min-h-screen">
+<!-- Hero / Header Section -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<nav class="flex items-center gap-2 text-label-md text-slate-500 mb-2">
+<span>Resident Directory</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-primary font-semibold">Record #LZ-992-B</span>
+</nav>
+<h2 class="text-[3.5rem] font-bold leading-none tracking-tight text-on-surface">Mateo S. Dela Cruz</h2>
+<div class="flex items-center gap-4 mt-4">
+<span class="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">verified</span>
+            Mediation Eligibility: Active
+          </span>
+<span class="text-slate-400 text-sm italic">Registered since January 12, 2018</span>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-3 border-2 border-slate-200 font-bold rounded-lg hover:bg-slate-100 transition-colors">Archive Record</button>
+<button class="px-6 py-3 bg-primary text-on-primary font-bold rounded-lg flex items-center gap-2 hover:opacity-90">
+<span class="material-symbols-outlined">edit</span>
+          Modify Record
+        </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Profile & Core Details -->
+<section class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+<!-- Portrait Monolith -->
+<div class="bg-surface-container-lowest ghost-shadow p-8 rounded-xl flex flex-col items-center">
+<div class="w-48 h-48 rounded-lg bg-surface-container-high flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-on-surface-variant text-[8rem]" style="font-variation-settings: 'wght' 100;">person</span>
+</div>
+<div class="text-center">
+<h3 class="text-title-sm text-slate-500 uppercase tracking-widest mb-1">Internal Status</h3>
+<p class="text-headline-md font-bold text-on-surface">Head of Household</p>
+</div>
+</div>
+<!-- Bio Data -->
+<div class="bg-surface-container-lowest ghost-shadow p-8 rounded-xl">
+<h3 class="text-title-sm font-bold border-b border-slate-100 pb-4 mb-4">Personal Identifiers</h3>
+<div class="space-y-4">
+<div class="flex justify-between">
+<span class="text-label-md text-slate-500">Date of Birth</span>
+<span class="text-body-md font-semibold">May 24, 1985</span>
+</div>
+<div class="flex justify-between">
+<span class="text-label-md text-slate-500">Age</span>
+<span class="text-body-md font-semibold">38 Years Old</span>
+</div>
+<div class="flex justify-between">
+<span class="text-label-md text-slate-500">Civil Status</span>
+<span class="text-body-md font-semibold">Married</span>
+</div>
+<div class="flex justify-between">
+<span class="text-label-md text-slate-500">National ID (PhilSys)</span>
+<span class="text-body-md font-semibold font-mono">1029-4482-1102</span>
+</div>
+<div class="flex justify-between">
+<span class="text-label-md text-slate-500">Voter Status</span>
+<span class="text-body-md font-semibold text-primary">Precinct 0422-A</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Central Information Hub -->
+<section class="col-span-12 lg:col-span-5 flex flex-col gap-6">
+<!-- Contact & Residence -->
+<div class="bg-white ghost-shadow p-8 rounded-xl">
+<h3 class="text-headline-md font-bold mb-6">Administrative Contact</h3>
+<div class="grid grid-cols-2 gap-8">
+<div>
+<span class="text-label-md text-slate-500 uppercase block mb-1">Mobile Primary</span>
+<p class="text-body-md font-bold text-on-surface">+63 917 555 0129</p>
+</div>
+<div>
+<span class="text-label-md text-slate-500 uppercase block mb-1">Email Registry</span>
+<p class="text-body-md font-bold text-on-surface text-sm truncate">mateo.delacruz@example.com</p>
+</div>
+<div class="col-span-2">
+<span class="text-label-md text-slate-500 uppercase block mb-1">Permanent Address</span>
+<p class="text-body-md font-bold text-on-surface">House 42, Purok 3-B, Nazareth St., Barangay Nazareth, CDO</p>
+</div>
+</div>
+</div>
+<!-- Internal Remarks (Scrollable) -->
+<div class="bg-white ghost-shadow flex flex-col rounded-xl h-[400px]">
+<div class="p-8 border-b border-slate-50">
+<h3 class="text-headline-md font-bold">Internal Remarks</h3>
+</div>
+<div class="flex-1 overflow-y-auto p-8 space-y-6">
+<!-- Remark Item -->
+<div class="flex gap-4">
+<div class="flex-shrink-0 w-8 h-8 rounded bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">edit_note</span>
+</div>
+<div>
+<p class="text-body-md text-slate-700">Resident reported property boundary dispute with neighbor in Purok 3. Initial mediation suggested. Documentation pending.</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-[10px] font-bold uppercase text-primary">A. SANTOS</span>
+<span class="text-[10px] text-slate-400">OCT 14, 2023 • 09:42 AM</span>
+</div>
+</div>
+</div>
+<!-- Remark Item -->
+<div class="flex gap-4">
+<div class="flex-shrink-0 w-8 h-8 rounded bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">verified</span>
+</div>
+<div>
+<p class="text-body-md text-slate-700">Clearance for local business permit issued. Verified zero outstanding Lupon complaints for the last 24 months.</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-[10px] font-bold uppercase text-primary">M. LUNA</span>
+<span class="text-[10px] text-slate-400">JUL 22, 2023 • 02:15 PM</span>
+</div>
+</div>
+</div>
+<!-- Remark Item -->
+<div class="flex gap-4">
+<div class="flex-shrink-0 w-8 h-8 rounded bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">warning</span>
+</div>
+<div>
+<p class="text-body-md text-slate-700">Incomplete ID requirements during 2022 census update. Resident promised to provide PSA copy by EOY.</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-[10px] font-bold uppercase text-primary">SYSTEM ADMIN</span>
+<span class="text-[10px] text-slate-400">NOV 05, 2022 • 11:30 AM</span>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 bg-slate-50 border-t border-slate-200">
+<div class="relative">
+<input class="w-full bg-white border border-slate-200 rounded-lg py-2 pl-4 pr-12 text-sm focus:ring-1 focus:ring-primary" placeholder="Add a formal remark..." type="text"/>
+<button class="absolute right-2 top-1/2 -translate-y-1/2 text-primary font-bold p-1">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Activity & Archives -->
+<section class="col-span-12 lg:col-span-3 flex flex-col gap-6">
+<!-- Digital Archive -->
+<div class="bg-surface-container-highest ghost-shadow p-6 rounded-xl">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-title-sm font-bold uppercase tracking-wider">Digital Archive</h3>
+<span class="material-symbols-outlined text-slate-400">folder_zip</span>
+</div>
+<div class="space-y-2">
+<div class="flex items-center gap-3 p-3 bg-white rounded border-l-4 border-orange-500 hover:bg-orange-50 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-orange-600">picture_as_pdf</span>
+<div class="flex flex-col overflow-hidden">
+<span class="text-[11px] font-bold truncate">Birth_Certificate_Mateo.pdf</span>
+<span class="text-[9px] text-slate-400">2.4 MB • Oct 2023</span>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 bg-white rounded border-l-4 border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-slate-600">image</span>
+<div class="flex flex-col overflow-hidden">
+<span class="text-[11px] font-bold truncate">Barangay_ID_Scan.jpg</span>
+<span class="text-[9px] text-slate-400">1.1 MB • Jan 2023</span>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 bg-white rounded border-l-4 border-slate-400 hover:bg-slate-50 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-slate-600">picture_as_pdf</span>
+<div class="flex flex-col overflow-hidden">
+<span class="text-[11px] font-bold truncate">Lupon_Settlement_Case-022.pdf</span>
+<span class="text-[9px] text-slate-400">512 KB • Dec 2021</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-4 py-2 border-2 border-dashed border-slate-300 rounded text-[10px] font-bold text-slate-500 hover:bg-white hover:text-primary transition-all uppercase">
+            Upload Documentation
+          </button>
+</div>
+<!-- Registry Activity Log -->
+<div class="bg-white ghost-shadow p-6 rounded-xl flex-1">
+<h3 class="text-title-sm font-bold mb-6">Registry Activity Log</h3>
+<div class="relative space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-0 before:w-[2px] before:bg-slate-100">
+<div class="relative pl-8">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center border-2 border-white">
+<span class="material-symbols-outlined text-[12px] text-orange-600" style="font-variation-settings: 'FILL' 1;">sync</span>
+</div>
+<span class="block text-[11px] font-bold">Record Modified</span>
+<span class="block text-[10px] text-slate-400">2 hours ago by A. Santos</span>
+</div>
+<div class="relative pl-8">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center border-2 border-white">
+<span class="material-symbols-outlined text-[12px] text-slate-600">visibility</span>
+</div>
+<span class="block text-[11px] font-bold">Dossier Exported</span>
+<span class="block text-[10px] text-slate-400">Yesterday at 1:40 PM</span>
+</div>
+<div class="relative pl-8">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center border-2 border-white">
+<span class="material-symbols-outlined text-[12px] text-slate-600">add_photo_alternate</span>
+</div>
+<span class="block text-[11px] font-bold">New Archive Upload</span>
+<span class="block text-[10px] text-slate-400">Oct 14, 2023 by M. Luna</span>
+</div>
+<div class="relative pl-8">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center border-2 border-white">
+<span class="material-symbols-outlined text-[12px] text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<span class="block text-[11px] font-bold">Mediation Status Active</span>
+<span class="block text-[10px] text-slate-400">Sept 30, 2023</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>
+
+<!-- Document Management -->

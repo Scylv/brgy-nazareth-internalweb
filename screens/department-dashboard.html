@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Department Office Dashboard - Barangay Nazareth</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#d8dadc",
+                    "on-primary-fixed-variant": "#7a3000",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e0e3e5",
+                    "surface-tint": "#a04100",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#9ccaff",
+                    "inverse-primary": "#ffb693",
+                    "tertiary-container": "#059eff",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#ffdbcc",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface": "#191c1e",
+                    "primary": "#a04100",
+                    "secondary-fixed-dim": "#ffb693",
+                    "tertiary-fixed": "#d0e4ff",
+                    "tertiary": "#0062a1",
+                    "inverse-surface": "#2d3133",
+                    "on-tertiary-fixed-variant": "#00497b",
+                    "secondary-container": "#fe9a69",
+                    "primary-fixed-dim": "#ffb693",
+                    "on-tertiary-fixed": "#001d35",
+                    "on-secondary-container": "#763006",
+                    "on-primary-fixed": "#351000",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#ff6b00",
+                    "background": "#f7f9fb",
+                    "on-background": "#191c1e",
+                    "surface-container-low": "#f2f4f6",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#5a4136",
+                    "on-tertiary-container": "#003357",
+                    "secondary-fixed": "#ffdbcc",
+                    "on-primary-container": "#572000",
+                    "surface": "#f7f9fb",
+                    "on-secondary-fixed-variant": "#783207",
+                    "outline": "#8e7164",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#e6e8ea",
+                    "on-secondary-fixed": "#351000",
+                    "error": "#ba1a1a",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary": "#96481e",
+                    "outline-variant": "#e2bfb0",
+                    "surface-bright": "#f7f9fb",
+                    "surface-container": "#eceef0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Public Sans"],
+                    "body": ["Public Sans"],
+                    "label": ["Public Sans"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ghost-shadow { box-shadow: 0 12px 40px rgba(25, 28, 30, 0.06); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar -->
+<aside class="fixed inset-y-0 left-0 flex flex-col h-screen w-64 bg-slate-50 dark:bg-slate-900 font-public-sans text-sm font-medium z-50">
+<div class="p-8">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-sm" data-icon="account_balance">account_balance</span>
+</div>
+<div>
+<h1 class="text-lg font-bold text-slate-900 dark:text-slate-50 leading-tight">Barangay Nazareth</h1>
+<p class="text-[10px] uppercase tracking-widest text-slate-500">Internal Systems</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1 pr-4">
+<a class="flex items-center gap-3 px-4 py-3 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-r-full font-semibold translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+                Resident Directory
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="gavel">gavel</span>
+                Lupon Registry
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+                Case Files
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+                Ordinances
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                Analytics
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+                System Logs
+            </a>
+</nav>
+<div class="p-6 border-t border-slate-200/50">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="person">person</span>
+</div>
+<div class="overflow-hidden">
+<p class="text-xs font-bold truncate">Admin Officer</p>
+<p class="text-[10px] text-slate-500">Dept. ID: 8821-N</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-64 h-16 flex justify-between items-center px-8 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" data-icon="search">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-highest/50 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Global search commands..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative text-slate-500 hover:text-orange-500 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full border-2 border-white"></span>
+</button>
+<div class="h-6 w-[1px] bg-slate-200"></div>
+<div class="flex items-center gap-3">
+<span class="text-sm font-semibold text-slate-900">Barangay Nazareth Internal</span>
+<span class="material-symbols-outlined text-slate-400" data-icon="account_circle">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 min-h-screen">
+<div class="p-8 max-w-7xl mx-auto space-y-8">
+<!-- Hero Search & Status Legend -->
+<section class="space-y-6">
+<div class="bg-surface-container-lowest p-8 rounded-lg ghost-shadow">
+<div class="max-w-3xl">
+<h2 class="text-3xl font-bold tracking-tight mb-2">Department Central Portal</h2>
+<p class="text-on-surface-variant mb-8">Access resident records, verify clearance statuses, and manage official referrals.</p>
+<div class="relative mb-6">
+<input class="w-full px-6 py-5 bg-surface text-lg border-none rounded-lg focus:ring-4 focus:ring-primary-container/30 placeholder:text-slate-400 transition-all" placeholder="Search Resident by Name, Household ID, or National ID..." type="text"/>
+<button class="absolute right-3 top-3 bottom-3 px-8 bg-primary-container text-on-primary-container font-bold rounded-lg flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+                                Search
+                            </button>
+</div>
+<div class="flex items-center gap-8 py-2">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+<span class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Cleared</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-amber-400"></span>
+<span class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">For Review</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-rose-600"></span>
+<span class="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Refer to Lupon</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Stats Grid -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<div class="md:col-span-2 bg-primary-container p-6 rounded-lg text-on-primary-container flex flex-col justify-between h-48">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-4xl opacity-50" data-icon="pending_actions">pending_actions</span>
+<span class="text-[10px] font-bold bg-on-primary-container/10 px-2 py-1 rounded">LIVE UPDATE</span>
+</div>
+<div>
+<p class="text-4xl font-bold">142</p>
+<p class="text-sm font-medium opacity-90">Flagged Records Pending Review</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-lg ghost-shadow flex flex-col justify-between h-48">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="gavel">gavel</span>
+<div>
+<p class="text-3xl font-bold">28</p>
+<p class="text-xs text-on-surface-variant font-medium">Pending Mediations</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-lg ghost-shadow flex flex-col justify-between h-48">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="verified_user">verified_user</span>
+<div>
+<p class="text-3xl font-bold">1,094</p>
+<p class="text-xs text-on-surface-variant font-medium">Clearances Issued (MTD)</p>
+</div>
+</div>
+</section>
+<!-- Core Dashboard Modules -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Column: Recent Lookups & Trends -->
+<div class="lg:col-span-8 space-y-8">
+<!-- Referral Trends -->
+<div class="bg-surface-container-lowest p-6 rounded-lg ghost-shadow">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h3 class="text-lg font-bold">Referral Trends</h3>
+<p class="text-xs text-on-surface-variant">Weekly volume of cases escalated to Lupon Tagapamayapa</p>
+</div>
+<div class="text-right">
+<span class="text-2xl font-bold">+12%</span>
+<p class="text-[10px] text-emerald-600 font-bold">FROM LAST WEEK</p>
+</div>
+</div>
+<div class="flex items-end gap-4 h-48 px-4">
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative group">
+<div class="absolute bottom-0 left-0 right-0 bg-primary h-[40%] rounded-t-sm"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400">MON</span>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative">
+<div class="absolute bottom-0 left-0 right-0 bg-primary h-[65%] rounded-t-sm"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400">TUE</span>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative">
+<div class="absolute bottom-0 left-0 right-0 bg-primary h-[35%] rounded-t-sm"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400">WED</span>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative">
+<div class="absolute bottom-0 left-0 right-0 bg-primary h-[85%] rounded-t-sm"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400">THU</span>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative">
+<div class="absolute bottom-0 left-0 right-0 bg-primary h-[50%] rounded-t-sm"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400">FRI</span>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative">
+<div class="absolute bottom-0 left-0 right-0 bg-primary h-[20%] rounded-t-sm"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400">SAT</span>
+</div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm relative">
+<div class="absolute bottom-0 left-0 right-0 bg-primary h-[10%] rounded-t-sm"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-400">SUN</span>
+</div>
+</div>
+<div class="mt-12"></div>
+</div>
+<!-- Recent Lookups -->
+<div class="bg-surface-container-lowest rounded-lg ghost-shadow overflow-hidden">
+<div class="p-6 border-b border-surface-container">
+<h3 class="text-lg font-bold">Recent Lookups</h3>
+<p class="text-xs text-on-surface-variant">Last activity across department terminals</p>
+</div>
+<div class="divide-y divide-surface-container">
+<div class="p-4 hover:bg-surface-container-low transition-colors flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-500" data-icon="person">person</span>
+</div>
+<div>
+<p class="text-sm font-bold">Bautista, Maria Clara</p>
+<p class="text-xs text-slate-500">ID: 2024-NZ-0912</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<span class="text-xs font-medium text-slate-400">2 mins ago</span>
+<div class="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span class="text-[10px] font-bold text-emerald-700">CLEARED</span>
+</div>
+</div>
+</div>
+<div class="p-4 hover:bg-surface-container-low transition-colors flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-500" data-icon="person">person</span>
+</div>
+<div>
+<p class="text-sm font-bold">Dela Cruz, Juan Pedro</p>
+<p class="text-xs text-slate-500">ID: 2023-NZ-4412</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<span class="text-xs font-medium text-slate-400">14 mins ago</span>
+<div class="flex items-center gap-2 px-3 py-1 bg-rose-50 rounded-full">
+<span class="w-2 h-2 rounded-full bg-rose-600"></span>
+<span class="text-[10px] font-bold text-rose-700">LUPON CASE</span>
+</div>
+</div>
+</div>
+<div class="p-4 hover:bg-surface-container-low transition-colors flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-500" data-icon="person">person</span>
+</div>
+<div>
+<p class="text-sm font-bold">Santos, Elena G.</p>
+<p class="text-xs text-slate-500">ID: 2024-NZ-1102</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<span class="text-xs font-medium text-slate-400">42 mins ago</span>
+<div class="flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-full">
+<span class="w-2 h-2 rounded-full bg-amber-400"></span>
+<span class="text-[10px] font-bold text-amber-700">FOR REVIEW</span>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 text-center">
+<button class="text-xs font-bold text-primary hover:underline">View All Search History</button>
+</div>
+</div>
+</div>
+<!-- Right Column: Announcements -->
+<div class="lg:col-span-4">
+<div class="bg-surface-container-lowest p-6 rounded-lg ghost-shadow h-full flex flex-col">
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-lg font-bold">Administrative Board</h3>
+<span class="material-symbols-outlined text-primary" data-icon="campaign">campaign</span>
+</div>
+<div class="space-y-6 flex-1">
+<div class="p-4 bg-surface rounded-lg border-l-4 border-primary">
+<div class="flex justify-between items-start mb-2">
+<p class="text-xs font-bold text-primary">URGENT</p>
+<p class="text-[10px] text-on-surface-variant uppercase font-medium">May 24, 09:00 AM</p>
+</div>
+<p class="text-sm font-bold mb-1">New Lupon Mediation Protocol</p>
+<p class="text-xs text-on-surface-variant leading-relaxed">Starting June 1st, all mediation referrals must include the updated Form 12-B with digital timestamps.</p>
+</div>
+<div class="p-4 bg-surface rounded-lg">
+<div class="flex justify-between items-start mb-2">
+<p class="text-[10px] text-on-surface-variant uppercase font-medium">May 23, 02:15 PM</p>
+</div>
+<p class="text-sm font-bold mb-1">Server Maintenance Schedule</p>
+<p class="text-xs text-on-surface-variant leading-relaxed">Central database will be offline this Saturday (2:00 AM - 5:00 AM) for security patching.</p>
+</div>
+<div class="p-4 bg-surface rounded-lg">
+<div class="flex justify-between items-start mb-2">
+<p class="text-[10px] text-on-surface-variant uppercase font-medium">May 21, 11:30 AM</p>
+</div>
+<p class="text-sm font-bold mb-1">Citizen Satisfaction Survey</p>
+<p class="text-xs text-on-surface-variant leading-relaxed">All front-line staff must encourage residents to fill out the digital satisfaction survey after clearance issuance.</p>
+</div>
+</div>
+<div class="mt-8">
+<button class="w-full py-3 bg-surface-container-high text-xs font-bold rounded-lg hover:bg-surface-container-highest transition-colors">
+                                View Full Archive
+                            </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Area -->
+<footer class="pt-8 pb-16 flex flex-col md:flex-row justify-between items-center text-[10px] text-slate-400 uppercase tracking-widest border-t border-slate-200">
+<p>© 2024 Barangay Nazareth. All rights reserved.</p>
+<div class="flex gap-6 mt-4 md:mt-0">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Security Audit</a>
+<a class="hover:text-primary transition-colors" href="#">Support Portal</a>
+</div>
+</footer>
+</div>
+</main>
+<!-- FAB (Suppressed on Dashboard as per guidelines, but template for other pages) -->
+<!-- Not rendered based on "Contextual FAB Suppression" rule for Dashboard/Internal systems where navigation is primary -->
+</body></html>
+
+<!-- Resident Verification View -->

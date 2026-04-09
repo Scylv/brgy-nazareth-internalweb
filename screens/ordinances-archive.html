@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Barangay Nazareth Internal - Legislative Archive</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#d8dadc",
+                    "on-primary-fixed-variant": "#7a3000",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e0e3e5",
+                    "surface-tint": "#a04100",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#9ccaff",
+                    "inverse-primary": "#ffb693",
+                    "tertiary-container": "#059eff",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#ffdbcc",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface": "#191c1e",
+                    "primary": "#a04100",
+                    "secondary-fixed-dim": "#ffb693",
+                    "tertiary-fixed": "#d0e4ff",
+                    "tertiary": "#0062a1",
+                    "inverse-surface": "#2d3133",
+                    "on-tertiary-fixed-variant": "#00497b",
+                    "secondary-container": "#fe9a69",
+                    "primary-fixed-dim": "#ffb693",
+                    "on-tertiary-fixed": "#001d35",
+                    "on-secondary-container": "#763006",
+                    "on-primary-fixed": "#351000",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#ff6b00",
+                    "background": "#f7f9fb",
+                    "on-background": "#191c1e",
+                    "surface-container-low": "#f2f4f6",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#5a4136",
+                    "on-tertiary-container": "#003357",
+                    "secondary-fixed": "#ffdbcc",
+                    "on-primary-container": "#572000",
+                    "surface": "#f7f9fb",
+                    "on-secondary-fixed-variant": "#783207",
+                    "outline": "#8e7164",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#e6e8ea",
+                    "on-secondary-fixed": "#351000",
+                    "error": "#ba1a1a",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary": "#96481e",
+                    "outline-variant": "#e2bfb0",
+                    "surface-bright": "#f7f9fb",
+                    "surface-container": "#eceef0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Public Sans"],
+                    "body": ["Public Sans"],
+                    "label": ["Public Sans"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        body { font-family: 'Public Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar Shell -->
+<aside class="fixed inset-y-0 left-0 flex flex-col h-screen w-64 bg-slate-50 dark:bg-slate-900 border-r-0 z-50">
+<div class="p-6 flex flex-col gap-1">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-orange-600">account_balance</span>
+</div>
+<div>
+<h2 class="text-lg font-bold text-slate-900 dark:text-slate-50 leading-tight">Barangay Nazareth</h2>
+<p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Internal Systems</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 mt-6 px-0 overflow-y-auto">
+<div class="space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-medium text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-medium text-sm">Resident Directory</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="gavel">gavel</span>
+<span class="font-medium text-sm">Lupon Registry</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+<span class="font-medium text-sm">Case Files</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-r-full font-semibold translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-medium text-sm">Ordinances</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-medium text-sm">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-medium text-sm">System Logs</span>
+</a>
+</div>
+</nav>
+<div class="p-6 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-on-surface-variant">person</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-semibold text-slate-900 dark:text-slate-50">Admin User</span>
+<span class="text-[10px] text-slate-500">Legislative Secretary</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 right-0 left-64 h-16 flex justify-between items-center px-8 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md shadow-sm dark:shadow-none border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-orange-500/50" placeholder="Search archive by reference or keyword..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative text-slate-500 hover:text-orange-500 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-orange-600 rounded-full border-2 border-white"></span>
+</button>
+<div class="h-6 w-px bg-slate-200 dark:bg-slate-800"></div>
+<button class="flex items-center gap-2 text-slate-500 hover:text-orange-500 transition-colors">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content Shell -->
+<main class="ml-64 pt-24 p-8 min-h-screen">
+<!-- Header Section: Architectural Editorial Style -->
+<header class="mb-12">
+<div class="flex justify-between items-end">
+<div>
+<span class="text-[0.75rem] font-medium text-primary uppercase tracking-[0.2em] mb-2 block">Bureau of Administrative Records</span>
+<h1 class="text-4xl font-bold text-on-surface tracking-tight">Legislative Archive</h1>
+</div>
+<button class="bg-primary-container text-on-primary-container px-6 py-3 rounded-lg font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-sm">add</span>
+<span>New Ordinance Draft</span>
+</button>
+</div>
+</header>
+<!-- Stats Bento Grid -->
+<div class="grid grid-cols-12 gap-6 mb-12">
+<div class="col-span-12 md:col-span-4 bg-surface-container-lowest p-8 rounded-lg shadow-[0_12px_40px_rgba(25,28,30,0.04)] flex flex-col justify-between h-40">
+<span class="text-[0.75rem] font-medium text-on-surface-variant uppercase tracking-wider">Active Mandates</span>
+<div class="flex items-baseline gap-2">
+<span class="text-5xl font-bold text-on-surface tracking-tighter">1,284</span>
+<span class="text-xs font-semibold text-emerald-600">+12% vs last FY</span>
+</div>
+</div>
+<div class="col-span-12 md:col-span-4 bg-surface-container-lowest p-8 rounded-lg shadow-[0_12px_40px_rgba(25,28,30,0.04)] flex flex-col justify-between h-40 border-l-4 border-orange-500">
+<span class="text-[0.75rem] font-medium text-on-surface-variant uppercase tracking-wider">Pending Review</span>
+<div class="flex items-baseline gap-2">
+<span class="text-5xl font-bold text-on-surface tracking-tighter">08</span>
+<span class="text-xs font-medium text-slate-400">Awaiting Signature</span>
+</div>
+</div>
+<!-- Audit Card: Tonal Asymmetry -->
+<div class="col-span-12 md:col-span-4 bg-on-surface p-8 rounded-lg flex flex-col justify-between h-40 relative overflow-hidden group">
+<div class="relative z-10">
+<span class="text-[0.75rem] font-medium text-slate-400 uppercase tracking-wider mb-1 block">Constitutional Alignment</span>
+<div class="flex items-center gap-3">
+<span class="text-3xl font-bold text-white tracking-tight">Audit Score: 98.4%</span>
+</div>
+</div>
+<div class="relative z-10 flex justify-between items-center">
+<span class="text-xs text-slate-400 font-medium italic">Compliant with LGC 1991</span>
+<span class="material-symbols-outlined text-emerald-400 text-3xl" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10">
+<span class="material-symbols-outlined text-9xl">gavel</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-8">
+<!-- Recent Ordinances List -->
+<section class="col-span-12 lg:col-span-9">
+<div class="bg-surface-container-low rounded-lg p-1">
+<div class="flex items-center justify-between px-6 py-6">
+<h2 class="text-xl font-semibold text-on-surface">Recent Ordinances</h2>
+<div class="flex gap-2">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded transition-colors"><span class="material-symbols-outlined">filter_list</span></button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded transition-colors"><span class="material-symbols-outlined">sort</span></button>
+</div>
+</div>
+<div class="space-y-2 pb-6">
+<!-- List Item 1 -->
+<div class="mx-6 p-6 bg-surface-container-lowest rounded-lg hover:bg-surface-container-low transition-colors group">
+<div class="flex items-start justify-between">
+<div class="flex gap-6">
+<div class="flex flex-col items-center justify-center w-20 py-2 bg-surface rounded border-t-2 border-primary">
+<span class="text-[10px] font-bold text-primary uppercase">REF. NO</span>
+<span class="text-sm font-bold text-on-surface">2024-042</span>
+</div>
+<div>
+<h3 class="text-base font-semibold text-on-surface mb-1">Environmental Waste Segregation Mandate</h3>
+<p class="text-sm text-on-surface-variant max-w-xl line-clamp-1 mb-4">An ordinance strictly requiring all residential and commercial establishments within Barangay Nazareth to segregate solid waste at source.</p>
+<div class="flex items-center gap-3">
+<span class="px-2 py-0.5 bg-slate-100 text-[10px] font-bold text-slate-600 rounded">ENVIRONMENT</span>
+<span class="px-2 py-0.5 bg-emerald-100 text-[10px] font-bold text-emerald-700 rounded-full flex items-center gap-1">
+<span class="w-1 h-1 bg-emerald-700 rounded-full"></span> ENFORCED
+                                            </span>
+<span class="text-[11px] text-slate-400 font-medium">Published: Oct 12, 2023</span>
+</div>
+</div>
+</div>
+<div class="flex gap-3 items-center">
+<button class="text-sm font-semibold text-primary hover:underline px-3 py-2">View</button>
+<button class="p-2 text-slate-400 hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">file_download</span>
+</button>
+</div>
+</div>
+</div>
+<!-- List Item 2 -->
+<div class="mx-6 p-6 bg-surface-container-lowest rounded-lg hover:bg-surface-container-low transition-colors group">
+<div class="flex items-start justify-between">
+<div class="flex gap-6">
+<div class="flex flex-col items-center justify-center w-20 py-2 bg-surface rounded border-t-2 border-slate-300">
+<span class="text-[10px] font-bold text-slate-500 uppercase">REF. NO</span>
+<span class="text-sm font-bold text-on-surface">2023-118</span>
+</div>
+<div>
+<h3 class="text-base font-semibold text-on-surface mb-1">Community Safety &amp; Curfew Regulation</h3>
+<p class="text-sm text-on-surface-variant max-w-xl line-clamp-1 mb-4">Establishing a standardized curfew for minors and peace officer protocols for late-night zone patrols.</p>
+<div class="flex items-center gap-3">
+<span class="px-2 py-0.5 bg-slate-100 text-[10px] font-bold text-slate-600 rounded">SAFETY</span>
+<span class="px-2 py-0.5 bg-emerald-100 text-[10px] font-bold text-emerald-700 rounded-full flex items-center gap-1">
+<span class="w-1 h-1 bg-emerald-700 rounded-full"></span> ENFORCED
+                                            </span>
+<span class="text-[11px] text-slate-400 font-medium">Published: June 05, 2023</span>
+</div>
+</div>
+</div>
+<div class="flex gap-3 items-center">
+<button class="text-sm font-semibold text-primary hover:underline px-3 py-2">View</button>
+<button class="p-2 text-slate-400 hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">file_download</span>
+</button>
+</div>
+</div>
+</div>
+<!-- List Item 3 -->
+<div class="mx-6 p-6 bg-surface-container-lowest rounded-lg hover:bg-surface-container-low transition-colors group">
+<div class="flex items-start justify-between">
+<div class="flex gap-6">
+<div class="flex flex-col items-center justify-center w-20 py-2 bg-surface rounded border-t-2 border-slate-300">
+<span class="text-[10px] font-bold text-slate-500 uppercase">REF. NO</span>
+<span class="text-sm font-bold text-on-surface">2023-089</span>
+</div>
+<div>
+<h3 class="text-base font-semibold text-on-surface mb-1">Urban Agriculture &amp; Food Security Initiative</h3>
+<p class="text-sm text-on-surface-variant max-w-xl line-clamp-1 mb-4">Providing tax incentives and seedling support for households maintaining rooftop or backyard vegetable gardens.</p>
+<div class="flex items-center gap-3">
+<span class="px-2 py-0.5 bg-slate-100 text-[10px] font-bold text-slate-600 rounded">AGRICULTURE</span>
+<span class="px-2 py-0.5 bg-emerald-100 text-[10px] font-bold text-emerald-700 rounded-full flex items-center gap-1">
+<span class="w-1 h-1 bg-emerald-700 rounded-full"></span> ENFORCED
+                                            </span>
+<span class="text-[11px] text-slate-400 font-medium">Published: Feb 18, 2023</span>
+</div>
+</div>
+</div>
+<div class="flex gap-3 items-center">
+<button class="text-sm font-semibold text-primary hover:underline px-3 py-2">View</button>
+<button class="p-2 text-slate-400 hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">file_download</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="px-6 py-4 flex justify-center">
+<button class="text-xs font-bold text-on-surface-variant uppercase tracking-widest hover:text-primary transition-colors">View All Archive Records</button>
+</div>
+</div>
+</section>
+<!-- Export Records Side Panel -->
+<aside class="col-span-12 lg:col-span-3 space-y-6">
+<div class="bg-surface-container-highest p-6 rounded-lg">
+<h3 class="text-sm font-bold text-on-surface uppercase tracking-widest mb-6">Export Records</h3>
+<div class="space-y-4">
+<div class="bg-surface p-4 rounded border-l-2 border-primary-container">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase mb-2">Select Format</label>
+<div class="grid grid-cols-2 gap-2">
+<button class="bg-white py-2 text-xs font-semibold rounded border border-slate-200">PDF Document</button>
+<button class="bg-white py-2 text-xs font-semibold rounded border border-slate-200 opacity-50 cursor-not-allowed">CSV Sheet</button>
+</div>
+</div>
+<div class="bg-surface p-4 rounded">
+<label class="block text-[10px] font-bold text-on-surface-variant uppercase mb-2">Date Range</label>
+<div class="space-y-2">
+<div class="flex items-center justify-between text-xs font-medium text-on-surface">
+<span>Last 12 Months</span>
+<span class="material-symbols-outlined text-sm">keyboard_arrow_down</span>
+</div>
+<div class="h-px bg-slate-200 w-full"></div>
+</div>
+</div>
+<button class="w-full bg-primary py-3 text-white text-xs font-bold uppercase tracking-widest rounded-lg hover:brightness-110 active:scale-95 transition-all">
+                            Generate Report
+                        </button>
+</div>
+</div>
+<div class="p-6 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center text-center">
+<div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-slate-400">cloud_upload</span>
+</div>
+<h4 class="text-sm font-bold text-on-surface mb-1">Batch Import</h4>
+<p class="text-xs text-slate-500 mb-4">Upload scanned physical ordinance copies for OCR digitization.</p>
+<button class="text-xs font-bold text-primary uppercase">Select Files</button>
+</div>
+<div class="relative overflow-hidden rounded-lg aspect-square">
+<img alt="" class="w-full h-full object-cover grayscale brightness-50" data-alt="high angle view of classic courthouse architecture with tall marble pillars and clean geometric lines in dramatic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnzqluZ_HwJ6dCLhmsFmbecBSO3NFGVFzPNgAmPx2huNUUbeGceU6w1J4jjdTuhNtzQdg-_Vl9oj9GmGLjVKVQPdQ0A0znZgyyye4pWzMv-hThIWO46wTB0hFjfi-OqgMlrUl7xQFpBYLtD_uu1adbV3SFfedFIX_gsVKP6eOP_A-5slsV0a8s58MHtbQ9C_ShyIdWVUt3syWPRKTMM4DapDLL6tIUCmOAwpPcgYpPzvVQFBUfLmMBQZXczI9nMVMnts38dhDnmDDz"/>
+<div class="absolute inset-0 flex flex-col justify-end p-6 text-white bg-gradient-to-t from-black/80 to-transparent">
+<span class="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-80">Legislative Focus</span>
+<h5 class="text-lg font-bold leading-tight">Civic Transparency Protocols 2024</h5>
+</div>
+</div>
+</aside>
+</div>
+</main>
+</body></html>
+
+<!-- Document Viewer -->

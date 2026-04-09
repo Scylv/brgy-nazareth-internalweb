@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Central Archives | Barangay Nazareth</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#d8dadc",
+                    "on-primary-fixed-variant": "#7a3000",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e0e3e5",
+                    "surface-tint": "#a04100",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#9ccaff",
+                    "inverse-primary": "#ffb693",
+                    "tertiary-container": "#059eff",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#ffdbcc",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface": "#191c1e",
+                    "primary": "#a04100",
+                    "secondary-fixed-dim": "#ffb693",
+                    "tertiary-fixed": "#d0e4ff",
+                    "tertiary": "#0062a1",
+                    "inverse-surface": "#2d3133",
+                    "on-tertiary-fixed-variant": "#00497b",
+                    "secondary-container": "#fe9a69",
+                    "primary-fixed-dim": "#ffb693",
+                    "on-tertiary-fixed": "#001d35",
+                    "on-secondary-container": "#763006",
+                    "on-primary-fixed": "#351000",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#ff6b00",
+                    "background": "#f7f9fb",
+                    "on-background": "#191c1e",
+                    "surface-container-low": "#f2f4f6",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#5a4136",
+                    "on-tertiary-container": "#003357",
+                    "secondary-fixed": "#ffdbcc",
+                    "on-primary-container": "#572000",
+                    "surface": "#f7f9fb",
+                    "on-secondary-fixed-variant": "#783207",
+                    "outline": "#8e7164",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#e6e8ea",
+                    "on-secondary-fixed": "#351000",
+                    "error": "#ba1a1a",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary": "#96481e",
+                    "outline-variant": "#e2bfb0",
+                    "surface-bright": "#f7f9fb",
+                    "surface-container": "#eceef0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Public Sans"],
+                    "body": ["Public Sans"],
+                    "label": ["Public Sans"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ghost-shadow {
+            box-shadow: 0 12px 40px rgba(25, 28, 30, 0.06);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar -->
+<aside class="fixed inset-y-0 left-0 flex flex-col h-screen w-64 bg-slate-50 dark:bg-slate-900 font-public-sans text-sm font-medium z-50">
+<div class="p-6 flex items-center gap-3">
+<div class="w-10 h-10 bg-slate-200 dark:bg-slate-800 flex items-center justify-center rounded-lg">
+<span class="material-symbols-outlined text-orange-600">account_balance</span>
+</div>
+<div>
+<h1 class="text-lg font-bold text-slate-900 dark:text-slate-50 leading-tight">Barangay Nazareth</h1>
+<p class="text-[10px] uppercase tracking-wider text-slate-500">Internal Systems</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+                Resident Directory
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="gavel">gavel</span>
+                Lupon Registry
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-r-full font-semibold translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+                Case Files
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+                Ordinances
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                Analytics
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+                System Logs
+            </a>
+</nav>
+<div class="p-6 mt-auto">
+<div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg">
+<div class="flex items-center justify-between mb-2">
+<span class="text-[10px] font-bold uppercase text-slate-500">Storage</span>
+<span class="text-[10px] font-bold text-orange-600">24% Used</span>
+</div>
+<div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+<div class="bg-orange-600 h-full w-[24%]"></div>
+</div>
+<p class="text-[11px] mt-2 text-slate-500">1.2 GB of 5 GB Used</p>
+</div>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-64 h-16 flex justify-between items-center px-8 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="w-full bg-surface-container-highest border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 transition-all" placeholder="Search archives, documents, or cases..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-orange-600 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<div class="h-8 w-[1px] bg-slate-200 mx-2"></div>
+<div class="flex items-center gap-3">
+<span class="text-xs font-semibold text-slate-700">Administrator</span>
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center border border-slate-200">
+<span class="material-symbols-outlined text-slate-400" data-icon="account_circle">account_circle</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="ml-64 pt-16 flex h-screen overflow-hidden">
+<!-- Document Browser -->
+<section class="flex-1 overflow-y-auto p-8 bg-surface">
+<!-- Header Actions -->
+<div class="flex items-end justify-between mb-8">
+<div>
+<h2 class="text-[3.5rem] font-bold leading-none text-on-surface">Central Archives</h2>
+<p class="text-xs font-medium text-on-surface-variant uppercase tracking-[0.2em] mt-2">Document Management System</p>
+</div>
+<div class="flex gap-3">
+<button class="bg-surface-container-lowest text-on-surface px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 ghost-shadow hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-sm">tune</span>
+                        Filter
+                    </button>
+<button class="bg-primary-container text-on-primary-container px-6 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm">upload_file</span>
+                        Upload Case File
+                    </button>
+</div>
+</div>
+<!-- Dashboard Grid (Tonal Monoliths) -->
+<div class="grid grid-cols-12 gap-6 mb-10">
+<div class="col-span-8 bg-surface-container-low p-8 rounded-xl flex flex-col justify-between min-h-[160px]">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-[0.75rem] font-medium text-on-surface-variant uppercase tracking-widest mb-1">Active Database</p>
+<h3 class="text-2xl font-semibold">2,842 Total Records</h3>
+</div>
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full bg-orange-200 border-2 border-surface-container-low flex items-center justify-center"><span class="text-[10px] font-bold text-orange-800">C</span></div>
+<div class="w-8 h-8 rounded-full bg-blue-200 border-2 border-surface-container-low flex items-center justify-center"><span class="text-[10px] font-bold text-blue-800">L</span></div>
+<div class="w-8 h-8 rounded-full bg-green-200 border-2 border-surface-container-low flex items-center justify-center"><span class="text-[10px] font-bold text-green-800">O</span></div>
+</div>
+</div>
+<div class="flex gap-8">
+<div>
+<span class="block text-[1.75rem] font-semibold">154</span>
+<span class="text-[0.75rem] font-medium text-on-surface-variant">New this month</span>
+</div>
+<div>
+<span class="block text-[1.75rem] font-semibold">12</span>
+<span class="text-[0.75rem] font-medium text-on-surface-variant">Pending Review</span>
+</div>
+</div>
+</div>
+<div class="col-span-4 bg-primary text-on-primary p-8 rounded-xl flex flex-col justify-between">
+<p class="text-[0.75rem] font-medium uppercase tracking-widest opacity-80">Quick Action</p>
+<div class="space-y-1">
+<h3 class="text-xl font-bold">Official Copies</h3>
+<p class="text-sm opacity-90 leading-tight">Generate certified true copies with digital seals.</p>
+</div>
+<button class="mt-4 bg-white/10 hover:bg-white/20 transition-colors w-full py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">verified</span>
+                        Generate Official Copy
+                    </button>
+</div>
+</div>
+<!-- Recent Documents Table -->
+<div class="bg-surface-container-lowest rounded-xl ghost-shadow overflow-hidden">
+<div class="p-6 border-b border-surface-container flex items-center justify-between">
+<h4 class="font-bold text-lg">Recent Documents</h4>
+<span class="text-xs text-on-surface-variant">Showing latest 25 items</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold border-b border-surface-container">
+<th class="px-6 py-4">Name</th>
+<th class="px-6 py-4">Modified</th>
+<th class="px-6 py-4">Size</th>
+<th class="px-6 py-4">Uploader</th>
+<th class="px-6 py-4">Status</th>
+<th class="px-6 py-4 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="text-sm divide-y divide-surface-container">
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-orange-50 rounded flex items-center justify-center text-orange-600">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">description</span>
+</div>
+<div>
+<span class="block font-semibold">Blotter_Report_2023_102.pdf</span>
+<span class="text-[10px] text-on-surface-variant uppercase">Incident Report</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">Oct 24, 2023</td>
+<td class="px-6 py-4 text-on-surface-variant">2.4 MB</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-slate-400">person</span>
+</div>
+<span class="text-xs font-medium">S. Santos</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded uppercase">Verified</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="bg-surface-container-low transition-colors group cursor-pointer border-l-4 border-orange-600">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-orange-50 rounded flex items-center justify-center text-orange-600">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+</div>
+<div>
+<span class="block font-semibold">Case_File_DelaCruz_vs_Reyes.zip</span>
+<span class="text-[10px] text-on-surface-variant uppercase">Lupon Case</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">Oct 23, 2023</td>
+<td class="px-6 py-4 text-on-surface-variant">45.8 MB</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-slate-400">person</span>
+</div>
+<span class="text-xs font-medium">R. Gomez</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-orange-100 text-orange-700 text-[10px] font-bold rounded uppercase">Restricted</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-blue-50 rounded flex items-center justify-center text-blue-600">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">image</span>
+</div>
+<div>
+<span class="block font-semibold">Evidence_Photo_001.jpg</span>
+<span class="text-[10px] text-on-surface-variant uppercase">Media Asset</span>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">Oct 22, 2023</td>
+<td class="px-6 py-4 text-on-surface-variant">8.1 MB</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-[14px] text-slate-400">person</span>
+</div>
+<span class="text-xs font-medium">S. Santos</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-slate-100 text-slate-700 text-[10px] font-bold rounded uppercase">Draft</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- Properties Side Panel -->
+<aside class="w-80 bg-surface-container-low border-l border-surface-container-highest p-6 flex flex-col gap-6 overflow-y-auto">
+<div class="flex items-center justify-between">
+<h5 class="text-sm font-bold uppercase tracking-widest text-on-surface-variant">Properties</h5>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+<!-- Preview Placeholder -->
+<div class="aspect-video bg-surface rounded-lg border-2 border-dashed border-surface-container flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-4xl mb-2">folder_zip</span>
+<span class="text-xs font-medium">Archive Preview Unavailable</span>
+</div>
+<div class="space-y-6">
+<div>
+<h6 class="text-[10px] font-bold text-on-surface-variant uppercase mb-2">Selected File</h6>
+<p class="text-sm font-bold leading-tight">Case_File_DelaCruz_vs_Reyes.zip</p>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-center py-2 border-b border-surface-container">
+<span class="text-xs text-on-surface-variant">Category</span>
+<span class="text-xs font-semibold">Lupon Registry</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-surface-container">
+<span class="text-xs text-on-surface-variant">Security Level</span>
+<span class="flex items-center gap-1 text-xs font-semibold text-error">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+                            Restricted
+                        </span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-surface-container">
+<span class="text-xs text-on-surface-variant">Retention Policy</span>
+<span class="text-xs font-semibold">Permanent (10+ Yrs)</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-surface-container">
+<span class="text-xs text-on-surface-variant">Last Downloaded</span>
+<span class="text-xs font-semibold">2 hours ago</span>
+</div>
+</div>
+<div class="pt-4">
+<h6 class="text-[10px] font-bold text-on-surface-variant uppercase mb-3">Permissions</h6>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-container-highest text-[10px] font-bold rounded-full">Chairman</span>
+<span class="px-3 py-1 bg-surface-container-highest text-[10px] font-bold rounded-full">Secretary</span>
+<span class="px-3 py-1 bg-surface-container-highest text-[10px] font-bold rounded-full">Admin</span>
+</div>
+</div>
+<div class="pt-4 grid grid-cols-2 gap-3">
+<button class="bg-surface-container-highest text-on-surface py-2.5 rounded-lg text-xs font-bold hover:bg-surface-variant transition-colors">
+                        Edit Metadata
+                    </button>
+<button class="bg-surface-container-highest text-on-surface py-2.5 rounded-lg text-xs font-bold hover:bg-surface-variant transition-colors">
+                        Download
+                    </button>
+</div>
+</div>
+</aside>
+</main>
+</body></html>
+
+<!-- Barangay Nazareth - Login -->

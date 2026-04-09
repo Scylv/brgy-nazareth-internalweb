@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Resident Verification | Barangay Nazareth Internal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .ghost-shadow {
+            box-shadow: 0 12px 40px rgba(25, 28, 30, 0.06);
+        }
+        body {
+            font-family: 'Public Sans', sans-serif;
+            background-color: #f7f9fb;
+            color: #191c1e;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#d8dadc",
+                        "on-primary-fixed-variant": "#7a3000",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#e0e3e5",
+                        "surface-tint": "#a04100",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#9ccaff",
+                        "inverse-primary": "#ffb693",
+                        "tertiary-container": "#059eff",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#ffdbcc",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "primary": "#a04100",
+                        "secondary-fixed-dim": "#ffb693",
+                        "tertiary-fixed": "#d0e4ff",
+                        "tertiary": "#0062a1",
+                        "inverse-surface": "#2d3133",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "secondary-container": "#fe9a69",
+                        "primary-fixed-dim": "#ffb693",
+                        "on-tertiary-fixed": "#001d35",
+                        "on-secondary-container": "#763006",
+                        "on-primary-fixed": "#351000",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#ff6b00",
+                        "background": "#f7f9fb",
+                        "on-background": "#191c1e",
+                        "surface-container-low": "#f2f4f6",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#5a4136",
+                        "on-tertiary-container": "#003357",
+                        "secondary-fixed": "#ffdbcc",
+                        "on-primary-container": "#572000",
+                        "surface": "#f7f9fb",
+                        "on-secondary-fixed-variant": "#783207",
+                        "outline": "#8e7164",
+                        "on-error-container": "#93000a",
+                        "surface-container-high": "#e6e8ea",
+                        "on-secondary-fixed": "#351000",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary": "#96481e",
+                        "outline-variant": "#e2bfb0",
+                        "surface-bright": "#f7f9fb",
+                        "surface-container": "#eceef0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Public Sans"],
+                        "body": ["Public Sans"],
+                        "label": ["Public Sans"]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar (Execution from JSON) -->
+<aside class="fixed inset-y-0 left-0 flex flex-col h-screen w-64 bg-slate-50 border-r-0 font-public-sans text-sm font-medium z-50">
+<div class="p-8">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 bg-slate-200 rounded-lg flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-on-surface text-2xl">account_balance</span>
+</div>
+<div>
+<h1 class="text-lg font-bold text-slate-900 leading-tight">Barangay Nazareth</h1>
+<p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Internal Systems</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-0 py-4">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-200 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 bg-orange-100 text-orange-700 rounded-r-full font-semibold translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span> Resident Directory
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-200 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="gavel">gavel</span> Lupon Registry
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-200 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="folder_open">folder_open</span> Case Files
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-200 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span> Ordinances
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-200 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span> Analytics
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-200 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span> System Logs
+            </a>
+</nav>
+<div class="p-6 mt-auto">
+<div class="p-4 bg-slate-100 rounded-lg flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-600 text-sm">person</span>
+</div>
+<div class="overflow-hidden">
+<p class="text-xs font-bold text-slate-900 truncate">Admin Office</p>
+<p class="text-[10px] text-slate-500 truncate">verification-clerk-01</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopAppBar (Execution from JSON) -->
+<header class="fixed top-0 right-0 left-64 h-16 flex justify-between items-center px-8 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 font-public-sans text-sm shadow-sm">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="w-full bg-slate-100 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-orange-500/20" placeholder="Search RBI ID or Resident Name..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative text-slate-500 hover:text-orange-500 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-orange-600 rounded-full border-2 border-white"></span>
+</button>
+<div class="h-8 w-[1px] bg-slate-200"></div>
+<div class="flex items-center gap-3">
+<span class="font-medium text-slate-700">Barangay Nazareth Internal</span>
+<span class="material-symbols-outlined text-slate-400" data-icon="account_circle">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 pb-12 px-12 min-h-screen">
+<!-- Breadcrumb / Context -->
+<div class="mb-8 flex items-center justify-between">
+<div>
+<nav class="flex items-center gap-2 text-label-md text-on-surface-variant mb-2">
+<span>Resident Directory</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-primary font-semibold">Verification View</span>
+</nav>
+<h2 class="text-3xl font-bold tracking-tight text-on-surface">Verification Report</h2>
+</div>
+<div class="text-right">
+<p class="text-label-md text-on-surface-variant">Reference ID</p>
+<p class="text-title-sm font-bold">VER-2023-9021-NZ</p>
+</div>
+</div>
+<!-- Bento Layout for Resident Verification -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Column 1: Resident Profile Summary -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+<section class="bg-surface-container-lowest p-8 rounded-lg ghost-shadow">
+<div class="flex flex-col items-center text-center mb-8">
+<div class="w-32 h-32 rounded-lg bg-surface-container-high flex items-center justify-center mb-4 overflow-hidden relative border border-outline-variant/10">
+<span class="material-symbols-outlined text-on-surface-variant text-6xl" style="font-variation-settings: 'wght' 200;">person</span>
+</div>
+<h3 class="text-2xl font-bold text-on-surface">JUAN DELA CRUZ</h3>
+<p class="text-label-md font-medium text-primary bg-primary-fixed px-3 py-1 rounded-full mt-2 uppercase tracking-widest">Resident</p>
+</div>
+<div class="space-y-4 pt-6 border-t border-surface-container-high">
+<div class="flex justify-between items-center">
+<span class="text-label-md text-on-surface-variant font-medium">RBI ID</span>
+<span class="text-body-md font-bold text-on-surface">RBI-10293-NZ</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-label-md text-on-surface-variant font-medium">National ID</span>
+<span class="text-body-md font-medium text-on-surface">7234-****-****-0129</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-label-md text-on-surface-variant font-medium">Purok</span>
+<span class="text-body-md font-medium text-on-surface">Purok 4-A, Upper Nazareth</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-label-md text-on-surface-variant font-medium">Date of Birth</span>
+<span class="text-body-md font-medium text-on-surface">March 14, 1988</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-label-md text-on-surface-variant font-medium">Civil Status</span>
+<span class="text-body-md font-medium text-on-surface">Married</span>
+</div>
+</div>
+<div class="mt-8">
+<button class="w-full py-3 bg-surface-container border border-outline-variant/20 rounded-lg text-title-sm font-semibold hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">visibility</span>
+                            View Full Profile (External)
+                        </button>
+</div>
+</section>
+<!-- Privacy Advisory Section -->
+<div class="p-6 bg-surface-container-low rounded-lg flex gap-4">
+<span class="material-symbols-outlined text-secondary text-2xl">policy</span>
+<div class="flex-1">
+<h4 class="text-title-sm font-bold text-on-surface">Privacy Advisory</h4>
+<p class="text-body-md text-on-surface-variant mt-1 leading-relaxed">
+                            Sensitive details are redacted in compliance with the Data Privacy Act of 2012. Access is logged for administrative audit.
+                        </p>
+</div>
+</div>
+</div>
+<!-- Column 2: Status & Instructions -->
+<div class="col-span-12 lg:col-span-8 flex flex-col gap-6">
+<!-- Status Monolith -->
+<section class="bg-emerald-50 p-8 rounded-lg flex flex-col md:flex-row items-center justify-between gap-6 border-l-[6px] border-emerald-600">
+<div class="flex items-center gap-6">
+<div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-emerald-700 text-4xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div>
+<h3 class="text-label-md font-bold text-emerald-800 uppercase tracking-wider">Current Record Status</h3>
+<div class="text-4xl font-bold text-emerald-900 mt-1 uppercase">Record Clear</div>
+</div>
+</div>
+<div class="text-right">
+<p class="text-label-md text-emerald-700 font-medium">Last Verified</p>
+<p class="text-title-sm font-bold text-emerald-900">Today, 10:45 AM</p>
+</div>
+</section>
+<!-- Instruction Panel -->
+<section class="bg-surface-container-lowest p-10 rounded-lg ghost-shadow flex-1">
+<div class="max-w-2xl">
+<h3 class="text-headline-md font-bold text-on-surface mb-6">Internal Clearance Instructions</h3>
+<div class="p-8 rounded-lg bg-emerald-600 text-white flex items-start gap-6 mb-10">
+<div class="w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl">task_alt</span>
+</div>
+<div>
+<h4 class="text-xl font-bold mb-2">Proceed with clearance</h4>
+<p class="text-white/80 leading-relaxed font-medium">
+                                    The resident has no active Lupon cases, pending community tax dues, or adverse neighborhood reports. 
+                                    Department staff may authorize document issuance immediately.
+                                </p>
+</div>
+</div>
+<div class="space-y-8">
+<div>
+<h5 class="text-label-md font-bold text-primary mb-4 uppercase tracking-widest">Recommended Actions</h5>
+<div class="grid md:grid-cols-2 gap-4">
+<button class="flex items-center gap-4 p-4 rounded-lg bg-primary-container text-on-primary-container hover:opacity-90 transition-opacity text-left">
+<div class="w-10 h-10 bg-on-primary-container/10 rounded flex items-center justify-center">
+<span class="material-symbols-outlined">print</span>
+</div>
+<div>
+<p class="font-bold">Generate Document</p>
+<p class="text-xs opacity-80">Official Barangay Clearance</p>
+</div>
+</button>
+<button class="flex items-center gap-4 p-4 rounded-lg bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors text-left">
+<div class="w-10 h-10 bg-on-surface-variant/10 rounded flex items-center justify-center">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div>
+<p class="font-bold">Indigency Record</p>
+<p class="text-xs opacity-80">Internal Only</p>
+</div>
+</button>
+</div>
+</div>
+<div class="pt-8 border-t border-surface-container-high">
+<h5 class="text-label-md font-bold text-on-surface-variant mb-4 uppercase tracking-widest">Officer Checklist</h5>
+<div class="space-y-3">
+<label class="flex items-center gap-3 text-body-md text-on-surface-variant cursor-pointer group">
+<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+<span class="group-hover:text-on-surface transition-colors">Physical identity verified (Actual person vs. photo on record)</span>
+</label>
+<label class="flex items-center gap-3 text-body-md text-on-surface-variant cursor-pointer group">
+<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+<span class="group-hover:text-on-surface transition-colors">Purpose of clearance matches application on file</span>
+</label>
+<label class="flex items-center gap-3 text-body-md text-on-surface-variant cursor-pointer group">
+<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+<span class="group-hover:text-on-surface transition-colors">Payment confirmation verified in System Logs</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Secondary / Alternative Info -->
+<div class="grid grid-cols-2 gap-6">
+<div class="p-6 bg-surface-container-highest rounded-lg border-l-4 border-slate-400">
+<span class="text-label-md font-bold text-on-surface-variant">LUPON STATUS</span>
+<p class="text-xl font-bold mt-1 text-on-surface">No Records Found</p>
+</div>
+<div class="p-6 bg-surface-container-highest rounded-lg border-l-4 border-slate-400">
+<span class="text-label-md font-bold text-on-surface-variant">TAX COMPLIANCE</span>
+<p class="text-xl font-bold mt-1 text-on-surface">Up to Date (2024)</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button (Limited Use Case) - Contextual for Generating Main Doc -->
+<div class="fixed bottom-10 right-10">
+<button class="group relative flex items-center justify-center w-16 h-16 bg-primary-container text-on-primary-container rounded-full shadow-lg hover:scale-105 transition-all">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">print</span>
+<span class="absolute right-full mr-4 bg-on-surface text-surface text-xs font-bold px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Generate Official Document</span>
+</button>
+</div>
+</body></html>
+
+<!-- Resident Search Results -->

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Resident Record | Barangay Nazareth Internal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Public Sans', sans-serif; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#d8dadc",
+                        "on-primary-fixed-variant": "#7a3000",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#e0e3e5",
+                        "surface-tint": "#a04100",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#9ccaff",
+                        "inverse-primary": "#ffb693",
+                        "tertiary-container": "#059eff",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#ffdbcc",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "primary": "#a04100",
+                        "secondary-fixed-dim": "#ffb693",
+                        "tertiary-fixed": "#d0e4ff",
+                        "tertiary": "#0062a1",
+                        "inverse-surface": "#2d3133",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "secondary-container": "#fe9a69",
+                        "primary-fixed-dim": "#ffb693",
+                        "on-tertiary-fixed": "#001d35",
+                        "on-secondary-container": "#763006",
+                        "on-primary-fixed": "#351000",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#ff6b00",
+                        "background": "#f7f9fb",
+                        "on-background": "#191c1e",
+                        "surface-container-low": "#f2f4f6",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#5a4136",
+                        "on-tertiary-container": "#003357",
+                        "secondary-fixed": "#ffdbcc",
+                        "on-primary-container": "#572000",
+                        "surface": "#f7f9fb",
+                        "on-secondary-fixed-variant": "#783207",
+                        "outline": "#8e7164",
+                        "on-error-container": "#93000a",
+                        "surface-container-high": "#e6e8ea",
+                        "on-secondary-fixed": "#351000",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary": "#96481e",
+                        "outline-variant": "#e2bfb0",
+                        "surface-bright": "#f7f9fb",
+                        "surface-container": "#eceef0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background overflow-hidden">
+<!-- SideNavBar Shell -->
+<aside class="fixed inset-y-0 left-0 flex flex-col h-screen w-64 bg-slate-50 dark:bg-slate-900 font-public-sans text-sm font-medium z-50">
+<div class="p-6 flex items-center gap-3">
+<div class="w-10 h-10 bg-on-surface-variant/10 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl">account_balance</span>
+</div>
+<div>
+<h1 class="text-lg font-bold text-slate-900 dark:text-slate-50 leading-tight">Barangay Nazareth</h1>
+<p class="text-xs text-slate-500 font-normal">Internal Systems</p>
+</div>
+</div>
+<nav class="flex-1 mt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-r-full font-semibold translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Resident Directory</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">gavel</span>
+<span>Lupon Registry</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">folder_open</span>
+<span>Case Files</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">description</span>
+<span>Ordinances</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">history</span>
+<span>System Logs</span>
+</a>
+</nav>
+<div class="p-4 bg-slate-100 dark:bg-slate-800 mt-auto">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-xl">person</span>
+</div>
+<div class="overflow-hidden">
+<p class="text-xs font-bold truncate">Admin Officer</p>
+<p class="text-[10px] text-slate-500 truncate">ID: BRGY-2024-001</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 right-0 left-64 h-16 flex justify-between items-center px-8 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-none font-public-sans text-sm">
+<div class="flex items-center gap-6">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="bg-surface-container-low border-none rounded-lg pl-10 pr-4 py-2 w-80 focus:ring-2 focus:ring-primary/20 text-sm" placeholder="Search records..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-orange-500 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="h-8 w-[1px] bg-slate-200 dark:bg-slate-800 mx-2"></div>
+<button class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-slate-500">account_circle</span>
+<span class="font-medium">System Admin</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 h-screen overflow-y-auto">
+<div class="p-8 max-w-7xl mx-auto">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-10">
+<div>
+<nav class="flex items-center gap-2 text-label-md text-slate-500 mb-2">
+<span>Resident Directory</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-primary font-medium">New Record</span>
+</nav>
+<h2 class="text-3xl font-bold tracking-tight text-on-surface">Resident Record Entry</h2>
+<p class="text-slate-500 mt-1">Registry of Barangay Inhabitants (RBI Form)</p>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-2.5 rounded-lg border border-slate-200 font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+                        Cancel
+                    </button>
+<button class="px-6 py-2.5 rounded-lg bg-primary-container text-on-primary-container font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">save</span>
+                        Save Record
+                    </button>
+</div>
+</div>
+<div class="flex flex-col lg:flex-row gap-8">
+<!-- Navigation Anchor (Sticky Side Tabs) -->
+<nav class="lg:w-64 flex-shrink-0">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 bg-surface-container-lowest rounded-lg border-l-4 border-primary font-semibold text-primary" href="#personal-info">
+<span class="material-symbols-outlined">person</span>
+                                Personal Info
+                            </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-surface-container-low rounded-lg transition-colors" href="#address-contact">
+<span class="material-symbols-outlined">home</span>
+                                Address &amp; Contact
+                            </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-surface-container-low rounded-lg transition-colors" href="#sector">
+<span class="material-symbols-outlined">category</span>
+                                Sector Classification
+                            </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-surface-container-low rounded-lg transition-colors" href="#documents">
+<span class="material-symbols-outlined">attachment</span>
+                                Documents
+                            </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-surface-container-low rounded-lg transition-colors" href="#system">
+<span class="material-symbols-outlined">shield</span>
+                                System Fields
+                            </a>
+</li>
+</ul>
+</nav>
+<!-- Form Content -->
+<div class="flex-1 space-y-8">
+<!-- Section: Personal Info -->
+<section class="bg-surface-container-lowest p-8 rounded-lg shadow-sm border border-transparent" id="personal-info">
+<div class="flex items-center gap-2 mb-6">
+<span class="w-1.5 h-6 bg-primary rounded-full"></span>
+<h3 class="text-xl font-semibold">Personal Information</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div class="col-span-full">
+<label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">PhilSys Card Number (PCN)</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg p-3 focus:ring-2 focus:ring-primary/20 text-sm font-mono tracking-widest" placeholder="XXXX-XXXX-XXXX-XXXX" type="text"/>
+</div>
+<div class="lg:col-span-2">
+<label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Full Name</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg p-3 focus:ring-2 focus:ring-primary/20 text-sm" placeholder="Surname, First Name Middle Name" type="text"/>
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Birth Date</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg p-3 focus:ring-2 focus:ring-primary/20 text-sm" type="date"/>
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Gender</label>
+<select class="w-full bg-surface-container-highest border-none rounded-lg p-3 focus:ring-2 focus:ring-primary/20 text-sm">
+<option>Select Gender</option>
+<option>Male</option>
+<option>Female</option>
+<option>Other</option>
+</select>
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Occupation</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg p-3 focus:ring-2 focus:ring-primary/20 text-sm" placeholder="Current Profession" type="text"/>
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Civil Status</label>
+<select class="w-full bg-surface-container-highest border-none rounded-lg p-3 focus:ring-2 focus:ring-primary/20 text-sm">
+<option>Single</option>
+<option>Married</option>
+<option>Widowed</option>
+<option>Legally Separated</option>
+</select>
+</div>
+</div>
+</section>
+<!-- Section: Address & Contact -->
+<section class="bg-surface-container-lowest p-8 rounded-lg shadow-sm border border-transparent" id="address-contact">
+<div class="flex items-center gap-2 mb-6">
+<span class="w-1.5 h-6 bg-primary rounded-full"></span>
+<h3 class="text-xl font-semibold">Address &amp; Contact Details</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<div>
+<label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">House #</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg p-3 focus:ring-2 focus:ring-primary/20 text-sm" placeholder="123" type="text"/>
+</div>
+<div class="md:col-span-3">
+<label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Street / Sitio</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg p-3 focus:ring-2 focus:ring-primary/20 text-sm" placeholder="Purok Name or Street Name" type="text"/>
+</div>
+<div class="md:col-span-2">
+<label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Contact Number</label>
+<div class="relative">
+<span class="absolute left-3 top-3 text-sm text-slate-400">+63</span>
+<input class="w-full bg-surface-container-highest border-none rounded-lg p-3 pl-12 focus:ring-2 focus:ring-primary/20 text-sm" placeholder="9XX XXX XXXX" type="tel"/>
+</div>
+</div>
+<div class="md:col-span-2">
+<label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Email Address</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg p-3 focus:ring-2 focus:ring-primary/20 text-sm" placeholder="example@domain.com" type="email"/>
+</div>
+</div>
+</section>
+<!-- Section: Sector Classification (Bento Style) -->
+<section class="bg-surface-container-lowest p-8 rounded-lg shadow-sm border border-transparent" id="sector">
+<div class="flex items-center gap-2 mb-6">
+<span class="w-1.5 h-6 bg-primary rounded-full"></span>
+<h3 class="text-xl font-semibold">Sector Classification</h3>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+<label class="group relative flex items-center p-4 bg-surface-container rounded-lg cursor-pointer hover:bg-orange-50 transition-colors">
+<input class="w-5 h-5 rounded text-primary border-none bg-white ring-offset-0 focus:ring-primary focus:ring-opacity-20 mr-3" type="checkbox"/>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-900">Senior Citizen</span>
+<span class="text-[10px] text-slate-500 uppercase">Aged 60+</span>
+</div>
+</label>
+<label class="group relative flex items-center p-4 bg-surface-container rounded-lg cursor-pointer hover:bg-orange-50 transition-colors">
+<input class="w-5 h-5 rounded text-primary border-none bg-white ring-offset-0 focus:ring-primary focus:ring-opacity-20 mr-3" type="checkbox"/>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-900">PWD</span>
+<span class="text-[10px] text-slate-500 uppercase">Differently Abled</span>
+</div>
+</label>
+<label class="group relative flex items-center p-4 bg-surface-container rounded-lg cursor-pointer hover:bg-orange-50 transition-colors">
+<input class="w-5 h-5 rounded text-primary border-none bg-white ring-offset-0 focus:ring-primary focus:ring-opacity-20 mr-3" type="checkbox"/>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-900">Solo Parent</span>
+<span class="text-[10px] text-slate-500 uppercase">Legal Guardian</span>
+</div>
+</label>
+<label class="group relative flex items-center p-4 bg-surface-container rounded-lg cursor-pointer hover:bg-orange-50 transition-colors">
+<input class="w-5 h-5 rounded text-primary border-none bg-white ring-offset-0 focus:ring-primary focus:ring-opacity-20 mr-3" type="checkbox"/>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-900">Indigenous</span>
+<span class="text-[10px] text-slate-500 uppercase">IP Group Member</span>
+</div>
+</label>
+<label class="group relative flex items-center p-4 bg-surface-container rounded-lg cursor-pointer hover:bg-orange-50 transition-colors">
+<input class="w-5 h-5 rounded text-primary border-none bg-white ring-offset-0 focus:ring-primary focus:ring-opacity-20 mr-3" type="checkbox"/>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-900">4Ps Member</span>
+<span class="text-[10px] text-slate-500 uppercase">DSWD Listed</span>
+</div>
+</label>
+<label class="group relative flex items-center p-4 bg-surface-container rounded-lg cursor-pointer hover:bg-orange-50 transition-colors">
+<input checked="" class="w-5 h-5 rounded text-primary border-none bg-white ring-offset-0 focus:ring-primary focus:ring-opacity-20 mr-3" type="checkbox"/>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-slate-900">Registered Voter</span>
+<span class="text-[10px] text-slate-500 uppercase">Comelec Status</span>
+</div>
+</label>
+</div>
+</section>
+<!-- Section: System Fields (Audit Trail) -->
+<section class="bg-surface-container-low p-6 rounded-lg border border-slate-200/50" id="system">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-slate-400 text-lg">shield</span>
+<h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Audit &amp; System Metadata</h4>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-[11px] font-mono text-slate-400">
+<div class="flex flex-col gap-2">
+<div class="flex justify-between border-b border-slate-200 pb-1">
+<span>ENCODER IP:</span>
+<span class="text-slate-600">192.168.1.104</span>
+</div>
+<div class="flex justify-between border-b border-slate-200 pb-1">
+<span>AUTH LEVEL:</span>
+<span class="text-slate-600">L2 CLERK</span>
+</div>
+<div class="flex justify-between border-b border-slate-200 pb-1">
+<span>STAMP:</span>
+<span class="text-slate-600">2024-10-27 14:22:05 UTC</span>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex flex-col">
+<span>RECORD HASH (SHA-256):</span>
+<span class="text-slate-500 break-all leading-tight mt-1 bg-white/50 p-2 rounded">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Sticky Footer for Actions -->
+<div class="mt-12 pt-8 border-t border-slate-200 flex justify-between items-center text-slate-400 text-xs">
+<p>© 2024 Barangay Nazareth Management System. All rights reserved.</p>
+<div class="flex gap-4">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">System Support</a>
+</div>
+</div>
+</div>
+</main>
+</body></html>
+
+<!-- Ordinances Module -->
