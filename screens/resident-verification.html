@@ -7,7 +7,6 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <style>
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -93,7 +92,7 @@
     </script>
 </head>
 <body class="bg-surface text-on-surface">
-<!-- SideNavBar (Execution from JSON) -->
+<!-- SideNavBar -->
 <aside class="fixed inset-y-0 left-0 flex flex-col h-screen w-64 bg-slate-50 border-r-0 font-public-sans text-sm font-medium z-50">
 <div class="p-8">
 <div class="flex items-center gap-3 mb-2">
@@ -141,7 +140,7 @@
 </div>
 </div>
 </aside>
-<!-- TopAppBar (Execution from JSON) -->
+<!-- TopAppBar -->
 <header class="fixed top-0 right-0 left-64 h-16 flex justify-between items-center px-8 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 font-public-sans text-sm shadow-sm">
 <div class="flex items-center gap-4 flex-1">
 <div class="relative w-full max-w-md">
@@ -187,8 +186,8 @@
 <div class="w-32 h-32 rounded-lg bg-surface-container-high flex items-center justify-center mb-4 overflow-hidden relative border border-outline-variant/10">
 <span class="material-symbols-outlined text-on-surface-variant text-6xl" style="font-variation-settings: 'wght' 200;">person</span>
 </div>
-<h3 class="text-2xl font-bold text-on-surface">JUAN DELA CRUZ</h3>
-<p class="text-label-md font-medium text-primary bg-primary-fixed px-3 py-1 rounded-full mt-2 uppercase tracking-widest">Resident</p>
+<h3 class="text-2xl font-bold text-on-surface uppercase">Juan Dela Cruz</h3>
+<p class="text-label-md font-medium text-primary bg-primary-fixed px-3 py-1 rounded-full mt-2 uppercase tracking-widest">Verified Resident</p>
 </div>
 <div class="space-y-4 pt-6 border-t border-surface-container-high">
 <div class="flex justify-between items-center">
@@ -201,7 +200,7 @@
 </div>
 <div class="flex justify-between items-center">
 <span class="text-label-md text-on-surface-variant font-medium">Purok</span>
-<span class="text-body-md font-medium text-on-surface">Purok 4-A, Upper Nazareth</span>
+<span class="text-body-md font-medium text-on-surface text-right">Purok 4-A, Upper Nazareth</span>
 </div>
 <div class="flex justify-between items-center">
 <span class="text-label-md text-on-surface-variant font-medium">Date of Birth</span>
@@ -215,7 +214,7 @@
 <div class="mt-8">
 <button class="w-full py-3 bg-surface-container border border-outline-variant/20 rounded-lg text-title-sm font-semibold hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2">
 <span class="material-symbols-outlined text-lg">visibility</span>
-                            View Full Profile (External)
+                            View Full Record (Audit)
                         </button>
 </div>
 </section>
@@ -225,45 +224,61 @@
 <div class="flex-1">
 <h4 class="text-title-sm font-bold text-on-surface">Privacy Advisory</h4>
 <p class="text-body-md text-on-surface-variant mt-1 leading-relaxed">
-                            Sensitive details are redacted in compliance with the Data Privacy Act of 2012. Access is logged for administrative audit.
+                            Sensitive data and specific case narratives are redacted per Data Privacy Act of 2012. Consult Lupon Registry for details.
                         </p>
 </div>
 </div>
 </div>
-<!-- Column 2: Status & Instructions -->
+<!-- Column 2: Status & Decision Logic -->
 <div class="col-span-12 lg:col-span-8 flex flex-col gap-6">
-<!-- Status Monolith -->
+<!-- Status Monolith (Clearance Decision) -->
 <section class="bg-emerald-50 p-8 rounded-lg flex flex-col md:flex-row items-center justify-between gap-6 border-l-[6px] border-emerald-600">
 <div class="flex items-center gap-6">
-<div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+<div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
 <span class="material-symbols-outlined text-emerald-700 text-4xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
 </div>
 <div>
-<h3 class="text-label-md font-bold text-emerald-800 uppercase tracking-wider">Current Record Status</h3>
-<div class="text-4xl font-bold text-emerald-900 mt-1 uppercase">Record Clear</div>
+<h3 class="text-label-md font-bold text-emerald-800 uppercase tracking-wider">Automated Decision Outcome</h3>
+<div class="text-4xl font-bold text-emerald-900 mt-1 uppercase tracking-tight">Record Clear</div>
 </div>
 </div>
 <div class="text-right">
-<p class="text-label-md text-emerald-700 font-medium">Last Verified</p>
+<p class="text-label-md text-emerald-700 font-medium">Decision Timestamp</p>
 <p class="text-title-sm font-bold text-emerald-900">Today, 10:45 AM</p>
 </div>
 </section>
-<!-- Instruction Panel -->
+<!-- Dynamic Instruction Panel (Instruction for Green Status) -->
 <section class="bg-surface-container-lowest p-10 rounded-lg ghost-shadow flex-1">
-<div class="max-w-2xl">
-<h3 class="text-headline-md font-bold text-on-surface mb-6">Internal Clearance Instructions</h3>
+<div class="max-w-3xl">
+<h3 class="text-headline-md font-bold text-on-surface mb-6">Staff Instructions</h3>
+<!-- Panel: Proceed with Clearance (Green) -->
 <div class="p-8 rounded-lg bg-emerald-600 text-white flex items-start gap-6 mb-10">
 <div class="w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-2xl">task_alt</span>
+<span class="material-symbols-outlined text-2xl">verified</span>
 </div>
 <div>
 <h4 class="text-xl font-bold mb-2">Proceed with clearance</h4>
-<p class="text-white/80 leading-relaxed font-medium">
-                                    The resident has no active Lupon cases, pending community tax dues, or adverse neighborhood reports. 
-                                    Department staff may authorize document issuance immediately.
+<p class="text-white/90 leading-relaxed font-medium">
+                                    Resident satisfies all internal requirements. No active Lupon cases, pending dues, or residency disputes found. 
+                                    Authorized staff may proceed with document issuance and standard fee collection.
                                 </p>
 </div>
 </div>
+<!-- Secondary Instruction (Hidden for Green, but ready for Red/Yellow status) -->
+<!-- 
+                        <div class="p-8 rounded-lg bg-red-600 text-white flex items-start gap-6 mb-10">
+                            <div class="w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-2xl">gavel</span>
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-bold mb-2">Refer to Lupon office</h4>
+                                <p class="text-white/90 leading-relaxed font-medium">
+                                    Clearance issuance is suspended. The resident has active records in the Lupon Registry that require resolution or specific endorsement.
+                                    Direct the resident to the Lupon Secretary for further assistance.
+                                </p>
+                            </div>
+                        </div>
+                        -->
 <div class="space-y-8">
 <div>
 <h5 class="text-label-md font-bold text-primary mb-4 uppercase tracking-widest">Recommended Actions</h5>
@@ -273,8 +288,8 @@
 <span class="material-symbols-outlined">print</span>
 </div>
 <div>
-<p class="font-bold">Generate Document</p>
-<p class="text-xs opacity-80">Official Barangay Clearance</p>
+<p class="font-bold">Generate Clearance</p>
+<p class="text-xs opacity-80">Official Document v.2024</p>
 </div>
 </button>
 <button class="flex items-center gap-4 p-4 rounded-lg bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors text-left">
@@ -282,53 +297,57 @@
 <span class="material-symbols-outlined">description</span>
 </div>
 <div>
-<p class="font-bold">Indigency Record</p>
-<p class="text-xs opacity-80">Internal Only</p>
+<p class="font-bold">Indigency Certificate</p>
+<p class="text-xs opacity-80">Internal Purpose Only</p>
 </div>
 </button>
 </div>
 </div>
 <div class="pt-8 border-t border-surface-container-high">
-<h5 class="text-label-md font-bold text-on-surface-variant mb-4 uppercase tracking-widest">Officer Checklist</h5>
+<h5 class="text-label-md font-bold text-on-surface-variant mb-4 uppercase tracking-widest">Officer Compliance Checklist</h5>
 <div class="space-y-3">
 <label class="flex items-center gap-3 text-body-md text-on-surface-variant cursor-pointer group">
-<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
-<span class="group-hover:text-on-surface transition-colors">Physical identity verified (Actual person vs. photo on record)</span>
+<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all" type="checkbox"/>
+<span class="group-hover:text-on-surface transition-colors">Visual identity verification (Physical appearance vs Digital ID)</span>
 </label>
 <label class="flex items-center gap-3 text-body-md text-on-surface-variant cursor-pointer group">
-<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
-<span class="group-hover:text-on-surface transition-colors">Purpose of clearance matches application on file</span>
+<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all" type="checkbox"/>
+<span class="group-hover:text-on-surface transition-colors">Verification of document purpose (Employment, Travel, etc.)</span>
 </label>
 <label class="flex items-center gap-3 text-body-md text-on-surface-variant cursor-pointer group">
-<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
-<span class="group-hover:text-on-surface transition-colors">Payment confirmation verified in System Logs</span>
+<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all" type="checkbox"/>
+<span class="group-hover:text-on-surface transition-colors">Administrative fee payment confirmed in Finance Log</span>
 </label>
 </div>
 </div>
 </div>
 </div>
 </section>
-<!-- Secondary / Alternative Info -->
+<!-- Compliance Data Grid (Abstracted) -->
 <div class="grid grid-cols-2 gap-6">
 <div class="p-6 bg-surface-container-highest rounded-lg border-l-4 border-slate-400">
-<span class="text-label-md font-bold text-on-surface-variant">LUPON STATUS</span>
-<p class="text-xl font-bold mt-1 text-on-surface">No Records Found</p>
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-sm">gavel</span>
+<span class="text-label-md font-bold uppercase">Lupon Standing</span>
+</div>
+<p class="text-xl font-bold text-on-surface">No Pending Cases</p>
 </div>
 <div class="p-6 bg-surface-container-highest rounded-lg border-l-4 border-slate-400">
-<span class="text-label-md font-bold text-on-surface-variant">TAX COMPLIANCE</span>
-<p class="text-xl font-bold mt-1 text-on-surface">Up to Date (2024)</p>
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-sm">receipt_long</span>
+<span class="text-label-md font-bold uppercase">Tax Compliance</span>
+</div>
+<p class="text-xl font-bold text-on-surface">Current (2024)</p>
 </div>
 </div>
 </div>
 </div>
 </main>
-<!-- Floating Action Button (Limited Use Case) - Contextual for Generating Main Doc -->
+<!-- Floating Action Button -->
 <div class="fixed bottom-10 right-10">
 <button class="group relative flex items-center justify-center w-16 h-16 bg-primary-container text-on-primary-container rounded-full shadow-lg hover:scale-105 transition-all">
 <span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">print</span>
-<span class="absolute right-full mr-4 bg-on-surface text-surface text-xs font-bold px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">Generate Official Document</span>
+<span class="absolute right-full mr-4 bg-on-surface text-surface text-xs font-bold px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-md">Quick Generate Document</span>
 </button>
 </div>
 </body></html>
-
-<!-- Resident Search Results -->
