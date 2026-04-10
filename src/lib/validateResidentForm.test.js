@@ -27,4 +27,33 @@ describe("validateResidentForm", () => {
       documents: "Documents must be a list."
     });
   });
+
+  it("rejects whitespace-only required fields and missing documents", () => {
+    const result = validateResidentForm({
+      id: "   ",
+      name: "   ",
+      address: "   ",
+      status: "green"
+    });
+
+    expect(result.isValid).toBe(false);
+    expect(result.errors).toMatchObject({
+      id: "Resident ID is required.",
+      name: "Full name is required.",
+      address: "Address is required.",
+      documents: "Documents must be a list."
+    });
+  });
+
+  it("accepts an empty documents array when the other required fields are valid", () => {
+    const result = validateResidentForm({
+      ...residents[0],
+      documents: []
+    });
+
+    expect(result).toEqual({
+      isValid: true,
+      errors: {}
+    });
+  });
 });

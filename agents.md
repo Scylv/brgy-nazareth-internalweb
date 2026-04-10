@@ -1,27 +1,25 @@
-# Project Context
+Add a new business logic function without modifying existing code.
 
-System: Barangay Resident Status Verification and Lupon Registry System
+Function name: canProceedWithClearance(status)
 
-Stack:
-- React + Tailwind
-- Local mock data (no backend yet)
+Behavior:
+- return true if status is "green"
+- return false for "yellow", "red", or invalid values
 
-Core Rules:
-- Department Office: search + view status only
-- Lupon Staff: full edit access
-- Admin: user management
+Create:
+1. src/lib/canProceedWithClearance.js
+2. src/lib/canProceedWithClearance.test.js
 
-Status Logic:
-- Green = Proceed
-- Yellow = Refer to Lupon
-- Red = Refer to Lupon
+Test requirements:
+- include happy path and edge cases
+- use Vitest
+- do not modify any existing files
 
 Constraints:
-- No chat system
-- No real-time features
-- No unnecessary complexity
-- Focus on minimal working prototype
+- do not refactor existing code
+- do not change UI
+- minimal implementation only
 
-Definition of Done:
-- Core workflow works
-- Unit tests exist for main logic
+Output:
+- test file first
+- then implementation
