@@ -7,7 +7,6 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script id="tailwind-config">
       tailwind.config = {
         darkMode: "class",
@@ -165,199 +164,222 @@
 </header>
 <!-- Main Content Shell -->
 <main class="ml-64 pt-24 p-8 min-h-screen">
-<!-- Header Section: Architectural Editorial Style -->
-<header class="mb-12">
+<!-- Header Section -->
+<header class="mb-10">
 <div class="flex justify-between items-end">
 <div>
-<span class="text-[0.75rem] font-medium text-primary uppercase tracking-[0.2em] mb-2 block">Bureau of Administrative Records</span>
-<h1 class="text-4xl font-bold text-on-surface tracking-tight">Legislative Archive</h1>
+<span class="text-[0.7rem] font-bold text-slate-500 uppercase tracking-[0.2em] mb-1 block">Legislative Module</span>
+<h1 class="text-3xl font-bold text-on-surface tracking-tight">Ordinance Registry</h1>
 </div>
-<button class="bg-primary-container text-on-primary-container px-6 py-3 rounded-lg font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity active:scale-95 shadow-sm">
-<span class="material-symbols-outlined text-sm">add</span>
-<span>New Ordinance Draft</span>
+<div class="flex gap-3">
+<button class="bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-surface-variant transition-colors active:scale-95">
+<span class="material-symbols-outlined text-base">cloud_upload</span>
+<span>Import Batch</span>
 </button>
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 hover:brightness-110 transition-all active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-base">add</span>
+<span>New Draft</span>
+</button>
+</div>
 </div>
 </header>
-<!-- Stats Bento Grid -->
-<div class="grid grid-cols-12 gap-6 mb-12">
-<div class="col-span-12 md:col-span-4 bg-surface-container-lowest p-8 rounded-lg shadow-[0_12px_40px_rgba(25,28,30,0.04)] flex flex-col justify-between h-40">
-<span class="text-[0.75rem] font-medium text-on-surface-variant uppercase tracking-wider">Active Mandates</span>
-<div class="flex items-baseline gap-2">
-<span class="text-5xl font-bold text-on-surface tracking-tighter">1,284</span>
-<span class="text-xs font-semibold text-emerald-600">+12% vs last FY</span>
-</div>
-</div>
-<div class="col-span-12 md:col-span-4 bg-surface-container-lowest p-8 rounded-lg shadow-[0_12px_40px_rgba(25,28,30,0.04)] flex flex-col justify-between h-40 border-l-4 border-orange-500">
-<span class="text-[0.75rem] font-medium text-on-surface-variant uppercase tracking-wider">Pending Review</span>
-<div class="flex items-baseline gap-2">
-<span class="text-5xl font-bold text-on-surface tracking-tighter">08</span>
-<span class="text-xs font-medium text-slate-400">Awaiting Signature</span>
-</div>
-</div>
-<!-- Audit Card: Tonal Asymmetry -->
-<div class="col-span-12 md:col-span-4 bg-on-surface p-8 rounded-lg flex flex-col justify-between h-40 relative overflow-hidden group">
-<div class="relative z-10">
-<span class="text-[0.75rem] font-medium text-slate-400 uppercase tracking-wider mb-1 block">Constitutional Alignment</span>
-<div class="flex items-center gap-3">
-<span class="text-3xl font-bold text-white tracking-tight">Audit Score: 98.4%</span>
-</div>
-</div>
-<div class="relative z-10 flex justify-between items-center">
-<span class="text-xs text-slate-400 font-medium italic">Compliant with LGC 1991</span>
-<span class="material-symbols-outlined text-emerald-400 text-3xl" style="font-variation-settings: 'FILL' 1;">verified</span>
-</div>
-<div class="absolute -right-4 -bottom-4 opacity-10">
-<span class="material-symbols-outlined text-9xl">gavel</span>
-</div>
-</div>
-</div>
 <div class="grid grid-cols-12 gap-8">
-<!-- Recent Ordinances List -->
+<!-- Main List Section -->
 <section class="col-span-12 lg:col-span-9">
-<div class="bg-surface-container-low rounded-lg p-1">
-<div class="flex items-center justify-between px-6 py-6">
-<h2 class="text-xl font-semibold text-on-surface">Recent Ordinances</h2>
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+<!-- Filters Bar -->
+<div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+<div class="flex items-center gap-4">
+<span class="text-xs font-bold text-slate-400 uppercase tracking-wider">All Records</span>
 <div class="flex gap-2">
-<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded transition-colors"><span class="material-symbols-outlined">filter_list</span></button>
-<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded transition-colors"><span class="material-symbols-outlined">sort</span></button>
+<button class="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-[11px] font-semibold text-slate-600 dark:text-slate-400">2024</button>
+<button class="px-3 py-1 text-[11px] font-semibold text-slate-400">2023</button>
+<button class="px-3 py-1 text-[11px] font-semibold text-slate-400">2022</button>
 </div>
 </div>
-<div class="space-y-2 pb-6">
-<!-- List Item 1 -->
-<div class="mx-6 p-6 bg-surface-container-lowest rounded-lg hover:bg-surface-container-low transition-colors group">
-<div class="flex items-start justify-between">
-<div class="flex gap-6">
-<div class="flex flex-col items-center justify-center w-20 py-2 bg-surface rounded border-t-2 border-primary">
-<span class="text-[10px] font-bold text-primary uppercase">REF. NO</span>
-<span class="text-sm font-bold text-on-surface">2024-042</span>
-</div>
-<div>
-<h3 class="text-base font-semibold text-on-surface mb-1">Environmental Waste Segregation Mandate</h3>
-<p class="text-sm text-on-surface-variant max-w-xl line-clamp-1 mb-4">An ordinance strictly requiring all residential and commercial establishments within Barangay Nazareth to segregate solid waste at source.</p>
-<div class="flex items-center gap-3">
-<span class="px-2 py-0.5 bg-slate-100 text-[10px] font-bold text-slate-600 rounded">ENVIRONMENT</span>
-<span class="px-2 py-0.5 bg-emerald-100 text-[10px] font-bold text-emerald-700 rounded-full flex items-center gap-1">
-<span class="w-1 h-1 bg-emerald-700 rounded-full"></span> ENFORCED
-                                            </span>
-<span class="text-[11px] text-slate-400 font-medium">Published: Oct 12, 2023</span>
+<div class="flex items-center gap-2">
+<button class="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"><span class="material-symbols-outlined text-xl">filter_list</span></button>
+<button class="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"><span class="material-symbols-outlined text-xl">sort</span></button>
 </div>
 </div>
+<!-- Simple Table View -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50 dark:bg-slate-900/80">
+<th class="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 w-24 text-center">Ref</th>
+<th class="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">Ordinance Title</th>
+<th class="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 w-32">Classification</th>
+<th class="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 w-28">Status</th>
+<th class="px-6 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 w-32 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-50 dark:divide-slate-800">
+<!-- Row 1 -->
+<tr class="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4">
+<span class="text-xs font-mono font-bold text-slate-600 dark:text-slate-400 block text-center">2024-042</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-slate-900 dark:text-slate-100">Environmental Waste Segregation Mandate</span>
+<span class="text-[11px] text-slate-400 mt-0.5">Approved: Oct 12, 2023 • Enforced by Zone 1-7 Officers</span>
 </div>
-<div class="flex gap-3 items-center">
-<button class="text-sm font-semibold text-primary hover:underline px-3 py-2">View</button>
-<button class="p-2 text-slate-400 hover:text-on-surface transition-colors">
-<span class="material-symbols-outlined">file_download</span>
-</button>
+</td>
+<td class="px-6 py-4">
+<span class="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">ENVIRONMENT</span>
+</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 uppercase">
+<span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> ENFORCED
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors" title="Download PDF"><span class="material-symbols-outlined text-xl">file_download</span></button>
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors" title="View Details"><span class="material-symbols-outlined text-xl">visibility</span></button>
 </div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 text-center">
+<span class="text-xs font-mono font-bold text-slate-600 dark:text-slate-400">2023-118</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-slate-900 dark:text-slate-100">Community Safety &amp; Curfew Regulation</span>
+<span class="text-[11px] text-slate-400 mt-0.5">Approved: June 05, 2023 • Updates Ordinance 2018-02</span>
 </div>
+</td>
+<td class="px-6 py-4">
+<span class="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">SAFETY</span>
+</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 uppercase">
+<span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> ENFORCED
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors" title="Download PDF"><span class="material-symbols-outlined text-xl">file_download</span></button>
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors" title="View Details"><span class="material-symbols-outlined text-xl">visibility</span></button>
 </div>
-<!-- List Item 2 -->
-<div class="mx-6 p-6 bg-surface-container-lowest rounded-lg hover:bg-surface-container-low transition-colors group">
-<div class="flex items-start justify-between">
-<div class="flex gap-6">
-<div class="flex flex-col items-center justify-center w-20 py-2 bg-surface rounded border-t-2 border-slate-300">
-<span class="text-[10px] font-bold text-slate-500 uppercase">REF. NO</span>
-<span class="text-sm font-bold text-on-surface">2023-118</span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 text-center">
+<span class="text-xs font-mono font-bold text-slate-600 dark:text-slate-400">2023-089</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-slate-900 dark:text-slate-100">Urban Agriculture &amp; Food Security Initiative</span>
+<span class="text-[11px] text-slate-400 mt-0.5">Approved: Feb 18, 2023 • Resident Incentive Program</span>
 </div>
-<div>
-<h3 class="text-base font-semibold text-on-surface mb-1">Community Safety &amp; Curfew Regulation</h3>
-<p class="text-sm text-on-surface-variant max-w-xl line-clamp-1 mb-4">Establishing a standardized curfew for minors and peace officer protocols for late-night zone patrols.</p>
-<div class="flex items-center gap-3">
-<span class="px-2 py-0.5 bg-slate-100 text-[10px] font-bold text-slate-600 rounded">SAFETY</span>
-<span class="px-2 py-0.5 bg-emerald-100 text-[10px] font-bold text-emerald-700 rounded-full flex items-center gap-1">
-<span class="w-1 h-1 bg-emerald-700 rounded-full"></span> ENFORCED
-                                            </span>
-<span class="text-[11px] text-slate-400 font-medium">Published: June 05, 2023</span>
+</td>
+<td class="px-6 py-4">
+<span class="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">AGRI</span>
+</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 uppercase">
+<span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> ENFORCED
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors" title="Download PDF"><span class="material-symbols-outlined text-xl">file_download</span></button>
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors" title="View Details"><span class="material-symbols-outlined text-xl">visibility</span></button>
 </div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="group hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+<td class="px-6 py-4 text-center">
+<span class="text-xs font-mono font-bold text-slate-600 dark:text-slate-400">2024-001</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-slate-900 dark:text-slate-100">Barangay Infrastructure Tax Amendment</span>
+<span class="text-[11px] text-slate-400 mt-0.5">Reviewed: Jan 10, 2024 • Pending Signature</span>
 </div>
+</td>
+<td class="px-6 py-4">
+<span class="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">FINANCE</span>
+</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 uppercase">
+<span class="w-1.5 h-1.5 bg-orange-500 rounded-full"></span> PENDING
+                                    </span>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors" title="Download PDF"><span class="material-symbols-outlined text-xl">file_download</span></button>
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors" title="View Details"><span class="material-symbols-outlined text-xl">visibility</span></button>
 </div>
-<div class="flex gap-3 items-center">
-<button class="text-sm font-semibold text-primary hover:underline px-3 py-2">View</button>
-<button class="p-2 text-slate-400 hover:text-on-surface transition-colors">
-<span class="material-symbols-outlined">file_download</span>
-</button>
+</td>
+</tr>
+</tbody>
+</table>
 </div>
-</div>
-</div>
-<!-- List Item 3 -->
-<div class="mx-6 p-6 bg-surface-container-lowest rounded-lg hover:bg-surface-container-low transition-colors group">
-<div class="flex items-start justify-between">
-<div class="flex gap-6">
-<div class="flex flex-col items-center justify-center w-20 py-2 bg-surface rounded border-t-2 border-slate-300">
-<span class="text-[10px] font-bold text-slate-500 uppercase">REF. NO</span>
-<span class="text-sm font-bold text-on-surface">2023-089</span>
-</div>
-<div>
-<h3 class="text-base font-semibold text-on-surface mb-1">Urban Agriculture &amp; Food Security Initiative</h3>
-<p class="text-sm text-on-surface-variant max-w-xl line-clamp-1 mb-4">Providing tax incentives and seedling support for households maintaining rooftop or backyard vegetable gardens.</p>
-<div class="flex items-center gap-3">
-<span class="px-2 py-0.5 bg-slate-100 text-[10px] font-bold text-slate-600 rounded">AGRICULTURE</span>
-<span class="px-2 py-0.5 bg-emerald-100 text-[10px] font-bold text-emerald-700 rounded-full flex items-center gap-1">
-<span class="w-1 h-1 bg-emerald-700 rounded-full"></span> ENFORCED
-                                            </span>
-<span class="text-[11px] text-slate-400 font-medium">Published: Feb 18, 2023</span>
-</div>
-</div>
-</div>
-<div class="flex gap-3 items-center">
-<button class="text-sm font-semibold text-primary hover:underline px-3 py-2">View</button>
-<button class="p-2 text-slate-400 hover:text-on-surface transition-colors">
-<span class="material-symbols-outlined">file_download</span>
-</button>
-</div>
-</div>
-</div>
-</div>
-<div class="px-6 py-4 flex justify-center">
-<button class="text-xs font-bold text-on-surface-variant uppercase tracking-widest hover:text-primary transition-colors">View All Archive Records</button>
+<div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/30 dark:bg-slate-900/30">
+<span class="text-[11px] font-medium text-slate-400">Showing 4 of 1,284 records</span>
+<button class="text-xs font-bold text-primary uppercase tracking-widest hover:underline decoration-2 underline-offset-4">View Complete Archive</button>
 </div>
 </div>
 </section>
-<!-- Export Records Side Panel -->
+<!-- Sidebar / Secondary Actions -->
 <aside class="col-span-12 lg:col-span-3 space-y-6">
-<div class="bg-surface-container-highest p-6 rounded-lg">
-<h3 class="text-sm font-bold text-on-surface uppercase tracking-widest mb-6">Export Records</h3>
+<!-- Quick Summary -->
+<div class="bg-slate-100 dark:bg-slate-900/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
+<h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Registry Summary</h3>
 <div class="space-y-4">
-<div class="bg-surface p-4 rounded border-l-2 border-primary-container">
-<label class="block text-[10px] font-bold text-on-surface-variant uppercase mb-2">Select Format</label>
-<div class="grid grid-cols-2 gap-2">
-<button class="bg-white py-2 text-xs font-semibold rounded border border-slate-200">PDF Document</button>
-<button class="bg-white py-2 text-xs font-semibold rounded border border-slate-200 opacity-50 cursor-not-allowed">CSV Sheet</button>
+<div class="flex justify-between items-baseline">
+<span class="text-xs text-slate-500">Active Mandates</span>
+<span class="text-lg font-bold text-slate-900 dark:text-slate-100">1,284</span>
+</div>
+<div class="flex justify-between items-baseline">
+<span class="text-xs text-slate-500">Awaiting Signature</span>
+<span class="text-lg font-bold text-orange-600">08</span>
+</div>
+<div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-emerald-500 text-sm">verified</span>
+<span class="text-[10px] font-bold text-slate-500 uppercase">Compliance Score</span>
+</div>
+<div class="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+<div class="bg-emerald-500 h-full w-[98%]"></div>
+</div>
+<span class="text-[10px] text-slate-400 mt-1 block">98.4% Constitutional Alignment</span>
 </div>
 </div>
-<div class="bg-surface p-4 rounded">
-<label class="block text-[10px] font-bold text-on-surface-variant uppercase mb-2">Date Range</label>
-<div class="space-y-2">
-<div class="flex items-center justify-between text-xs font-medium text-on-surface">
-<span>Last 12 Months</span>
-<span class="material-symbols-outlined text-sm">keyboard_arrow_down</span>
 </div>
-<div class="h-px bg-slate-200 w-full"></div>
+<!-- Export Reports -->
+<div class="bg-surface-container-highest/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
+<h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Export Tools</h3>
+<div class="space-y-3">
+<button class="w-full flex items-center justify-between p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-primary/50 transition-colors">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-lg text-slate-400">picture_as_pdf</span> PDF Compilation</span>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-primary/50 transition-colors">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-lg text-slate-400">table_chart</span> CSV Data Sheet</span>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
 </div>
+<button class="w-full mt-4 bg-slate-900 dark:bg-slate-700 py-2.5 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-black transition-colors">
+                    Generate Quarterly Report
+                </button>
 </div>
-<button class="w-full bg-primary py-3 text-white text-xs font-bold uppercase tracking-widest rounded-lg hover:brightness-110 active:scale-95 transition-all">
-                            Generate Report
-                        </button>
-</div>
-</div>
-<div class="p-6 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center text-center">
-<div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-<span class="material-symbols-outlined text-slate-400">cloud_upload</span>
-</div>
-<h4 class="text-sm font-bold text-on-surface mb-1">Batch Import</h4>
-<p class="text-xs text-slate-500 mb-4">Upload scanned physical ordinance copies for OCR digitization.</p>
-<button class="text-xs font-bold text-primary uppercase">Select Files</button>
-</div>
-<div class="relative overflow-hidden rounded-lg aspect-square">
-<img alt="" class="w-full h-full object-cover grayscale brightness-50" data-alt="high angle view of classic courthouse architecture with tall marble pillars and clean geometric lines in dramatic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnzqluZ_HwJ6dCLhmsFmbecBSO3NFGVFzPNgAmPx2huNUUbeGceU6w1J4jjdTuhNtzQdg-_Vl9oj9GmGLjVKVQPdQ0A0znZgyyye4pWzMv-hThIWO46wTB0hFjfi-OqgMlrUl7xQFpBYLtD_uu1adbV3SFfedFIX_gsVKP6eOP_A-5slsV0a8s58MHtbQ9C_ShyIdWVUt3syWPRKTMM4DapDLL6tIUCmOAwpPcgYpPzvVQFBUfLmMBQZXczI9nMVMnts38dhDnmDDz"/>
-<div class="absolute inset-0 flex flex-col justify-end p-6 text-white bg-gradient-to-t from-black/80 to-transparent">
-<span class="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-80">Legislative Focus</span>
-<h5 class="text-lg font-bold leading-tight">Civic Transparency Protocols 2024</h5>
+<!-- Decorative / Branding -->
+<div class="relative overflow-hidden rounded-xl aspect-[4/3] group cursor-default">
+<img alt="" class="w-full h-full object-cover grayscale brightness-[0.4] transition-transform duration-700 group-hover:scale-105" data-alt="high angle view of classic courthouse architecture with tall marble pillars and clean geometric lines in dramatic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnzqluZ_HwJ6dCLhmsFmbecBSO3NFGVFzPNgAmPx2huNUUbeGceU6w1J4jjdTuhNtzQdg-_Vl9oj9GmGLjVKVQPdQ0A0znZgyyye4pWzMv-hThIWO46wTB0hFjfi-OqgMlrUl7xQFpBYLtD_uu1adbV3SFfedFIX_gsVKP6eOP_A-5slsV0a8s58MHtbQ9C_ShyIdWVUt3syWPRKTMM4DapDLL6tIUCmOAwpPcgYpPzvVQFBUfLmMBQZXczI9nMVMnts38dhDnmDDz"/>
+<div class="absolute inset-0 flex flex-col justify-end p-5 text-white bg-gradient-to-t from-black/90 via-transparent to-transparent">
+<span class="text-[9px] font-bold uppercase tracking-[0.2em] mb-1 opacity-70">Legislative Focus</span>
+<h5 class="text-sm font-bold leading-tight">Civic Transparency &amp; Local Governance Protocols 2024</h5>
 </div>
 </div>
 </aside>
 </div>
 </main>
 </body></html>
-
-<!-- Document Viewer -->
