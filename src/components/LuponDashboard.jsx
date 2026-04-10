@@ -1,0 +1,80 @@
+import StatusBadge from "./StatusBadge";
+
+export default function LuponDashboard({
+  residents,
+  selectedResidentId,
+  onSelectResident,
+  onOpenForm
+}) {
+  return (
+    <div className="space-y-6">
+      <section className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-[1.5rem] border border-orange-100 bg-orange-50 p-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gov-700">Registry</p>
+          <p className="mt-3 text-3xl font-black text-slate-900">{residents.length}</p>
+          <p className="mt-2 text-sm text-slate-600">Local mock resident records</p>
+        </div>
+        <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">For Review</p>
+          <p className="mt-3 text-3xl font-black text-amber-900">
+            {residents.filter((resident) => resident.status === "yellow").length}
+          </p>
+          <p className="mt-2 text-sm text-amber-800">Need Lupon assessment</p>
+        </div>
+        <div className="rounded-[1.5rem] border border-rose-200 bg-rose-50 p-5">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose-700">Active Referral</p>
+          <p className="mt-3 text-3xl font-black text-rose-900">
+            {residents.filter((resident) => resident.status === "red").length}
+          </p>
+          <p className="mt-2 text-sm text-rose-800">Hold clearance until resolved</p>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-[1.75rem] border border-orange-100">
+        <div className="grid gap-px bg-orange-100">
+          <div className="grid grid-cols-[1.3fr_0.8fr_1fr_auto] gap-4 bg-orange-50 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-gov-700">
+            <span>Resident</span>
+            <span>Status</span>
+            <span>Internal Remarks</span>
+            <span>Edit</span>
+          </div>
+
+          {residents.map((resident) => (
+            <div
+              className={`grid grid-cols-1 gap-4 bg-white px-5 py-4 lg:grid-cols-[1.3fr_0.8fr_1fr_auto] ${
+                resident.id === selectedResidentId ? "ring-2 ring-gov-500 ring-inset" : ""
+              }`}
+              key={resident.id}
+            >
+              <button
+                className="text-left"
+                onClick={() => onSelectResident(resident.id)}
+                type="button"
+              >
+                <div className="font-semibold text-slate-900">{resident.name}</div>
+                <div className="text-sm text-slate-600">{resident.id}</div>
+                <div className="text-sm text-slate-500">{resident.caseReason || "No active case reason"}</div>
+              </button>
+
+              <div className="flex items-center">
+                <StatusBadge status={resident.status} />
+              </div>
+
+              <div className="flex items-center text-sm text-slate-600">{resident.remarks}</div>
+
+              <div className="flex items-center">
+                <button
+                  className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800"
+                  onClick={() => onOpenForm(resident.id)}
+                  type="button"
+                >
+                  Edit record
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
