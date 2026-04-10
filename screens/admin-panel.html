@@ -1,395 +1,421 @@
 <!DOCTYPE html>
 
-<html class="light" lang="en"><head>
+<html lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Barangay Nazareth Internal Systems - Admin Panel</title>
+<title>Barangay Nazareth - Admin User Management</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#9ccaff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#783207",
+                        "on-primary-container": "#572000",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#351000",
+                        "primary-fixed": "#ffdbcc",
+                        "on-tertiary-fixed-variant": "#00497b",
+                        "surface-bright": "#f7f9fb",
+                        "secondary-fixed": "#ffdbcc",
+                        "surface-container": "#eceef0",
+                        "on-primary-fixed-variant": "#7a3000",
+                        "surface-tint": "#a04100",
+                        "on-secondary-container": "#763006",
+                        "background": "#f7f9fb",
+                        "surface": "#f7f9fb",
+                        "secondary-fixed-dim": "#ffb693",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-background": "#191c1e",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#5a4136",
+                        "inverse-on-surface": "#eff1f3",
+                        "tertiary-fixed": "#d0e4ff",
+                        "surface-container-highest": "#e0e3e5",
+                        "inverse-primary": "#ffb693",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#e6e8ea",
+                        "on-primary-fixed": "#351000",
+                        "surface-variant": "#e0e3e5",
+                        "outline": "#8e7164",
+                        "on-tertiary-container": "#003357",
+                        "surface-dim": "#d8dadc",
+                        "primary": "#a04100",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#059eff",
+                        "on-tertiary-fixed": "#001d35",
+                        "primary-container": "#ff6b00",
+                        "inverse-surface": "#2d3133",
+                        "surface-container-low": "#f2f4f6",
+                        "on-surface": "#191c1e",
+                        "secondary": "#96481e",
+                        "tertiary": "#0062a1",
+                        "primary-fixed-dim": "#ffb693",
+                        "outline-variant": "#e2bfb0",
+                        "secondary-container": "#fe9a69"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Public Sans"],
+                        "body": ["Public Sans"],
+                        "label": ["Public Sans"]
+                    }
+                },
+            }
+        }
+    </script>
 <style>
+        body { font-family: 'Public Sans', sans-serif; }
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-            vertical-align: middle;
-        }
-        body {
-            font-family: 'Public Sans', sans-serif;
         }
         .ghost-shadow {
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #e0e3e5;
-            border-radius: 10px;
+            box-shadow: 0 12px 40px rgba(25, 28, 30, 0.06);
         }
     </style>
-<script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                "surface-dim": "#d8dadc",
-                "on-primary-fixed-variant": "#00497b",
-                "on-primary": "#ffffff",
-                "surface-variant": "#e0e3e5",
-                "surface-tint": "#0062a1",
-                "inverse-on-surface": "#eff1f3",
-                "on-error": "#ffffff",
-                "tertiary-fixed-dim": "#9ccaff",
-                "inverse-primary": "#d0e4ff",
-                "tertiary-container": "#d0e4ff",
-                "on-tertiary": "#ffffff",
-                "primary-fixed": "#d0e4ff",
-                "surface-container-lowest": "#ffffff",
-                "on-surface": "#191c1e",
-                "primary": "#0062a1",
-                "secondary-fixed-dim": "#bfc8d0",
-                "tertiary-fixed": "#d0e4ff",
-                "tertiary": "#4c606e",
-                "inverse-surface": "#2d3133",
-                "on-tertiary-fixed-variant": "#354956",
-                "secondary-container": "#dee3e9",
-                "primary-fixed-dim": "#9ccaff",
-                "on-tertiary-fixed": "#071d29",
-                "on-secondary-container": "#111d25",
-                "on-primary-fixed": "#001d35",
-                "on-secondary": "#ffffff",
-                "primary-container": "#d0e4ff",
-                "background": "#f8f9fa",
-                "on-background": "#191c1e",
-                "surface-container-low": "#f2f4f6",
-                "error-container": "#ffdad6",
-                "on-surface-variant": "#43474e",
-                "on-tertiary-container": "#001d35",
-                "secondary-fixed": "#dee3e9",
-                "on-primary-container": "#001d35",
-                "surface": "#f8f9fa",
-                "on-secondary-fixed-variant": "#3e4850",
-                "outline": "#73777f",
-                "on-error-container": "#93000a",
-                "surface-container-high": "#e6e8ea",
-                "on-secondary-fixed": "#111d25",
-                "error": "#ba1a1a",
-                "surface-container-highest": "#e0e3e5",
-                "secondary": "#565f67",
-                "outline-variant": "#c3c7cf",
-                "surface-bright": "#f8f9fa",
-                "surface-container": "#eceef0"
-            },
-            "borderRadius": {
-                "DEFAULT": "0.375rem",
-                "lg": "0.5rem",
-                "xl": "0.75rem",
-                "full": "9999px"
-            }
-          },
-        },
-      }
-    </script>
 </head>
-<body class="bg-background text-on-surface flex overflow-hidden">
-<!-- SideNavBar -->
-<aside class="fixed inset-y-0 left-0 flex flex-col h-screen w-64 bg-white border-r border-outline-variant z-50">
-<div class="p-6">
-<div class="flex items-center gap-3 mb-2">
-<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-<span class="material-symbols-outlined text-on-primary text-lg">account_balance</span>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar Shell -->
+<aside class="fixed left-0 top-0 h-full flex flex-col bg-slate-50 dark:bg-slate-900 h-screen w-64 border-r border-transparent font-public-sans text-sm font-medium z-50">
+<div class="p-6 flex flex-col items-start space-y-2">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 bg-surface-container-high rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="account_balance">account_balance</span>
 </div>
-<h1 class="text-lg font-bold text-on-surface">Barangay Nazareth</h1>
+<div>
+<h1 class="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">Barangay Nazareth</h1>
+<p class="text-xs text-slate-500">Internal Admin</p>
 </div>
-<p class="text-[10px] text-on-surface-variant opacity-70 uppercase tracking-widest font-bold">Admin Portal</p>
 </div>
-<nav class="flex-1 px-4 space-y-1">
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
-<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
-<span class="font-medium text-sm">Dashboard</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-semibold transition-colors" href="#">
-<span class="material-symbols-outlined" data-icon="group">group</span>
-<span class="text-sm">User Management</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
-<span class="material-symbols-outlined" data-icon="rule">rule</span>
-<span class="font-medium text-sm">Role Assignment</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
-<span class="material-symbols-outlined" data-icon="history">history</span>
-<span class="font-medium text-sm">Activity Log</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors" href="#">
-<span class="material-symbols-outlined" data-icon="settings">settings</span>
-<span class="font-medium text-sm">System Settings</span>
-</a>
+</div>
+<nav class="flex-1 mt-4 px-3 space-y-1">
+<a class="flex items-center px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center px-3 py-2.5 bg-white dark:bg-slate-950 text-orange-600 dark:text-orange-500 font-semibold shadow-sm translate-x-1 transition-transform group" href="#">
+<span class="material-symbols-outlined mr-3 text-orange-600" data-icon="group">group</span>
+                Resident Directory
+            </a>
+<a class="flex items-center px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="gavel">gavel</span>
+                Lupon Registry
+            </a>
+<a class="flex items-center px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="folder_open">folder_open</span>
+                Case Files
+            </a>
+<a class="flex items-center px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="description">description</span>
+                Ordinances
+            </a>
+<a class="flex items-center px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="analytics">analytics</span>
+                Analytics
+            </a>
+<a class="flex items-center px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="terminal">terminal</span>
+                System Logs
+            </a>
 </nav>
-<div class="p-4 mt-auto border-t border-outline-variant">
-<div class="flex items-center gap-3 p-2">
-<div class="w-9 h-9 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
-<span class="material-symbols-outlined text-xl">person</span>
+<div class="p-4 mt-auto">
+<div class="bg-surface-container-low rounded-lg p-3 flex items-center space-x-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="person">person</span>
 </div>
-<div class="overflow-hidden">
-<p class="text-xs font-bold truncate">Admin User</p>
-<p class="text-[10px] opacity-60 truncate">System Controller</p>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-on-surface truncate">Admin Nazareth</p>
+<p class="text-[10px] text-slate-500 truncate">Super Administrator</p>
 </div>
 </div>
 </div>
 </aside>
 <!-- Main Content Area -->
-<main class="flex-1 ml-64 min-h-screen relative overflow-y-auto custom-scrollbar">
+<main class="ml-64 flex-1 flex flex-col min-h-screen">
 <!-- TopAppBar -->
-<header class="sticky top-0 h-16 bg-white/90 backdrop-blur-sm flex justify-between items-center px-8 z-40 border-b border-outline-variant">
-<div class="flex items-center gap-4 flex-1">
-<div class="relative w-full max-w-sm">
-<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
-<input class="w-full bg-surface-container-low border border-outline-variant text-sm px-10 py-1.5 rounded-full focus:ring-2 focus:ring-primary/20 focus:outline-none" placeholder="Search users or logs..." type="text"/>
+<header class="flex justify-between items-center px-8 h-16 sticky top-0 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md shadow-sm dark:shadow-none font-public-sans text-sm">
+<div class="flex items-center flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-slate-400 text-lg" data-icon="search">search</span>
+</span>
+<input class="block w-full pl-10 pr-3 py-2 bg-surface-container-low border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/20 placeholder-slate-400" placeholder="Search system users or roles..." type="text"/>
 </div>
 </div>
-<div class="flex items-center gap-4">
-<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high text-on-surface-variant">
-<span class="material-symbols-outlined">notifications</span>
+<div class="flex items-center space-x-6 ml-8">
+<button class="relative text-slate-500 hover:text-orange-600 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full"></span>
 </button>
-<div class="h-6 w-[1px] bg-outline-variant"></div>
-<div class="flex items-center gap-2">
-<span class="text-sm font-medium">Nazareth Admin</span>
-<span class="material-symbols-outlined text-3xl text-outline" data-icon="account_circle">account_circle</span>
-</div>
-</div>
-</header>
-<div class="p-8 max-w-6xl mx-auto">
-<!-- Page Header -->
-<div class="flex items-center justify-between mb-8">
-<div>
-<h2 class="text-3xl font-bold tracking-tight text-on-surface">User Administration</h2>
-<p class="text-on-surface-variant text-sm mt-1">Manage system personnel, access levels, and audit activity.</p>
-</div>
-<button class="bg-primary text-on-primary px-5 py-2 rounded-lg flex items-center gap-2 font-semibold hover:opacity-90 transition-opacity shadow-sm">
-<span class="material-symbols-outlined text-sm">person_add</span>
+<button class="text-slate-500 hover:text-orange-600 transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="h-6 w-[1px] bg-slate-200"></div>
+<button class="flex items-center space-x-2 px-4 py-2 bg-primary-container text-on-primary-container font-semibold rounded-lg shadow-sm hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
 <span>Add User</span>
 </button>
 </div>
-<!-- Main Layout Grid -->
-<div class="grid grid-cols-12 gap-6">
-<!-- User Directory -->
-<section class="col-span-12 xl:col-span-8">
-<div class="bg-white rounded-xl border border-outline-variant overflow-hidden ghost-shadow">
-<div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
-<h3 class="font-semibold text-on-surface flex items-center gap-2">
-<span class="material-symbols-outlined text-primary">group</span>
-                            System Personnel
-                        </h3>
-<div class="flex gap-2">
-<button class="text-xs px-3 py-1 border border-outline-variant rounded hover:bg-surface-container-low">Export</button>
-<button class="text-xs px-3 py-1 border border-outline-variant rounded hover:bg-surface-container-low">Filter</button>
+</header>
+<!-- Content Canvas -->
+<div class="p-8 space-y-8 max-w-[1400px] mx-auto w-full">
+<!-- Dashboard Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-lg ghost-shadow flex flex-col">
+<span class="text-[0.75rem] font-medium text-slate-500 uppercase tracking-wider mb-1">Active Users</span>
+<span class="text-4xl font-bold text-on-surface">14</span>
+<div class="mt-4 flex items-center text-xs text-green-600 font-medium">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="trending_up">trending_up</span>
+                        2 added this month
+                    </div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-lg ghost-shadow flex flex-col">
+<span class="text-[0.75rem] font-medium text-slate-500 uppercase tracking-wider mb-1">Admin Roles</span>
+<span class="text-4xl font-bold text-on-surface">04</span>
+<div class="mt-4 flex items-center text-xs text-slate-400 font-medium">
+                        System-wide permissions
+                    </div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-lg ghost-shadow flex flex-col">
+<span class="text-[0.75rem] font-medium text-slate-500 uppercase tracking-wider mb-1">Logs Today</span>
+<span class="text-4xl font-bold text-on-surface">128</span>
+<div class="mt-4 flex items-center text-xs text-orange-600 font-medium">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="history">history</span>
+                        High activity period
+                    </div>
 </div>
 </div>
-<div class="overflow-x-auto">
-<table class="w-full text-left">
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+<!-- Main User List (The Monolith) -->
+<div class="xl:col-span-2 space-y-4">
+<div class="flex items-center justify-between">
+<h2 class="text-xl font-semibold text-on-surface">System Access Management</h2>
+<div class="flex space-x-2">
+<button class="px-3 py-1 text-xs font-medium bg-surface-container-high rounded text-on-surface">All Users</button>
+<button class="px-3 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded">By Role</button>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-lg ghost-shadow overflow-hidden">
+<table class="w-full text-left border-collapse">
 <thead>
-<tr class="bg-surface-container-low/30 border-b border-outline-variant">
-<th class="px-6 py-3 text-[11px] font-bold uppercase text-on-surface-variant tracking-wider">Name</th>
-<th class="px-6 py-3 text-[11px] font-bold uppercase text-on-surface-variant tracking-wider">Access Role</th>
-<th class="px-6 py-3 text-[11px] font-bold uppercase text-on-surface-variant tracking-wider">Status</th>
-<th class="px-6 py-3 text-[11px] font-bold uppercase text-on-surface-variant tracking-wider">Last Activity</th>
-<th class="px-6 py-3"></th>
+<tr class="bg-surface-container-low">
+<th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">User Identity</th>
+<th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Assigned Role</th>
+<th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+<th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
 </tr>
 </thead>
-<tbody class="divide-y divide-outline-variant">
-<tr class="hover:bg-surface-container-low/50 transition-colors">
-<td class="px-6 py-4">
-<div class="flex items-center gap-3">
-<div class="w-9 h-9 rounded-full bg-primary-container text-primary flex items-center justify-center font-bold text-xs">RM</div>
+<tbody class="divide-y divide-slate-50">
+<!-- User Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors duration-200">
+<td class="px-6 py-5">
+<div class="flex items-center space-x-3">
+<div class="w-9 h-9 rounded bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-400" data-icon="person">person</span>
+</div>
 <div>
-<p class="text-sm font-semibold">Ricardo Morales</p>
-<p class="text-[11px] text-on-surface-variant">rmorales@nazareth.gov</p>
+<div class="text-sm font-semibold text-on-surface">Maria Santos</div>
+<div class="text-xs text-slate-500">m.santos@nazareth.gov</div>
 </div>
 </div>
 </td>
-<td class="px-6 py-4">
-<select class="text-xs bg-surface-container border border-outline-variant rounded px-2 py-1 focus:ring-1 focus:ring-primary outline-none">
-<option selected="">Administrator</option>
-<option>Department Staff</option>
-<option>Lupon Member</option>
-</select>
+<td class="px-6 py-5">
+<span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight bg-orange-50 text-orange-700 rounded border border-orange-100">Admin</span>
 </td>
-<td class="px-6 py-4">
-<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100">
-<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                            ACTIVE
-                                        </span>
+<td class="px-6 py-5">
+<div class="flex items-center text-xs font-medium text-green-600">
+<span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span>
+                                            Active
+                                        </div>
 </td>
-<td class="px-6 py-4 text-xs text-on-surface-variant">Today, 10:45 AM</td>
-<td class="px-6 py-4 text-right">
-<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant">
-<span class="material-symbols-outlined text-lg">edit</span>
+<td class="px-6 py-5 text-right">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
 </button>
 </td>
 </tr>
-<tr class="hover:bg-surface-container-low/50 transition-colors">
-<td class="px-6 py-4">
-<div class="flex items-center gap-3">
-<div class="w-9 h-9 rounded-full bg-secondary-container text-secondary flex items-center justify-center font-bold text-xs">EL</div>
+<!-- User Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors duration-200">
+<td class="px-6 py-5">
+<div class="flex items-center space-x-3">
+<div class="w-9 h-9 rounded bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-400" data-icon="person">person</span>
+</div>
 <div>
-<p class="text-sm font-semibold">Elena Ledesma</p>
-<p class="text-[11px] text-on-surface-variant">edesma@nazareth.gov</p>
+<div class="text-sm font-semibold text-on-surface">Roberto Dela Cruz</div>
+<div class="text-xs text-slate-500">r.delacruz@nazareth.gov</div>
 </div>
 </div>
 </td>
-<td class="px-6 py-4">
-<select class="text-xs bg-surface-container border border-outline-variant rounded px-2 py-1 focus:ring-1 focus:ring-primary outline-none">
-<option>Administrator</option>
-<option selected="">Department Staff</option>
-<option>Lupon Member</option>
-</select>
+<td class="px-6 py-5">
+<span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-700 rounded border border-slate-200">Dept Office</span>
 </td>
-<td class="px-6 py-4">
-<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold border border-amber-100">
-<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                            AWAY
-                                        </span>
+<td class="px-6 py-5">
+<div class="flex items-center text-xs font-medium text-green-600">
+<span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span>
+                                            Active
+                                        </div>
 </td>
-<td class="px-6 py-4 text-xs text-on-surface-variant">Yesterday</td>
-<td class="px-6 py-4 text-right">
-<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant">
-<span class="material-symbols-outlined text-lg">edit</span>
+<td class="px-6 py-5 text-right">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
 </button>
 </td>
 </tr>
-<tr class="hover:bg-surface-container-low/50 transition-colors">
-<td class="px-6 py-4">
-<div class="flex items-center gap-3">
-<div class="w-9 h-9 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold text-xs">JS</div>
+<!-- User Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors duration-200">
+<td class="px-6 py-5">
+<div class="flex items-center space-x-3">
+<div class="w-9 h-9 rounded bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-400" data-icon="person">person</span>
+</div>
 <div>
-<p class="text-sm font-semibold">Juan Santos</p>
-<p class="text-[11px] text-on-surface-variant">jsantos@nazareth.gov</p>
+<div class="text-sm font-semibold text-on-surface">Elena Garcia</div>
+<div class="text-xs text-slate-500">e.garcia@nazareth.gov</div>
 </div>
 </div>
 </td>
-<td class="px-6 py-4">
-<select class="text-xs bg-surface-container border border-outline-variant rounded px-2 py-1 focus:ring-1 focus:ring-primary outline-none">
-<option>Administrator</option>
-<option>Department Staff</option>
-<option selected="">Lupon Member</option>
-</select>
+<td class="px-6 py-5">
+<span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight bg-blue-50 text-blue-700 rounded border border-blue-100">Lupon</span>
 </td>
-<td class="px-6 py-4">
-<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] font-bold border border-outline-variant">
-<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
-                                            OFFLINE
-                                        </span>
+<td class="px-6 py-5">
+<div class="flex items-center text-xs font-medium text-slate-400">
+<span class="w-1.5 h-1.5 bg-slate-300 rounded-full mr-2"></span>
+                                            Away
+                                        </div>
 </td>
-<td class="px-6 py-4 text-xs text-on-surface-variant">3 days ago</td>
-<td class="px-6 py-4 text-right">
-<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant">
-<span class="material-symbols-outlined text-lg">edit</span>
+<td class="px-6 py-5 text-right">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+</button>
+</td>
+</tr>
+<!-- User Row 4 -->
+<tr class="hover:bg-surface-container-low transition-colors duration-200">
+<td class="px-6 py-5">
+<div class="flex items-center space-x-3">
+<div class="w-9 h-9 rounded bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-400" data-icon="person">person</span>
+</div>
+<div>
+<div class="text-sm font-semibold text-on-surface">Tomas Lim</div>
+<div class="text-xs text-slate-500">t.lim@nazareth.gov</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-700 rounded border border-slate-200">Dept Office</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center text-xs font-medium text-green-600">
+<span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span>
+                                            Active
+                                        </div>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
 </button>
 </td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="px-6 py-3 border-t border-outline-variant bg-surface-container-low/30 text-[11px] flex items-center justify-between text-on-surface-variant font-medium">
-<span>Showing 3 of 18 total users</span>
-<div class="flex gap-4">
-<button class="hover:text-primary transition-colors">Previous</button>
-<button class="hover:text-primary transition-colors font-bold text-primary">1</button>
-<button class="hover:text-primary transition-colors">Next</button>
+<div class="p-4 bg-surface-container-low/50 border-t border-slate-100 flex justify-center">
+<button class="text-xs font-semibold text-slate-500 hover:text-primary transition-colors uppercase tracking-widest">Load More Users</button>
 </div>
 </div>
 </div>
-</section>
-<!-- Activity Log -->
-<aside class="col-span-12 xl:col-span-4 space-y-6">
-<div class="bg-white rounded-xl border border-outline-variant p-6 ghost-shadow h-full">
-<div class="flex items-center justify-between mb-6">
-<h3 class="font-semibold text-on-surface flex items-center gap-2">
-<span class="material-symbols-outlined text-secondary">history</span>
-                            Activity Log
-                        </h3>
-<button class="material-symbols-outlined text-on-surface-variant text-xl hover:rotate-180 transition-transform duration-500">refresh</button>
+<!-- Simple Text-based Activity Log -->
+<div class="space-y-4">
+<h2 class="text-xl font-semibold text-on-surface">Recent Activity</h2>
+<div class="bg-white rounded-lg ghost-shadow p-6 flex flex-col space-y-6">
+<div class="flex space-x-4">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-primary mb-1"></div>
+<div class="w-[1px] h-full bg-slate-100"></div>
 </div>
-<div class="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-0 before:w-px before:bg-outline-variant">
-<div class="relative pl-8">
-<span class="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary-container flex items-center justify-center">
-<span class="material-symbols-outlined text-primary text-[14px]">login</span>
-</span>
-<p class="text-xs font-bold">Session Started</p>
-<p class="text-[11px] text-on-surface-variant leading-relaxed">Admin Morales logged in from terminal B1.</p>
-<p class="text-[10px] text-outline mt-1 font-medium">10:45 AM</p>
-</div>
-<div class="relative pl-8">
-<span class="absolute left-0 top-1 w-6 h-6 rounded-full bg-secondary-container flex items-center justify-center">
-<span class="material-symbols-outlined text-secondary text-[14px]">edit_note</span>
-</span>
-<p class="text-xs font-bold">Record Updated</p>
-<p class="text-[11px] text-on-surface-variant leading-relaxed">Elena Ledesma updated resident registry #402.</p>
-<p class="text-[10px] text-outline mt-1 font-medium">09:32 AM</p>
-</div>
-<div class="relative pl-8">
-<span class="absolute left-0 top-1 w-6 h-6 rounded-full bg-error-container flex items-center justify-center">
-<span class="material-symbols-outlined text-error text-[14px]">lock</span>
-</span>
-<p class="text-xs font-bold">Access Denied</p>
-<p class="text-[11px] text-on-surface-variant leading-relaxed">Unauthorized access attempt blocked on Case Files.</p>
-<p class="text-[10px] text-outline mt-1 font-medium">08:15 AM</p>
-</div>
-<div class="relative pl-8">
-<span class="absolute left-0 top-1 w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center">
-<span class="material-symbols-outlined text-on-surface-variant text-[14px]">backup</span>
-</span>
-<p class="text-xs font-bold">System Backup</p>
-<p class="text-[11px] text-on-surface-variant leading-relaxed">Daily database backup completed successfully.</p>
-<p class="text-[10px] text-outline mt-1 font-medium">02:00 AM</p>
+<div class="pb-2">
+<p class="text-xs text-slate-400 font-medium">10:42 AM</p>
+<p class="text-sm text-on-surface leading-tight mt-1">
+<span class="font-bold">Maria Santos</span> added a new resident to the directory.
+                                </p>
 </div>
 </div>
-<button class="w-full mt-8 py-2 text-xs font-bold text-primary border border-primary/20 rounded-lg hover:bg-primary-container transition-colors">
-                        View Full History
-                    </button>
+<div class="flex space-x-4">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-slate-300 mb-1"></div>
+<div class="w-[1px] h-full bg-slate-100"></div>
 </div>
-</aside>
+<div class="pb-2">
+<p class="text-xs text-slate-400 font-medium">09:15 AM</p>
+<p class="text-sm text-on-surface leading-tight mt-1">
+<span class="font-bold">System</span> automatically backed up Lupon files.
+                                </p>
 </div>
-<!-- Quick Summary -->
-<div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-<div class="bg-white p-4 rounded-xl border border-outline-variant flex items-center gap-4">
-<div class="w-12 h-12 bg-primary-container text-primary rounded-lg flex items-center justify-center">
-<span class="material-symbols-outlined">person</span>
 </div>
+<div class="flex space-x-4">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-primary mb-1"></div>
+<div class="w-[1px] h-full bg-slate-100"></div>
+</div>
+<div class="pb-2">
+<p class="text-xs text-slate-400 font-medium">Yesterday, 04:30 PM</p>
+<p class="text-sm text-on-surface leading-tight mt-1">
+<span class="font-bold">Roberto Dela Cruz</span> updated Ordinance #2024-03 status.
+                                </p>
+</div>
+</div>
+<div class="flex space-x-4">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-slate-300 mb-1"></div>
+<div class="w-[1px] h-full bg-slate-100"></div>
+</div>
+<div class="pb-2">
+<p class="text-xs text-slate-400 font-medium">Yesterday, 02:12 PM</p>
+<p class="text-sm text-on-surface leading-tight mt-1">
+<span class="font-bold">Elena Garcia</span> resolved Case File #B-112.
+                                </p>
+</div>
+</div>
+<div class="flex space-x-4">
+<div class="flex flex-col items-center">
+<div class="w-2 h-2 rounded-full bg-orange-200 mb-1"></div>
+</div>
+<div class="">
+<p class="text-xs text-slate-400 font-medium">Yesterday, 11:00 AM</p>
+<p class="text-sm text-on-surface leading-tight mt-1">
+<span class="font-bold">Admin Nazareth</span> created "Dept Office" role.
+                                </p>
+</div>
+</div>
+<button class="w-full py-3 mt-4 border border-dashed border-slate-200 rounded text-xs font-semibold text-slate-400 hover:bg-slate-50 transition-colors">
+                            VIEW FULL AUDIT TRAIL
+                        </button>
+</div>
+</div>
+</div>
+<!-- Footer-style Secondary Section -->
+<div class="bg-surface-container-low rounded-lg p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center border border-slate-200/40">
 <div>
-<p class="text-[10px] font-bold uppercase text-on-surface-variant">Active Users</p>
-<p class="text-xl font-bold">18</p>
+<h3 class="text-lg font-bold text-on-surface">Data Security Policy</h3>
+<p class="text-sm text-slate-600 mt-2 max-w-lg">All administrative actions are logged and encrypted. Personnel must maintain confidentiality of resident records in accordance with the Data Privacy Act.</p>
 </div>
-</div>
-<div class="bg-white p-4 rounded-xl border border-outline-variant flex items-center gap-4">
-<div class="w-12 h-12 bg-secondary-container text-secondary rounded-lg flex items-center justify-center">
-<span class="material-symbols-outlined">security</span>
-</div>
-<div>
-<p class="text-[10px] font-bold uppercase text-on-surface-variant">Admin Roles</p>
-<p class="text-xl font-bold">4</p>
-</div>
-</div>
-<div class="bg-white p-4 rounded-xl border border-outline-variant flex items-center gap-4">
-<div class="w-12 h-12 bg-surface-container-high text-on-surface-variant rounded-lg flex items-center justify-center">
-<span class="material-symbols-outlined">history</span>
-</div>
-<div>
-<p class="text-[10px] font-bold uppercase text-on-surface-variant">Logs Today</p>
-<p class="text-xl font-bold">142</p>
-</div>
-</div>
-<div class="bg-white p-4 rounded-xl border border-outline-variant flex items-center gap-4">
-<div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center">
-<span class="material-symbols-outlined">check_circle</span>
-</div>
-<div>
-<p class="text-[10px] font-bold uppercase text-on-surface-variant">Health Status</p>
-<p class="text-xl font-bold">Stable</p>
-</div>
+<div class="flex md:justify-end space-x-4">
+<button class="px-6 py-2.5 text-xs font-bold text-slate-600 border border-slate-300 rounded hover:bg-white transition-colors">EXPORT DATA</button>
+<button class="px-6 py-2.5 text-xs font-bold text-white bg-on-surface rounded hover:opacity-90 transition-opacity">REQUEST ACCESS CHANGE</button>
 </div>
 </div>
 </div>
