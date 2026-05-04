@@ -21,6 +21,10 @@ export function validateResidentForm(data) {
     errors.documents = "Documents must be a list.";
   }
 
+  if (data.registeredVoter && !data.precinctNumber?.trim()) {
+    errors.precinctNumber = "Precinct number is required for registered voters.";
+  }
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors

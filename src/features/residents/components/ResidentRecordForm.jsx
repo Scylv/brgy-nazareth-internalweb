@@ -131,8 +131,12 @@ export default function ResidentRecordForm({
                 key={sector}
               >
                 <input
-                  checked={formData.sectors.includes(sector)}
-                  name="sectors"
+                  checked={
+                    sector === "Registered Voter"
+                      ? formData.registeredVoter
+                      : formData.sectors.includes(sector)
+                  }
+                  name={sector === "Registered Voter" ? "registeredVoter" : "sectors"}
                   onChange={onChange}
                   type="checkbox"
                   value={sector}
@@ -142,6 +146,17 @@ export default function ResidentRecordForm({
             )
           )}
         </div>
+
+        {formData.registeredVoter ? (
+          <Field error={errors.precinctNumber} label="Precinct Number">
+            <input
+              className={inputClassName}
+              name="precinctNumber"
+              onChange={onChange}
+              value={formData.precinctNumber}
+            />
+          </Field>
+        ) : null}
       </Section>
 
       <Section title="Record Status">

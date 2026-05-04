@@ -111,6 +111,17 @@ export default function App() {
         };
       }
 
+      if (name === "registeredVoter") {
+        return {
+          ...current,
+          registeredVoter: checked,
+          precinctNumber: checked ? current.precinctNumber : "",
+          sectors: checked
+            ? Array.from(new Set([...current.sectors, "Registered Voter"]))
+            : current.sectors.filter((sector) => sector !== "Registered Voter")
+        };
+      }
+
       return {
         ...current,
         [name]: type === "checkbox" ? checked : value

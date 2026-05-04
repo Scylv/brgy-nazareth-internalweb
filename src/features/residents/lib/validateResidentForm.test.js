@@ -56,4 +56,30 @@ describe("validateResidentForm", () => {
       errors: {}
     });
   });
+
+  it("requires precinct number for registered voters", () => {
+    const result = validateResidentForm({
+      ...residents[0],
+      registeredVoter: true,
+      precinctNumber: "   "
+    });
+
+    expect(result.isValid).toBe(false);
+    expect(result.errors).toMatchObject({
+      precinctNumber: "Precinct number is required for registered voters."
+    });
+  });
+
+  it("does not require precinct number for non-registered voters", () => {
+    const result = validateResidentForm({
+      ...residents[0],
+      registeredVoter: false,
+      precinctNumber: ""
+    });
+
+    expect(result).toEqual({
+      isValid: true,
+      errors: {}
+    });
+  });
 });
