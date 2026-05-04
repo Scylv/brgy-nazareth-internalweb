@@ -3,3 +3,6 @@ dist/
 .vite/
 agents.md
 instructions.md
+.codex-local/
+agents.md
+instructions.md
