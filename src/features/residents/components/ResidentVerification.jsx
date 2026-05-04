@@ -1,4 +1,6 @@
 import StatusBadge from "../../../shared/components/StatusBadge";
+import DocumentRequestHistory from "../../../shared/components/DocumentRequestHistory";
+import { getDocumentRequestsForResident } from "../../../shared/lib/documentRequests";
 import { getStatusAction } from "../../../shared/lib/status";
 
 function formatBirthDate(date) {
@@ -9,7 +11,9 @@ function formatBirthDate(date) {
   }).format(new Date(date));
 }
 
-export default function ResidentVerification({ resident, onBack }) {
+export default function ResidentVerification({ documentRequests, resident, onBack }) {
+  const residentDocumentRequests = getDocumentRequestsForResident(resident.id, documentRequests);
+
   return (
     <div className="space-y-6">
       <button
@@ -87,6 +91,8 @@ export default function ResidentVerification({ resident, onBack }) {
           </div>
         </section>
       </div>
+
+      <DocumentRequestHistory requests={residentDocumentRequests} />
     </div>
   );
 }

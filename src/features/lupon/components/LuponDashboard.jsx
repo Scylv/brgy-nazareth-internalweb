@@ -1,4 +1,6 @@
 import StatusBadge from "../../../shared/components/StatusBadge";
+import DocumentRequestHistory from "../../../shared/components/DocumentRequestHistory";
+import { getDocumentRequestsForResident } from "../../../shared/lib/documentRequests";
 import { RESIDENT_STATUS_FILTERS } from "../../../shared/lib/filterResidents";
 
 const statusFilterLabels = {
@@ -9,8 +11,10 @@ const statusFilterLabels = {
 };
 
 export default function LuponDashboard({
+  documentRequests,
   query,
   residents,
+  selectedResident,
   selectedResidentId,
   onQueryChange,
   onAddResident,
@@ -19,6 +23,10 @@ export default function LuponDashboard({
   onStatusFilterChange,
   statusFilter
 }) {
+  const selectedResidentDocumentRequests = selectedResident
+    ? getDocumentRequestsForResident(selectedResident.id, documentRequests)
+    : [];
+
   return (
     <div className="space-y-6">
       <section className="rounded-[1.75rem] border border-orange-100 bg-gradient-to-r from-orange-50 to-white p-6">
@@ -137,6 +145,13 @@ export default function LuponDashboard({
           ) : null}
         </div>
       </section>
+
+      {selectedResident ? (
+        <DocumentRequestHistory
+          requests={selectedResidentDocumentRequests}
+          title={`${selectedResident.name} Document History`}
+        />
+      ) : null}
     </div>
   );
 }

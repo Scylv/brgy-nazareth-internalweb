@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { documentRequests as initialDocumentRequests } from "./data/documentRequests";
 import { residents as initialResidents } from "./data/residents";
 import { users } from "./data/users";
 import AdminPanel from "./features/admin/components/AdminPanel";
@@ -19,10 +20,23 @@ import { pageCopy } from "./shared/lib/pageCopy";
 
 const defaultResident = initialResidents[0];
 
+function toDepartmentResident(resident) {
+  return {
+    id: resident.id,
+    householdId: resident.householdId,
+    name: resident.name,
+    birthDate: resident.birthDate,
+    civilStatus: resident.civilStatus,
+    address: resident.address,
+    status: resident.status
+  };
+}
+
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loginError, setLoginError] = useState("");
   const [residentList, setResidentList] = useState(initialResidents);
+  const [documentRequestList, setDocumentRequestList] = useState(initialDocumentRequests);
   const [departmentSearchQuery, setDepartmentSearchQuery] = useState("");
   const [departmentStatusFilter, setDepartmentStatusFilter] = useState("all");
   const [luponSearchQuery, setLuponSearchQuery] = useState("");
@@ -39,7 +53,7 @@ export default function App() {
         query: departmentSearchQuery,
         statusFilter: departmentStatusFilter,
         residents: residentList
-      }),
+      }).map(toDepartmentResident),
     [departmentSearchQuery, departmentStatusFilter, residentList]
   );
 
@@ -55,6 +69,18 @@ export default function App() {
 
   const selectedResident =
     residentList.find((resident) => resident.id === selectedResidentId) ?? residentList[0];
+  const selectedDepartmentResident = toDepartmentResident(selectedResident);
+  const departmentResidentList = residentList.map(toDepartmentResident);
+
+  function createDocumentRequestId(requests) {
+    const nextNumber =
+      requests.reduce((highest, request) => {
+        const requestNumber = Number(request.id.replace("DOC-2026-", ""));
+        return Number.isNaN(requestNumber) ? highest : Math.max(highest, requestNumber);
+      }, 0) + 1;
+
+    return `DOC-2026-${String(nextNumber).padStart(4, "0")}`;
+  }
 
   function getLandingPage(role) {
     if (role === "department") {
@@ -202,6 +228,22 @@ export default function App() {
     setCurrentPage("lupon");
   }
 
+  function handleDocumentRequestSave(request) {
+    setDocumentRequestList((current) => {
+      if (request.id) {
+        return current.map((item) => (item.id === request.id ? request : item));
+      }
+
+      return [
+        {
+          ...request,
+          id: createDocumentRequestId(current)
+        },
+        ...current
+      ];
+    });
+  }
+
   if (!currentUser) {
     return <LoginScreen error={loginError} onLogin={handleLogin} users={users} />;
   }
@@ -229,10 +271,13 @@ export default function App() {
     >
       {currentPage === "department" ? (
         <DepartmentDashboard
+          documentRequests={documentRequestList}
+          onDocumentRequestSave={handleDocumentRequestSave}
           onQueryChange={setDepartmentSearchQuery}
           onSelectResident={openResidentVerification}
           onStatusFilterChange={setDepartmentStatusFilter}
           query={departmentSearchQuery}
+          residents={departmentResidentList}
           results={departmentResidents}
           statusFilter={departmentStatusFilter}
         />
@@ -240,13 +285,15 @@ export default function App() {
 
       {currentPage === "verification" ? (
         <ResidentVerification
+          documentRequests={documentRequestList}
           onBack={() => setCurrentPage("department")}
-          resident={selectedResident}
+          resident={selectedDepartmentResident}
         />
       ) : null}
 
       {currentPage === "lupon" ? (
         <LuponDashboard
+          documentRequests={documentRequestList}
           onQueryChange={setLuponSearchQuery}
           onAddResident={openNewResidentForm}
           onOpenForm={openResidentForm}
@@ -254,6 +301,7 @@ export default function App() {
           onStatusFilterChange={setLuponStatusFilter}
           query={luponSearchQuery}
           residents={luponResidents}
+          selectedResident={selectedResident}
           selectedResidentId={selectedResidentId}
           statusFilter={luponStatusFilter}
         />
