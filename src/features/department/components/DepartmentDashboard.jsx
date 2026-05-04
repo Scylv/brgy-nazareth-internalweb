@@ -1,10 +1,20 @@
 import StatusBadge from "../../../shared/components/StatusBadge";
+import { RESIDENT_STATUS_FILTERS } from "../../../shared/lib/filterResidents";
+
+const statusFilterLabels = {
+  all: "All",
+  green: "Green",
+  yellow: "Yellow",
+  red: "Red"
+};
 
 export default function DepartmentDashboard({
   query,
   results,
   onQueryChange,
-  onSelectResident
+  onSelectResident,
+  onStatusFilterChange,
+  statusFilter
 }) {
   return (
     <div className="space-y-6">
@@ -25,6 +35,23 @@ export default function DepartmentDashboard({
           <div className="rounded-2xl bg-white px-4 py-3 text-sm text-slate-600">
             {results.length} resident{results.length === 1 ? "" : "s"} found
           </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {RESIDENT_STATUS_FILTERS.map((filter) => (
+            <button
+              className={`rounded-2xl border px-4 py-2 text-sm font-semibold transition ${
+                statusFilter === filter
+                  ? "border-gov-700 bg-gov-700 text-white"
+                  : "border-orange-100 bg-white text-slate-700 hover:border-gov-300"
+              }`}
+              key={filter}
+              onClick={() => onStatusFilterChange(filter)}
+              type="button"
+            >
+              {statusFilterLabels[filter]}
+            </button>
+          ))}
         </div>
       </section>
 
@@ -80,6 +107,12 @@ export default function DepartmentDashboard({
               </div>
             </div>
           ))}
+
+          {results.length === 0 ? (
+            <div className="bg-white px-5 py-8 text-center text-sm text-slate-500">
+              No residents match the current search and status filter.
+            </div>
+          ) : null}
         </div>
       </section>
     </div>

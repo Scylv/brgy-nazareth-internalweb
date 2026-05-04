@@ -9,10 +9,10 @@ import LuponDashboard from "./features/lupon/components/LuponDashboard";
 import ResidentRecordForm from "./features/residents/components/ResidentRecordForm";
 import ResidentVerification from "./features/residents/components/ResidentVerification";
 import { cloneResident } from "./features/residents/lib/cloneResident";
-import { searchResident } from "./features/residents/lib/searchResident";
 import { validateResidentForm } from "./features/residents/lib/validateResidentForm";
 import AppNavigation from "./shared/components/AppNavigation";
 import AppShell from "./shared/components/AppShell";
+import { filterResidents } from "./shared/lib/filterResidents";
 import { canEditRecord } from "./shared/lib/permissions";
 import { pageCopy } from "./shared/lib/pageCopy";
 
@@ -22,15 +22,33 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loginError, setLoginError] = useState("");
   const [residentList, setResidentList] = useState(initialResidents);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [departmentSearchQuery, setDepartmentSearchQuery] = useState("");
+  const [departmentStatusFilter, setDepartmentStatusFilter] = useState("all");
+  const [luponSearchQuery, setLuponSearchQuery] = useState("");
+  const [luponStatusFilter, setLuponStatusFilter] = useState("all");
   const [selectedResidentId, setSelectedResidentId] = useState(defaultResident.id);
   const [currentPage, setCurrentPage] = useState("login");
   const [formData, setFormData] = useState(cloneResident(defaultResident));
   const [formErrors, setFormErrors] = useState({});
 
-  const filteredResidents = useMemo(
-    () => searchResident(searchQuery, residentList),
-    [searchQuery, residentList]
+  const departmentResidents = useMemo(
+    () =>
+      filterResidents({
+        query: departmentSearchQuery,
+        statusFilter: departmentStatusFilter,
+        residents: residentList
+      }),
+    [departmentSearchQuery, departmentStatusFilter, residentList]
+  );
+
+  const luponResidents = useMemo(
+    () =>
+      filterResidents({
+        query: luponSearchQuery,
+        statusFilter: luponStatusFilter,
+        residents: residentList
+      }),
+    [luponSearchQuery, luponStatusFilter, residentList]
   );
 
   const selectedResident =
@@ -70,7 +88,10 @@ export default function App() {
     setCurrentUser(null);
     setCurrentPage("login");
     setLoginError("");
-    setSearchQuery("");
+    setDepartmentSearchQuery("");
+    setDepartmentStatusFilter("all");
+    setLuponSearchQuery("");
+    setLuponStatusFilter("all");
     setFormErrors({});
     setSelectedResidentId(defaultResident.id);
     setFormData(cloneResident(defaultResident));
@@ -185,10 +206,12 @@ export default function App() {
     >
       {currentPage === "department" ? (
         <DepartmentDashboard
-          onQueryChange={setSearchQuery}
+          onQueryChange={setDepartmentSearchQuery}
           onSelectResident={openResidentVerification}
-          query={searchQuery}
-          results={filteredResidents}
+          onStatusFilterChange={setDepartmentStatusFilter}
+          query={departmentSearchQuery}
+          results={departmentResidents}
+          statusFilter={departmentStatusFilter}
         />
       ) : null}
 
@@ -201,10 +224,14 @@ export default function App() {
 
       {currentPage === "lupon" ? (
         <LuponDashboard
+          onQueryChange={setLuponSearchQuery}
           onOpenForm={openResidentForm}
           onSelectResident={setSelectedResidentId}
-          residents={residentList}
+          onStatusFilterChange={setLuponStatusFilter}
+          query={luponSearchQuery}
+          residents={luponResidents}
           selectedResidentId={selectedResidentId}
+          statusFilter={luponStatusFilter}
         />
       ) : null}
 
