@@ -1,4 +1,4 @@
-import StatusBadge from "./StatusBadge";
+import StatusBadge from "../../../shared/components/StatusBadge";
 
 export default function LuponDashboard({
   residents,
@@ -12,14 +12,14 @@ export default function LuponDashboard({
         <div className="rounded-[1.5rem] border border-orange-100 bg-orange-50 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gov-700">Registry</p>
           <p className="mt-3 text-3xl font-black text-slate-900">{residents.length}</p>
-          <p className="mt-2 text-sm text-slate-600">Local mock resident records</p>
+          <p className="mt-2 text-sm text-slate-600">Resident records loaded from local data</p>
         </div>
         <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">For Review</p>
           <p className="mt-3 text-3xl font-black text-amber-900">
             {residents.filter((resident) => resident.status === "yellow").length}
           </p>
-          <p className="mt-2 text-sm text-amber-800">Need Lupon assessment</p>
+          <p className="mt-2 text-sm text-amber-800">Pending Lupon assessment</p>
         </div>
         <div className="rounded-[1.5rem] border border-rose-200 bg-rose-50 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose-700">Active Referral</p>

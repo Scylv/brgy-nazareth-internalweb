@@ -8,15 +8,15 @@ export default function LoginScreen({ users, onLogin, error }) {
               Barangay Nazareth
             </p>
             <h1 className="mt-4 max-w-md text-5xl font-black leading-tight">
-              Resident Status Verification and Lupon Registry
+              Resident Verification and Lupon Registry
             </h1>
             <p className="mt-6 max-w-lg text-sm leading-7 text-orange-100">
-              Minimal class-demo prototype for resident verification, Lupon referrals,
-              and role-based internal access.
+              Internal workspace for resident verification, Lupon review, and local
+              role-based access.
             </p>
           </div>
           <div className="rounded-3xl border border-white/10 bg-white/10 p-6">
-            <p className="text-sm font-semibold">Demo accounts</p>
+            <p className="text-sm font-semibold">Available local accounts</p>
             <ul className="mt-3 space-y-2 text-sm text-orange-50">
               {users.map((user) => (
                 <li key={user.id}>
@@ -36,8 +36,8 @@ export default function LoginScreen({ users, onLogin, error }) {
               </p>
               <h2 className="mt-3 text-3xl font-black text-slate-900">Secure Login</h2>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                Use one of the demo accounts to open the Department Office, Lupon,
-                or Admin workflow.
+                Sign in with one of the configured local accounts to access the
+                Department Office, Lupon, or Admin workspace.
               </p>
             </div>
 

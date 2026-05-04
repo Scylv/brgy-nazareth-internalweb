@@ -1,4 +1,4 @@
-import StatusBadge from "./StatusBadge";
+import StatusBadge from "../../../shared/components/StatusBadge";
 
 export default function DepartmentDashboard({
   query,
@@ -11,8 +11,8 @@ export default function DepartmentDashboard({
       <section className="rounded-[1.75rem] border border-orange-100 bg-gradient-to-r from-orange-50 to-white p-6">
         <h2 className="text-2xl font-black text-slate-900">Resident Search</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Department Office can search by resident name or RBI ID and view only the
-          limited verification result needed for clearance handling.
+          Search by resident name or RBI ID and review only the verification result
+          required for clearance handling.
         </p>
 
         <div className="mt-5 flex flex-col gap-3 md:flex-row">
@@ -37,12 +37,12 @@ export default function DepartmentDashboard({
         <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Yellow</p>
           <p className="mt-3 text-2xl font-black text-amber-900">Refer</p>
-          <p className="mt-2 text-sm text-amber-800">Verbally refer the resident to the Lupon office.</p>
+          <p className="mt-2 text-sm text-amber-800">Refer the resident to the Lupon office.</p>
         </div>
         <div className="rounded-[1.5rem] border border-rose-200 bg-rose-50 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose-700">Red</p>
           <p className="mt-3 text-2xl font-black text-rose-900">Refer</p>
-          <p className="mt-2 text-sm text-rose-800">Lupon handling is required before any clearance proceeds.</p>
+          <p className="mt-2 text-sm text-rose-800">Lupon handling is required before clearance proceeds.</p>
         </div>
       </section>
 

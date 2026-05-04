@@ -1,5 +1,5 @@
-import StatusBadge from "./StatusBadge";
-import { getStatusAction } from "../lib/status";
+import StatusBadge from "../../../shared/components/StatusBadge";
+import { getStatusAction } from "../../../shared/lib/status";
 
 function formatBirthDate(date) {
   return new Intl.DateTimeFormat("en-PH", {
@@ -70,8 +70,8 @@ export default function ResidentVerification({ resident, onBack }) {
               </h3>
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 Department Office must not view confidential Lupon reasons or internal
-                remarks. If the status is yellow or red, verbally refer the resident to
-                the Lupon office.
+                remarks. If the status is yellow or red, refer the resident to the
+                Lupon office.
               </p>
             </div>
           </div>

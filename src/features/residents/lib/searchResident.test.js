@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { residents } from "../data/residents";
+import { residents } from "../../../data/residents";
 import { searchResident } from "./searchResident";
 
 describe("searchResident", () => {

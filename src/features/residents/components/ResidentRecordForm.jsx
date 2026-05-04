@@ -144,7 +144,7 @@ export default function ResidentRecordForm({
         </div>
       </Section>
 
-      <Section title="System Fields">
+      <Section title="Record Status">
         <Field error={errors.status} label="Status">
           <select className={inputClassName} name="status" onChange={onChange} value={formData.status}>
             {statusOptions.map((option) => (
