@@ -29,6 +29,7 @@ const inputClassName =
 export default function ResidentRecordForm({
   formData,
   errors,
+  mode = "edit",
   onChange,
   onDocumentInputChange,
   onSave,
@@ -48,7 +49,7 @@ export default function ResidentRecordForm({
           className="rounded-2xl bg-gov-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gov-800"
           type="submit"
         >
-          Save resident record
+          {mode === "add" ? "Add resident record" : "Save resident record"}
         </button>
       </div>
 
@@ -59,6 +60,15 @@ export default function ResidentRecordForm({
 
         <Field error={errors.id} label="Resident ID">
           <input className={inputClassName} name="id" onChange={onChange} value={formData.id} />
+        </Field>
+
+        <Field error={errors.householdId} label="Household ID">
+          <input
+            className={inputClassName}
+            name="householdId"
+            onChange={onChange}
+            value={formData.householdId}
+          />
         </Field>
 
         <Field label="Birth Date">
@@ -78,6 +88,16 @@ export default function ResidentRecordForm({
             onChange={onChange}
             value={formData.civilStatus}
           />
+        </Field>
+
+        <Field error={errors.gender} label="Gender">
+          <select className={inputClassName} name="gender" onChange={onChange} value={formData.gender}>
+            <option value="">Select gender</option>
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+            <option value="Non-binary">Non-binary</option>
+            <option value="Prefer not to say">Prefer not to say</option>
+          </select>
         </Field>
       </Section>
 
@@ -124,6 +144,9 @@ export default function ResidentRecordForm({
 
       <Section title="Sector Classification">
         <div className="md:col-span-2 grid gap-3 sm:grid-cols-2">
+          {errors.sectors ? (
+            <p className="sm:col-span-2 text-sm text-rose-600">{errors.sectors}</p>
+          ) : null}
           {["Senior Citizen", "PWD", "Solo Parent", "Registered Voter", "4Ps Member"].map(
             (sector) => (
               <label
@@ -176,6 +199,7 @@ export default function ResidentRecordForm({
             onChange={onDocumentInputChange}
             value={formData.documents.join(", ")}
           />
+          {errors.documents ? <span className="mt-2 block text-sm text-rose-600">{errors.documents}</span> : null}
         </Field>
 
         <div className="md:col-span-2">

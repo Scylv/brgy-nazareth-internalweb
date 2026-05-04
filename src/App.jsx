@@ -9,11 +9,12 @@ import LuponDashboard from "./features/lupon/components/LuponDashboard";
 import ResidentRecordForm from "./features/residents/components/ResidentRecordForm";
 import ResidentVerification from "./features/residents/components/ResidentVerification";
 import { cloneResident } from "./features/residents/lib/cloneResident";
+import { createBlankResident } from "./features/residents/lib/createBlankResident";
 import { validateResidentForm } from "./features/residents/lib/validateResidentForm";
 import AppNavigation from "./shared/components/AppNavigation";
 import AppShell from "./shared/components/AppShell";
 import { filterResidents } from "./shared/lib/filterResidents";
-import { canEditRecord } from "./shared/lib/permissions";
+import { canAddRecord, canEditRecord } from "./shared/lib/permissions";
 import { pageCopy } from "./shared/lib/pageCopy";
 
 const defaultResident = initialResidents[0];
@@ -28,6 +29,7 @@ export default function App() {
   const [luponStatusFilter, setLuponStatusFilter] = useState("all");
   const [selectedResidentId, setSelectedResidentId] = useState(defaultResident.id);
   const [currentPage, setCurrentPage] = useState("login");
+  const [formMode, setFormMode] = useState("edit");
   const [formData, setFormData] = useState(cloneResident(defaultResident));
   const [formErrors, setFormErrors] = useState({});
 
@@ -80,6 +82,7 @@ export default function App() {
     setCurrentUser(user);
     setLoginError("");
     setSelectedResidentId(defaultResident.id);
+    setFormMode("edit");
     setFormData(cloneResident(defaultResident));
     setCurrentPage(getLandingPage(user.role));
   }
@@ -94,6 +97,7 @@ export default function App() {
     setLuponStatusFilter("all");
     setFormErrors({});
     setSelectedResidentId(defaultResident.id);
+    setFormMode("edit");
     setFormData(cloneResident(defaultResident));
   }
 
@@ -109,13 +113,28 @@ export default function App() {
     }
 
     setSelectedResidentId(residentId);
+    setFormMode("edit");
     setFormData(cloneResident(resident));
+    setFormErrors({});
+    setCurrentPage("form");
+  }
+
+  function openNewResidentForm() {
+    if (!canAddRecord(currentUser.role)) {
+      return;
+    }
+
+    const newResident = createBlankResident(residentList);
+    setSelectedResidentId(newResident.id);
+    setFormMode("add");
+    setFormData(newResident);
     setFormErrors({});
     setCurrentPage("form");
   }
 
   function closeResidentForm() {
     setFormErrors({});
+    setFormMode("edit");
     setCurrentPage("lupon");
   }
 
@@ -171,10 +190,14 @@ export default function App() {
       return;
     }
 
+    const savedResident = cloneResident(formData);
     setResidentList((current) =>
-      current.map((resident) => (resident.id === selectedResidentId ? cloneResident(formData) : resident))
+      formMode === "add"
+        ? [...current, savedResident]
+        : current.map((resident) => (resident.id === selectedResidentId ? savedResident : resident))
     );
     setSelectedResidentId(formData.id);
+    setFormMode("edit");
     setFormErrors({});
     setCurrentPage("lupon");
   }
@@ -225,6 +248,7 @@ export default function App() {
       {currentPage === "lupon" ? (
         <LuponDashboard
           onQueryChange={setLuponSearchQuery}
+          onAddResident={openNewResidentForm}
           onOpenForm={openResidentForm}
           onSelectResident={setSelectedResidentId}
           onStatusFilterChange={setLuponStatusFilter}
@@ -239,6 +263,7 @@ export default function App() {
         <ResidentRecordForm
           errors={formErrors}
           formData={formData}
+          mode={formMode}
           onCancel={closeResidentForm}
           onChange={handleFormChange}
           onDocumentInputChange={handleDocumentInputChange}

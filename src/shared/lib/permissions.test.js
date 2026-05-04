@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canEditRecord, canManageUsers } from "./permissions";
+import { canAddRecord, canEditRecord, canManageUsers } from "./permissions";
 
 describe("canEditRecord", () => {
   it("allows Lupon staff to edit", () => {
@@ -14,6 +14,19 @@ describe("canEditRecord", () => {
   it("blocks missing or unexpected roles from editing", () => {
     expect(canEditRecord()).toBe(false);
     expect(canEditRecord("Lupon")).toBe(false);
+  });
+});
+
+describe("canAddRecord", () => {
+  it("allows only Lupon staff to add resident records", () => {
+    expect(canAddRecord("lupon")).toBe(true);
+    expect(canAddRecord("department")).toBe(false);
+    expect(canAddRecord("admin")).toBe(false);
+  });
+
+  it("blocks missing or unexpected roles from adding", () => {
+    expect(canAddRecord()).toBe(false);
+    expect(canAddRecord("Lupon")).toBe(false);
   });
 });
 

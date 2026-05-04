@@ -13,6 +13,7 @@ export default function LuponDashboard({
   residents,
   selectedResidentId,
   onQueryChange,
+  onAddResident,
   onSelectResident,
   onOpenForm,
   onStatusFilterChange,
@@ -36,6 +37,13 @@ export default function LuponDashboard({
           <div className="rounded-2xl bg-white px-4 py-3 text-sm text-slate-600">
             {residents.length} resident{residents.length === 1 ? "" : "s"} shown
           </div>
+          <button
+            className="rounded-2xl bg-gov-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gov-800"
+            onClick={onAddResident}
+            type="button"
+          >
+            Add resident
+          </button>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">

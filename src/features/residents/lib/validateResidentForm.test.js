@@ -12,18 +12,24 @@ describe("validateResidentForm", () => {
   it("returns validation errors for missing required fields", () => {
     const result = validateResidentForm({
       id: "",
+      householdId: "",
       name: "",
       address: "",
+      gender: "",
       status: "unknown",
+      sectors: "not-an-array",
       documents: "not-an-array"
     });
 
     expect(result.isValid).toBe(false);
     expect(result.errors).toMatchObject({
       id: "Resident ID is required.",
+      householdId: "Household ID is required.",
       name: "Full name is required.",
       address: "Address is required.",
+      gender: "Gender is required.",
       status: "Status must be green, yellow, or red.",
+      sectors: "Sectors must be a list.",
       documents: "Documents must be a list."
     });
   });
@@ -31,16 +37,21 @@ describe("validateResidentForm", () => {
   it("rejects whitespace-only required fields and missing documents", () => {
     const result = validateResidentForm({
       id: "   ",
+      householdId: "   ",
       name: "   ",
       address: "   ",
+      gender: "   ",
       status: "green"
     });
 
     expect(result.isValid).toBe(false);
     expect(result.errors).toMatchObject({
       id: "Resident ID is required.",
+      householdId: "Household ID is required.",
       name: "Full name is required.",
       address: "Address is required.",
+      gender: "Gender is required.",
+      sectors: "Sectors must be a list.",
       documents: "Documents must be a list."
     });
   });
