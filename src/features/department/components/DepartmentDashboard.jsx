@@ -7,7 +7,11 @@ import {
   getRecentDocumentRequests,
   getTotalDocumentRequests
 } from "../../../shared/lib/documentRequests";
-import { RESIDENT_STATUS_FILTERS } from "../../../shared/lib/filterResidents";
+import {
+  getResidentStatusCounts,
+  RESIDENT_STATUS_FILTERS,
+  searchResidents
+} from "../../../shared/lib/filterResidents";
 
 const statusFilterLabels = {
   all: "All",
@@ -52,6 +56,7 @@ export default function DepartmentDashboard({
   const [documentForm, setDocumentForm] = useState(blankDocumentRequest);
   const documentTypeCounts = countDocumentRequestsByType(documentRequests);
   const recentRequests = getRecentDocumentRequests(documentRequests, 4);
+  const statusCounts = getResidentStatusCounts(searchResidents(query, residents));
 
   function getResidentName(residentId) {
     return residents.find((resident) => resident.id === residentId)?.name ?? residentId;
@@ -106,10 +111,10 @@ export default function DepartmentDashboard({
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           {RESIDENT_STATUS_FILTERS.map((filter) => (
             <button
-              className={`rounded-2xl border px-4 py-2 text-sm font-semibold transition ${
+              className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition ${
                 statusFilter === filter
                   ? "border-gov-700 bg-gov-700 text-white"
                   : "border-orange-100 bg-white text-slate-700 hover:border-gov-300"
@@ -118,9 +123,22 @@ export default function DepartmentDashboard({
               onClick={() => onStatusFilterChange(filter)}
               type="button"
             >
-              {statusFilterLabels[filter]}
+              <span>{statusFilterLabels[filter]}</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs ${
+                  statusFilter === filter ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"
+                }`}
+              >
+                {statusCounts[filter]}
+              </span>
             </button>
           ))}
+          <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900">
+            <span>Lupon Referral</span>
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900">
+              {statusCounts.luponReferral}
+            </span>
+          </div>
         </div>
       </section>
 

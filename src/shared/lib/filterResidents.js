@@ -34,3 +34,23 @@ export function filterResidentsByStatus(statusFilter, residentList) {
 export function filterResidents({ query = "", statusFilter = "all", residents = [] }) {
   return filterResidentsByStatus(statusFilter, searchResidents(query, residents));
 }
+
+export function getResidentStatusCounts(residentList = []) {
+  const counts = {
+    all: residentList.length,
+    green: 0,
+    yellow: 0,
+    red: 0,
+    luponReferral: 0
+  };
+
+  residentList.forEach((resident) => {
+    if (resident.status === "green" || resident.status === "yellow" || resident.status === "red") {
+      counts[resident.status] += 1;
+    }
+  });
+
+  counts.luponReferral = counts.yellow + counts.red;
+
+  return counts;
+}

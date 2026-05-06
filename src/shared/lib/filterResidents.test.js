@@ -3,6 +3,7 @@ import { residents } from "../../data/residents";
 import {
   filterResidents,
   filterResidentsByStatus,
+  getResidentStatusCounts,
   normalizeResidentStatusFilter,
   searchResidents
 } from "./filterResidents";
@@ -65,5 +66,27 @@ describe("resident filtering", () => {
   it("falls back to all statuses for unknown status filters", () => {
     expect(normalizeResidentStatusFilter("blue")).toBe("all");
     expect(filterResidentsByStatus("blue", residents)).toHaveLength(residents.length);
+  });
+
+  it("counts residents by status and Lupon referral need", () => {
+    expect(getResidentStatusCounts(residents)).toEqual({
+      all: 3,
+      green: 1,
+      yellow: 1,
+      red: 1,
+      luponReferral: 2
+    });
+  });
+
+  it("counts residents from the provided resident subset", () => {
+    const matchingResidents = searchResidents("RBI-2024-0002", residents);
+
+    expect(getResidentStatusCounts(matchingResidents)).toEqual({
+      all: 1,
+      green: 0,
+      yellow: 1,
+      red: 0,
+      luponReferral: 1
+    });
   });
 });
