@@ -319,7 +319,13 @@ export default function App() {
         />
       ) : null}
 
-      {currentPage === "admin" ? <AdminPanel /> : null}
+      {currentPage === "admin" ? (
+        <AdminPanel
+          documentRequests={documentRequestList}
+          residents={residentList}
+          users={users}
+        />
+      ) : null}
     </AppShell>
   );
 }
