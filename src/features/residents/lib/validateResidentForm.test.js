@@ -12,10 +12,12 @@ describe("validateResidentForm", () => {
   it("returns validation errors for missing required fields", () => {
     const result = validateResidentForm({
       id: "",
+      contactNumber:"",
       householdId: "",
       name: "",
       address: "",
       gender: "",
+      email: "",
       status: "unknown",
       sectors: "not-an-array",
       documents: "not-an-array"
@@ -25,11 +27,14 @@ describe("validateResidentForm", () => {
     expect(result.errors).toMatchObject({
       id: "Resident ID is required.",
       householdId: "Household ID is required.",
+      contactNumber: "11 Digit number required.",
       name: "Full name is required.",
       address: "Address is required.",
       gender: "Gender is required.",
+      email: "input correct email ex @gmail.com",
       status: "Status must be green, yellow, or red.",
       sectors: "Sectors must be a list.",
+      birthDate: "Missing date",
       documents: "Documents must be a list."
     });
   });
@@ -40,14 +45,17 @@ describe("validateResidentForm", () => {
       householdId: "   ",
       name: "   ",
       address: "   ",
+      contactNumber:"    ",
       gender: "   ",
-      status: "green"
+      birthDate:"",
+      status: ""
     });
 
     expect(result.isValid).toBe(false);
     expect(result.errors).toMatchObject({
       id: "Resident ID is required.",
       householdId: "Household ID is required.",
+      contactNumber: "input number.",
       name: "Full name is required.",
       address: "Address is required.",
       gender: "Gender is required.",

@@ -71,7 +71,7 @@ export default function ResidentRecordForm({
           />
         </Field>
 
-        <Field label="Birth Date">
+        <Field error={errors.birthDate} label="Birth Date">
           <input
             className={inputClassName}
             name="birthDate"
@@ -106,16 +106,18 @@ export default function ResidentRecordForm({
           <input className={inputClassName} name="address" onChange={onChange} value={formData.address} />
         </Field>
 
-        <Field label="Contact Number">
+        <Field error={errors.contactNumber} label="Contact Number">
           <input
-            className={inputClassName}
-            name="contactNumber"
-            onChange={onChange}
+           className={inputClassName}
+           maxLength={11}
+           name="contactNumber"
+           onChange={(e) => {const value = e.target.value.replace(/\D/g, "");
+           onChange({target: {name: "contactNumber",value}});}}
             value={formData.contactNumber}
           />
         </Field>
 
-        <Field label="Email">
+        <Field error={errors.email} label="Email">
           <input className={inputClassName} name="email" onChange={onChange} value={formData.email} />
         </Field>
 

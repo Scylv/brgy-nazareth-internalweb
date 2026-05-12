@@ -11,7 +11,7 @@ describe("createBlankResident", () => {
       householdId: "HH-NAZ-1091",
       name: "",
       address: "",
-      status: "green",
+      status: "",
       registeredVoter: false,
       precinctNumber: "",
       sectors: [],

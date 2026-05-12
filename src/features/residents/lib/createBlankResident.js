@@ -29,7 +29,7 @@ export function createBlankResident(existingResidents = []) {
     sectors: [],
     registeredVoter: false,
     precinctNumber: "",
-    status: "green",
+    status: "none",
     remarks: "",
     caseReason: "",
     documents: []

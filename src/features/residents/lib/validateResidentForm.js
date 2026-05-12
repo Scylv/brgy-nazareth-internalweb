@@ -20,6 +20,16 @@ export function validateResidentForm(data) {
   if (!data.gender?.trim()) {
     errors.gender = "Gender is required.";
   }
+  if (!data.birthDate?.trim()) {
+    errors.birthDate = "Birth date is required.";
+  }
+  if (!/^09\d{9}$/.test(data.contactNumber || "")) {
+    errors.contactNumber =
+    "Contact number must start with 09 and be exactly 11 digits.";
+  }
+  if (!data.email?.trim() || !data.email.endsWith("@gmail.com")) {
+    errors.email = "Email must be a valid Gmail address.";
+  }
 
   if (!["green", "yellow", "red"].includes(data.status)) {
     errors.status = "Status must be green, yellow, or red.";
