@@ -26,4 +26,9 @@ describe("searchResident", () => {
   it("matches residents by household id", () => {
     expect(searchResident("HH-NAZ-1001", residents)[0].name).toBe("Juan Dela Cruz");
   });
+
+  it("should handle mixed-case and whitespace queries correctly", () => {
+        const results = searchResident("  MARIA  ", residents);
+        expect(results.some(r => r.name === "Maria Santos")).toBe(true);
+  });
 });
