@@ -97,6 +97,44 @@ VALUES
     'red'
   );
 
+INSERT INTO resident_status_history (
+  id,
+  resident_id,
+  previous_status_color,
+  new_status_color,
+  reason,
+  changed_by_profile_id,
+  created_at
+)
+VALUES
+  (
+    'RSH-2026-0001',
+    'RBI-2024-0001',
+    NULL,
+    'green',
+    'Initial seed status.',
+    'lupon-1',
+    '2026-05-01 08:00:00+08'
+  ),
+  (
+    'RSH-2026-0002',
+    'RBI-2024-0002',
+    NULL,
+    'yellow',
+    'Address requires Lupon verification.',
+    'lupon-1',
+    '2026-05-01 08:10:00+08'
+  ),
+  (
+    'RSH-2026-0003',
+    'RBI-2024-0003',
+    NULL,
+    'red',
+    'Active Lupon dispute blocks clearance.',
+    'lupon-1',
+    '2026-05-01 08:20:00+08'
+  );
+
 INSERT INTO barangay_documents (
   id,
   code,
@@ -220,6 +258,35 @@ VALUES
     NULL,
     '2026-08-01',
     'dept-1'
+  );
+
+INSERT INTO document_request_events (
+  id,
+  document_request_id,
+  previous_status,
+  new_status,
+  note,
+  created_by_profile_id,
+  created_at
+)
+VALUES
+  (
+    'DRE-2026-0001',
+    'DOC-2026-0001',
+    NULL,
+    'released',
+    'Seeded released request matching the current demo flow.',
+    'dept-1',
+    '2026-05-04 16:00:00+08'
+  ),
+  (
+    'DRE-2026-0002',
+    'DOC-2026-0002',
+    NULL,
+    'processing',
+    'Seeded in-progress request matching the current demo flow.',
+    'dept-1',
+    '2026-05-01 11:30:00+08'
   );
 
 INSERT INTO audit_logs (

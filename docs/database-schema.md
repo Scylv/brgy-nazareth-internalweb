@@ -1,9 +1,8 @@
 # Database Schema Plan
 
-This document describes the planned PostgreSQL-compatible schema for the
-Barangay Nazareth Internal Web App. The frontend still uses local mock data;
-these tables are planning artifacts for a later approved database
-implementation.
+This document describes the PostgreSQL-compatible schema for the Barangay
+Nazareth Internal Web App database foundation. The frontend still uses local
+mock data; the backend API can be run separately for database-backed routes.
 
 The plan is not tied to a specific hosted database product. It should be
 deployable later on a local/internal PostgreSQL server or on an approved secure
@@ -15,6 +14,9 @@ hosted PostgreSQL server.
 - Track Lupon cases and confidential case notes outside the resident table.
 - Track document requests using lowercase workflow statuses.
 - Store barangay document definitions for public and internal use.
+- Track resident clearance status changes.
+- Track document request status events.
+- Prepare attachment metadata for future approved file uploads.
 - Prepare audit logging and import tracking tables for future operations.
 - Keep authentication and password storage out of this schema until approved.
 
@@ -105,6 +107,20 @@ Stores confidential notes for Lupon cases.
 | created_by_profile_id | text | Profile that wrote the note. |
 | created_at | timestamptz | Creation timestamp. |
 
+### resident_status_history
+
+Stores status-color changes for resident clearance handling.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | text | Primary key. |
+| resident_id | text | Foreign key to `residents.id`. |
+| previous_status_color | text | Previous `green`, `yellow`, or `red` value, nullable for initial seed/import. |
+| new_status_color | text | New `green`, `yellow`, or `red` value. |
+| reason | text | Optional change reason. |
+| changed_by_profile_id | text | Profile that changed the status. |
+| created_at | timestamptz | Creation timestamp. |
+
 ### document_requests
 
 Tracks department document request workflow records.
@@ -122,6 +138,37 @@ Tracks department document request workflow records.
 | processed_by_profile_id | text | Department profile processing the request. |
 | created_at | timestamptz | Creation timestamp. |
 | updated_at | timestamptz | Last update timestamp. |
+
+### document_request_events
+
+Stores request timeline events and status changes.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | text | Primary key. |
+| document_request_id | text | Foreign key to `document_requests.id`. |
+| previous_status | text | Previous request status, nullable for initial event. |
+| new_status | text | New request status. |
+| note | text | Optional event note. |
+| created_by_profile_id | text | Profile that created the event. |
+| created_at | timestamptz | Creation timestamp. |
+
+### attachments
+
+Stores future file metadata only. Actual upload, storage, and download behavior
+are not implemented yet.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | text | Primary key. |
+| owner_type | text | `resident`, `document_request`, `lupon_case`, or `lupon_case_note`. |
+| owner_id | text | ID of the owning record. |
+| original_filename | text | Original uploaded file name. |
+| storage_key | text | Future storage lookup key. |
+| mime_type | text | File MIME type. |
+| file_size_bytes | bigint | File size when known. |
+| uploaded_by_profile_id | text | Profile that uploaded the file. |
+| created_at | timestamptz | Creation timestamp. |
 
 ### barangay_documents
 
@@ -201,10 +248,15 @@ Tracks row-level import results for review and correction.
   - `expiry_date`
 - Lupon case lookup:
   - `resident_id`
+- Timeline lookup:
+  - `resident_status_history.resident_id`
+  - `document_request_events.document_request_id`
+- Attachment lookup:
+  - `owner_type`, `owner_id`
 
 ## Future Implementation Notes
 
-- Keep the React app on mock data until database integration is explicitly
+- Keep the React app on mock data until wiring it to the backend is explicitly
   approved.
 - Add a reviewed authentication design before connecting `profiles` to real
   login behavior.

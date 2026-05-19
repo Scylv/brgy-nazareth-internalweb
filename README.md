@@ -56,7 +56,11 @@ These are local mock accounts only. They are not production authentication crede
 - Tailwind CSS
 - Vite
 - Vitest
-- Local mock data
+- Node.js
+- Express
+- PostgreSQL
+- `pg`
+- Local mock data for the current React prototype
 
 ## Install Dependencies
 
@@ -65,6 +69,57 @@ Install project dependencies from the repository root:
 ```bash
 npm install
 ```
+
+## Environment Setup
+
+Copy the example environment file and set a local PostgreSQL connection string:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Edit `.env` for your local database:
+
+```text
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/brgy_nazareth_internalweb
+PORT=3001
+```
+
+Do not commit real database credentials or production secrets.
+
+## Database Setup
+
+Create a local PostgreSQL database named in `DATABASE_URL`, then run the initial migration:
+
+```bash
+npm run db:migrate
+```
+
+Load the sample seed data:
+
+```bash
+npm run db:seed
+```
+
+The migration runner executes:
+
+```text
+database/migrations/001_initial_schema.sql
+```
+
+The seed runner executes:
+
+```text
+database/seed.sql
+```
+
+The schema includes residents, document requests, Lupon cases and notes, status history, document request events, import tracking, audit logs, and a future-ready attachments table. Actual file upload is not implemented yet.
 
 ## Run Tests
 
@@ -78,7 +133,7 @@ This verifies core local logic such as resident search, status handling, permiss
 
 ## Run Locally
 
-Start the Vite development server for use on the same laptop:
+Start the Vite development server for the existing React prototype:
 
 ```bash
 npm run dev
@@ -89,6 +144,46 @@ Open the local URL shown in the terminal, usually:
 ```text
 http://localhost:5173/
 ```
+
+Start the backend API in a separate terminal:
+
+```bash
+npm run dev:server
+```
+
+The API listens on:
+
+```text
+http://localhost:3001/
+```
+
+Available API routes:
+
+```text
+GET  /api/residents
+GET  /api/residents/:id
+GET  /api/document-requests
+POST /api/document-requests
+GET  /api/lupon/cases
+POST /api/lupon/cases
+POST /api/lupon/cases/:id/notes
+```
+
+The backend currently uses a simple development-only role header instead of real authentication:
+
+```text
+x-user-role: admin
+x-user-role: department
+x-user-role: lupon
+```
+
+Optional write attribution can use:
+
+```text
+x-profile-id: dept-1
+```
+
+Department routes do not expose `lupon_cases.confidential_summary` or `lupon_case_notes.note_body`. Lupon case routes require the `lupon` role.
 
 ## Run On The Local Network
 
@@ -141,13 +236,13 @@ Notes for the LAN demo:
 
 ## Prototype Notes
 
-- The current version uses mock/local data.
-- There is no database integration yet.
+- The current React UI still uses mock/local data.
+- The backend is a minimal database-backed foundation and does not replace the React prototype state yet.
 - There are no file uploads yet.
 - Document request tracking is transaction-based and linked to residents.
 - Department handles barangay-issued document requests.
 - Lupon case documents and records are separate and confidential.
-- The production version should use a database, real authentication, backups, and role-based access control.
+- The production version should add real authentication, backups, reviewed deployment settings, and hardened role-based access control.
 
 ## Build Check
 
