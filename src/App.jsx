@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { documentRequests as initialDocumentRequests } from "./data/documentRequests";
 import { residents as initialResidents } from "./data/residents";
 import { users } from "./data/users";
@@ -7,6 +7,7 @@ import LoginScreen from "./features/auth/components/LoginScreen";
 import { findUser } from "./features/auth/lib/findUser";
 import DepartmentDashboard from "./features/department/components/DepartmentDashboard";
 import LuponDashboard from "./features/lupon/components/LuponDashboard";
+import { fetchResidents } from "./features/residents/api/residentsApi";
 import ResidentRecordForm from "./features/residents/components/ResidentRecordForm";
 import ResidentVerification from "./features/residents/components/ResidentVerification";
 import { cloneResident } from "./features/residents/lib/cloneResident";
@@ -36,6 +37,9 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loginError, setLoginError] = useState("");
   const [residentList, setResidentList] = useState(initialResidents);
+  const [databaseResidentList, setDatabaseResidentList] = useState([]);
+  const [isDepartmentResidentsLoading, setIsDepartmentResidentsLoading] = useState(true);
+  const [departmentResidentsError, setDepartmentResidentsError] = useState("");
   const [documentRequestList, setDocumentRequestList] = useState(initialDocumentRequests);
   const [departmentSearchQuery, setDepartmentSearchQuery] = useState("");
   const [departmentStatusFilter, setDepartmentStatusFilter] = useState("all");
@@ -47,14 +51,57 @@ export default function App() {
   const [formData, setFormData] = useState(cloneResident(defaultResident));
   const [formErrors, setFormErrors] = useState({});
 
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadDepartmentResidents() {
+      setIsDepartmentResidentsLoading(true);
+      setDepartmentResidentsError("");
+
+      try {
+        const residents = await fetchResidents();
+
+        if (!isActive) {
+          return;
+        }
+
+        setDatabaseResidentList(residents);
+      } catch (_error) {
+        if (!isActive) {
+          return;
+        }
+
+        setDatabaseResidentList([]);
+        setDepartmentResidentsError(
+          "Resident database API is unavailable. Start the backend with npm run dev:server, then refresh."
+        );
+      } finally {
+        if (isActive) {
+          setIsDepartmentResidentsLoading(false);
+        }
+      }
+    }
+
+    loadDepartmentResidents();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const departmentResidentRecords = useMemo(
+    () => databaseResidentList.map(toDepartmentResident),
+    [databaseResidentList]
+  );
+
   const departmentResidents = useMemo(
     () =>
       filterResidents({
         query: departmentSearchQuery,
         statusFilter: departmentStatusFilter,
-        residents: residentList
-      }).map(toDepartmentResident),
-    [departmentSearchQuery, departmentStatusFilter, residentList]
+        residents: departmentResidentRecords
+      }),
+    [departmentSearchQuery, departmentResidentRecords, departmentStatusFilter]
   );
 
   const luponResidents = useMemo(
@@ -69,8 +116,11 @@ export default function App() {
 
   const selectedResident =
     residentList.find((resident) => resident.id === selectedResidentId) ?? residentList[0];
-  const selectedDepartmentResident = toDepartmentResident(selectedResident);
-  const departmentResidentList = residentList.map(toDepartmentResident);
+  const selectedDepartmentResident =
+    departmentResidentRecords.find((resident) => resident.id === selectedResidentId) ??
+    departmentResidentRecords[0] ??
+    null;
+  const localDepartmentResidents = residentList.map(toDepartmentResident);
 
   function createDocumentRequestId(requests) {
     const nextNumber =
@@ -251,7 +301,9 @@ export default function App() {
   const actions = (
     <AppNavigation
       currentPage={currentPage}
-      hasSelectedResident={Boolean(selectedResident)}
+      hasSelectedResident={
+        currentUser.role === "department" ? Boolean(selectedDepartmentResident) : Boolean(selectedResident)
+      }
       onOpenAdmin={() => setCurrentPage("admin")}
       onOpenDepartment={() => setCurrentPage("department")}
       onOpenLupon={() => setCurrentPage("lupon")}
@@ -277,18 +329,29 @@ export default function App() {
           onSelectResident={openResidentVerification}
           onStatusFilterChange={setDepartmentStatusFilter}
           query={departmentSearchQuery}
-          residents={departmentResidentList}
+          residentDataSource="Database API"
+          residentError={departmentResidentsError}
+          residents={localDepartmentResidents}
+          residentSearchResidents={departmentResidentRecords}
           results={departmentResidents}
+          isResidentLoading={isDepartmentResidentsLoading}
           statusFilter={departmentStatusFilter}
         />
       ) : null}
 
-      {currentPage === "verification" ? (
+      {currentPage === "verification" && selectedDepartmentResident ? (
         <ResidentVerification
           documentRequests={documentRequestList}
           onBack={() => setCurrentPage("department")}
           resident={selectedDepartmentResident}
         />
+      ) : null}
+
+      {currentPage === "verification" && !selectedDepartmentResident ? (
+        <section className="rounded-[1.75rem] border border-orange-100 bg-white p-6 text-sm text-slate-600">
+          Resident database data is not loaded yet. Return to the Department dashboard and try again
+          after the backend API is available.
+        </section>
       ) : null}
 
       {currentPage === "lupon" ? (
