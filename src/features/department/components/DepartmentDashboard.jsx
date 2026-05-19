@@ -46,7 +46,11 @@ export default function DepartmentDashboard({
   onDocumentRequestSave,
   query,
   results,
+  residentDataSource,
+  residentError,
+  residentSearchResidents,
   residents,
+  isResidentLoading,
   onQueryChange,
   onSelectResident,
   onStatusFilterChange,
@@ -56,7 +60,8 @@ export default function DepartmentDashboard({
   const [documentForm, setDocumentForm] = useState(blankDocumentRequest);
   const documentTypeCounts = countDocumentRequestsByType(documentRequests);
   const recentRequests = getRecentDocumentRequests(documentRequests, 4);
-  const statusCounts = getResidentStatusCounts(searchResidents(query, residents));
+  const searchResidentList = residentSearchResidents ?? residents;
+  const statusCounts = getResidentStatusCounts(searchResidents(query, searchResidentList));
 
   function getResidentName(residentId) {
     return residents.find((resident) => resident.id === residentId)?.name ?? residentId;
@@ -110,6 +115,12 @@ export default function DepartmentDashboard({
             {results.length} resident{results.length === 1 ? "" : "s"} found
           </div>
         </div>
+
+        {residentDataSource ? (
+          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Data source: {residentDataSource}
+          </p>
+        ) : null}
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {RESIDENT_STATUS_FILTERS.map((filter) => (
@@ -389,34 +400,48 @@ export default function DepartmentDashboard({
             <span>Action</span>
           </div>
 
-          {results.map((resident) => (
-            <div
-              className="grid grid-cols-1 gap-4 bg-white px-5 py-4 md:grid-cols-[1.4fr_1fr_auto]"
-              key={resident.id}
-            >
-              <div>
-                <div className="font-semibold text-slate-900">{resident.name}</div>
-                <div className="text-sm text-slate-600">{resident.id}</div>
-                <div className="text-sm text-slate-500">{resident.address}</div>
-              </div>
-
-              <div className="flex items-center">
-                <StatusBadge status={resident.status} />
-              </div>
-
-              <div className="flex items-center">
-                <button
-                  className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800"
-                  onClick={() => onSelectResident(resident.id)}
-                  type="button"
-                >
-                  Verify
-                </button>
-              </div>
+          {isResidentLoading ? (
+            <div className="bg-white px-5 py-8 text-center text-sm text-slate-500">
+              Loading residents from the database API...
             </div>
-          ))}
+          ) : null}
 
-          {results.length === 0 ? (
+          {!isResidentLoading && residentError ? (
+            <div className="bg-white px-5 py-8 text-center text-sm text-rose-700">
+              {residentError}
+            </div>
+          ) : null}
+
+          {!isResidentLoading && !residentError
+            ? results.map((resident) => (
+                <div
+                  className="grid grid-cols-1 gap-4 bg-white px-5 py-4 md:grid-cols-[1.4fr_1fr_auto]"
+                  key={resident.id}
+                >
+                  <div>
+                    <div className="font-semibold text-slate-900">{resident.name}</div>
+                    <div className="text-sm text-slate-600">{resident.id}</div>
+                    <div className="text-sm text-slate-500">{resident.address}</div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <StatusBadge status={resident.status} />
+                  </div>
+
+                  <div className="flex items-center">
+                    <button
+                      className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800"
+                      onClick={() => onSelectResident(resident.id)}
+                      type="button"
+                    >
+                      Verify
+                    </button>
+                  </div>
+                </div>
+              ))
+            : null}
+
+          {!isResidentLoading && !residentError && results.length === 0 ? (
             <div className="bg-white px-5 py-8 text-center text-sm text-slate-500">
               No residents match the current search and status filter.
             </div>

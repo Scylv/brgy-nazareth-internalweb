@@ -60,7 +60,7 @@ These are local mock accounts only. They are not production authentication crede
 - Express
 - PostgreSQL
 - `pg`
-- Local mock data for the current React prototype
+- Local mock data for unintegrated prototype screens
 
 ## Install Dependencies
 
@@ -185,6 +185,20 @@ x-profile-id: dept-1
 
 Department routes do not expose `lupon_cases.confidential_summary` or `lupon_case_notes.note_body`. Lupon case routes require the `lupon` role.
 
+## Frontend Database-Backed Residents
+
+The Department resident search/list and verification flow now reads resident data from the backend API. The backend must be running for database-backed resident data to load in the React app.
+
+The frontend uses:
+
+```text
+VITE_API_BASE_URL=http://localhost:3001
+```
+
+If `VITE_API_BASE_URL` is not set, the frontend defaults to `http://localhost:3001`. If the backend is off, resident API loading fails and the Department resident list shows an error state.
+
+See [Frontend Database Integration](docs/frontend-database-integration.md) for setup, verification steps, curl checks, and current limitations.
+
 ## Run On The Local Network
 
 For a client demo from another phone, tablet, or laptop on the same Wi-Fi network, start Vite in host mode:
@@ -236,8 +250,9 @@ Notes for the LAN demo:
 
 ## Prototype Notes
 
-- The current React UI still uses mock/local data.
-- The backend is a minimal database-backed foundation and does not replace the React prototype state yet.
+- The Department resident search/list and verification flow uses the database API.
+- Other React screens may still use mock/local data.
+- The backend is a minimal database-backed foundation and does not replace all React prototype state yet.
 - There are no file uploads yet.
 - Document request tracking is transaction-based and linked to residents.
 - Department handles barangay-issued document requests.

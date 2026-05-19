@@ -48,6 +48,19 @@ describe("role-based API access", () => {
     expect(response.body.error).toContain("x-user-role");
   });
 
+  it("allows Vite frontend preflight requests with the development role header", async () => {
+    const app = createApp(createPool());
+
+    const response = await request(app)
+      .options("/api/residents")
+      .set("Origin", "http://localhost:5173")
+      .set("Access-Control-Request-Headers", "x-user-role");
+
+    expect(response.status).toBe(204);
+    expect(response.headers["access-control-allow-origin"]).toBe("http://localhost:5173");
+    expect(response.headers["access-control-allow-headers"]).toContain("x-user-role");
+  });
+
   it("blocks Department users from Lupon case routes", async () => {
     const app = createApp(createPool());
 
