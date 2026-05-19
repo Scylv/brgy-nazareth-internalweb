@@ -51,7 +51,7 @@ function addDays(date, days) {
   nextDate.setDate(nextDate.getDate() + days);
   return nextDate;
 }
-
 function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
+
