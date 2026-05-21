@@ -3,6 +3,13 @@ dist/
 .vite/
 .env
 .env.local
+screens
+
+# Local only files
 .codex-local/
+.agents/
 agents.md
+AGENTS.md
 instructions.md
+INSTRUCTIONS.md
+*.local.md
