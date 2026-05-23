@@ -1,14 +1,15 @@
 import express from "express";
+import { getCorsOrigins } from "./config/env.js";
 import { createDocumentRequestsRouter } from "./routes/documentRequests.js";
 import { createLuponCasesRouter } from "./routes/luponCases.js";
 import { createResidentsRouter } from "./routes/residents.js";
 
 export function createApp(pool) {
   const app = express();
+  const allowedOrigins = getCorsOrigins();
 
   app.use((req, res, next) => {
     const origin = req.get("origin");
-    const allowedOrigins = new Set(["http://localhost:5173", "http://127.0.0.1:5173"]);
 
     if (allowedOrigins.has(origin)) {
       res.setHeader("Access-Control-Allow-Origin", origin);

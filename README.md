@@ -199,6 +199,76 @@ If `VITE_API_BASE_URL` is not set, the frontend defaults to `http://localhost:30
 
 See [Frontend Database Integration](docs/frontend-database-integration.md) for setup, verification steps, curl checks, and current limitations.
 
+## Staging Deployment
+
+Use staging only for Milestone 3 internal testing and acceptance checks. Staging must use synthetic data only; do not load real resident records, real Lupon case details, or production secrets into the staging database.
+
+Recommended staging services:
+
+- **Frontend host:** Vercel, Render Static Site, Netlify, or another static frontend host.
+- **Backend host:** Render Web Service or another Node.js service that can run the Express API.
+- **Database provider:** Render PostgreSQL, Neon, Supabase PostgreSQL, or another hosted PostgreSQL database.
+
+Required backend environment variables:
+
+```text
+DATABASE_URL=postgres://...
+PORT=3001
+CORS_ORIGINS=http://localhost:5173,https://example-staging-frontend.onrender.com
+```
+
+Required frontend environment variable:
+
+```text
+VITE_API_BASE_URL=https://example-staging-backend.onrender.com
+```
+
+Set real staging values in the hosting provider dashboard. Do not commit `.env` files or real database credentials.
+
+Frontend deployment:
+
+```bash
+npm install
+npm run build
+```
+
+Publish the generated `dist` folder or configure the frontend host with:
+
+```text
+Build command: npm run build
+Publish directory: dist
+```
+
+Backend deployment:
+
+```bash
+npm install
+npm start
+```
+
+Configure the backend host with:
+
+```text
+Start command: npm start
+```
+
+Run database setup against the staging PostgreSQL database after `DATABASE_URL` is set for the backend environment:
+
+```bash
+npm run db:migrate
+npm run db:seed
+```
+
+The current migration and seed scripts are intended for a fresh staging database. Do not re-run the seed script on a populated staging database unless the data reset is intentional.
+
+Known staging limitations:
+
+- Authentication is still prototype-only and uses a development `x-user-role` header on API requests.
+- Demo login accounts are mock local accounts, not production credentials.
+- Some React screens still use local mock data.
+- File uploads, backups, production auth, and hardened database-level access policies are not implemented yet.
+- Department users must not see Lupon confidential summaries or notes; this boundary is covered by backend tests and should be checked again during acceptance testing.
+
 ## Run On The Local Network
 
 For a client demo from another phone, tablet, or laptop on the same Wi-Fi network, start Vite in host mode:

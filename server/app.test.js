@@ -1,5 +1,5 @@
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "./app.js";
 
 function createPool(rowsByQuery = []) {
@@ -38,6 +38,10 @@ const residentRow = {
   updated_at: "2026-05-01T00:00:00.000Z"
 };
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("role-based API access", () => {
   it("requires a valid role header", async () => {
     const app = createApp(createPool());
@@ -59,6 +63,25 @@ describe("role-based API access", () => {
     expect(response.status).toBe(204);
     expect(response.headers["access-control-allow-origin"]).toBe("http://localhost:5173");
     expect(response.headers["access-control-allow-headers"]).toContain("x-user-role");
+  });
+
+  it("allows configured staging frontend origins from CORS_ORIGINS", async () => {
+    vi.stubEnv(
+      "CORS_ORIGINS",
+      "https://example-staging-frontend.onrender.com, https://preview.example.com"
+    );
+    const app = createApp(createPool());
+
+    const response = await request(app)
+      .options("/api/residents")
+      .set("Origin", "https://example-staging-frontend.onrender.com")
+      .set("Access-Control-Request-Headers", "x-user-role");
+
+    expect(response.status).toBe(204);
+    expect(response.headers["access-control-allow-origin"]).toBe(
+      "https://example-staging-frontend.onrender.com"
+    );
+    expect(response.headers.vary).toBe("Origin");
   });
 
   it("blocks Department users from Lupon case routes", async () => {
