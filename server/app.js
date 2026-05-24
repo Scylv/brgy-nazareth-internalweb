@@ -1,6 +1,7 @@
 import express from "express";
 import { getAuthSessionSecret, getCorsOrigins } from "./config/env.js";
 import { createAuthMiddleware } from "./middleware/auth.js";
+import { createAdminRouter } from "./routes/admin.js";
 import { createAuthRouter } from "./routes/auth.js";
 import { createDocumentRequestsRouter } from "./routes/documentRequests.js";
 import { createLuponCasesRouter } from "./routes/luponCases.js";
@@ -40,6 +41,7 @@ export function createApp(pool) {
   const requireAuth = createAuthMiddleware(pool);
 
   app.use("/api/auth", createAuthRouter(pool));
+  app.use("/api/admin", requireAuth, createAdminRouter(pool));
   app.use("/api/residents", requireAuth, createResidentsRouter(pool));
   app.use("/api/document-requests", requireAuth, createDocumentRequestsRouter(pool));
   app.use("/api/lupon", requireAuth, createLuponCasesRouter(pool));

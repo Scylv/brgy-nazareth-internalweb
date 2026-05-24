@@ -66,3 +66,14 @@ export function toLuponCaseNote(row) {
     createdAt: row.created_at
   };
 }
+
+export function toProfile(row) {
+  return {
+    id: row.id,
+    username: row.username,
+    displayName: row.display_name,
+    role: row.role,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}

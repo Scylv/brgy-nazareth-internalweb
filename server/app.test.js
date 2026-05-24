@@ -286,6 +286,89 @@ describe("authentication and role-based API access", () => {
     expect(pool.queries.at(-1).sql).not.toContain("FROM lupon_cases");
   });
 
+  it("allows Admin users to list database profiles with safe fields only", async () => {
+    const pool = createPool([
+      [profileRows.admin],
+      [profileRows.admin],
+      [
+        {
+          ...profileRows.admin,
+          created_at: "2026-05-01T00:00:00.000Z",
+          updated_at: "2026-05-02T00:00:00.000Z"
+        },
+        {
+          ...profileRows.department,
+          created_at: "2026-05-03T00:00:00.000Z",
+          updated_at: "2026-05-04T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+
+    const response = await request(app).get("/api/admin/profiles").set("Cookie", cookie);
+
+    expect(response.status).toBe(200);
+    expect(response.body.profiles).toEqual([
+      {
+        id: "admin-1",
+        username: "admin",
+        displayName: "Ricardo Morales",
+        role: "admin",
+        createdAt: "2026-05-01T00:00:00.000Z",
+        updatedAt: "2026-05-02T00:00:00.000Z"
+      },
+      {
+        id: "dept-1",
+        username: "department",
+        displayName: "Elena Ledesma",
+        role: "department",
+        createdAt: "2026-05-03T00:00:00.000Z",
+        updatedAt: "2026-05-04T00:00:00.000Z"
+      }
+    ]);
+    expect(JSON.stringify(response.body)).not.toContain("password_hash");
+    expect(JSON.stringify(response.body)).not.toContain("scrypt$");
+    expect(pool.queries.at(-1).sql).not.toContain("password_hash");
+  });
+
+  it("blocks Department users from Admin profile routes", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app).get("/api/admin/profiles").set("Cookie", cookie);
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toContain("not allowed");
+    expect(pool.queries).toHaveLength(2);
+    expect(pool.queries.at(-1).sql).not.toContain("ORDER BY created_at");
+  });
+
+  it("blocks Lupon users from Admin profile routes", async () => {
+    const pool = createPool([[profileRows.lupon], [profileRows.lupon]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app).get("/api/admin/profiles").set("Cookie", cookie);
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toContain("not allowed");
+    expect(pool.queries).toHaveLength(2);
+    expect(pool.queries.at(-1).sql).not.toContain("ORDER BY created_at");
+  });
+
+  it("rejects unauthenticated Admin profile route requests", async () => {
+    const pool = createPool();
+    const app = createApp(pool);
+
+    const response = await request(app).get("/api/admin/profiles");
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toContain("Authentication is required");
+    expect(pool.queries).toHaveLength(0);
+  });
+
   it("allows Lupon users to access Lupon case routes", async () => {
     const pool = createPool([
       [profileRows.lupon],

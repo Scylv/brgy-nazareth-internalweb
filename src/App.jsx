@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { residents as initialResidents } from "./data/residents";
 import { users } from "./data/users";
+import { fetchAdminProfiles } from "./features/admin/api/adminProfilesApi";
 import AdminPanel from "./features/admin/components/AdminPanel";
 import { fetchCurrentUser, loginUser, logoutUser } from "./features/auth/api/authApi";
 import LoginScreen from "./features/auth/components/LoginScreen";
@@ -45,6 +46,9 @@ export default function App() {
   const [isDepartmentResidentsLoading, setIsDepartmentResidentsLoading] = useState(true);
   const [departmentResidentsError, setDepartmentResidentsError] = useState("");
   const [documentRequestList, setDocumentRequestList] = useState([]);
+  const [adminProfileList, setAdminProfileList] = useState([]);
+  const [isAdminProfilesLoading, setIsAdminProfilesLoading] = useState(false);
+  const [adminProfilesError, setAdminProfilesError] = useState("");
   const [isDocumentRequestsLoading, setIsDocumentRequestsLoading] = useState(false);
   const [documentRequestsError, setDocumentRequestsError] = useState("");
   const [luponCaseList, setLuponCaseList] = useState([]);
@@ -128,6 +132,55 @@ export default function App() {
     }
 
     loadDatabaseResidents();
+
+    return () => {
+      isActive = false;
+    };
+  }, [currentUser]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (currentUser?.role !== "admin") {
+      setAdminProfileList([]);
+      setIsAdminProfilesLoading(false);
+      setAdminProfilesError("");
+      return () => {
+        isActive = false;
+      };
+    }
+
+    async function loadAdminProfiles() {
+      setIsAdminProfilesLoading(true);
+      setAdminProfilesError("");
+
+      try {
+        const profiles = await fetchAdminProfiles();
+
+        if (!isActive) {
+          return;
+        }
+
+        setAdminProfileList(profiles);
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        setAdminProfileList([]);
+        setAdminProfilesError(
+          error?.status === 403
+            ? "Only Admin accounts can load database profiles."
+            : "Admin profile database API is unavailable. Start the backend with npm run dev:server, then refresh."
+        );
+      } finally {
+        if (isActive) {
+          setIsAdminProfilesLoading(false);
+        }
+      }
+    }
+
+    loadAdminProfiles();
 
     return () => {
       isActive = false;
@@ -328,6 +381,8 @@ export default function App() {
     setLuponStatusFilter("all");
     setDocumentRequestList([]);
     setDocumentRequestsError("");
+    setAdminProfileList([]);
+    setAdminProfilesError("");
     setLuponCaseList([]);
     setLuponCasesError("");
     setFormErrors({});
@@ -555,8 +610,10 @@ export default function App() {
       {currentPage === "admin" ? (
         <AdminPanel
           documentRequests={documentRequestList}
+          error={adminProfilesError}
+          isLoading={isAdminProfilesLoading}
           residents={residentList}
-          users={users}
+          users={adminProfileList}
         />
       ) : null}
     </AppShell>
