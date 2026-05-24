@@ -34,7 +34,7 @@ export async function fetchResidents() {
 function toResidentUpdatePayload(resident) {
   return {
     householdId: resident.householdId,
-    fullName: resident.fullName ?? resident.name,
+    fullName: resident.name ?? resident.fullName,
     birthDate: resident.birthDate,
     gender: resident.gender,
     civilStatus: resident.civilStatus,

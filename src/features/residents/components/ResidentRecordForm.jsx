@@ -25,16 +25,19 @@ function Field({ label, error, children }) {
 
 const inputClassName =
   "w-full rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 outline-none transition focus:border-gov-500 focus:bg-white";
+const readOnlyInputClassName =
+  "w-full cursor-not-allowed rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600 outline-none";
 
 export default function ResidentRecordForm({
   formData,
   errors,
   mode = "edit",
   onChange,
-  onDocumentInputChange,
   onSave,
   onCancel
 }) {
+  const isEditMode = mode === "edit";
+
   return (
     <form className="space-y-6" onSubmit={onSave}>
       <div className="flex flex-wrap gap-3">
@@ -65,7 +68,14 @@ export default function ResidentRecordForm({
         </Field>
 
         <Field error={errors.id} label="Resident ID">
-          <input className={inputClassName} name="id" onChange={onChange} value={formData.id} />
+          <input
+            aria-readonly={isEditMode}
+            className={isEditMode ? readOnlyInputClassName : inputClassName}
+            name="id"
+            onChange={isEditMode ? undefined : onChange}
+            readOnly={isEditMode}
+            value={formData.id}
+          />
         </Field>
 
         <Field error={errors.householdId} label="Household ID">
@@ -199,14 +209,19 @@ export default function ResidentRecordForm({
           </select>
         </Field>
 
-        <Field label="Documents (comma-separated)">
-          <input
-            className={inputClassName}
-            onChange={onDocumentInputChange}
-            value={formData.documents.join(", ")}
-          />
+        <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-sm font-semibold text-slate-900">Documents</p>
+          <p className="mt-2 text-sm leading-6 text-slate-700">
+            {formData.documents.length > 0
+              ? formData.documents.join(", ")
+              : "No resident documents are attached to this profile."}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Document handling is managed through document request tracking or future file upload
+            work.
+          </p>
           {errors.documents ? <span className="mt-2 block text-sm text-rose-600">{errors.documents}</span> : null}
-        </Field>
+        </div>
 
         <div className="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-sm font-semibold text-amber-900">Lupon case details</p>

@@ -153,4 +153,42 @@ describe("residents API", () => {
       status: "green"
     });
   });
+
+  it("sends the edited name as fullName when a stale fullName is present", async () => {
+    const fetchMock = vi.fn(async (_path, options) => {
+      expect(options.method).toBe("PATCH");
+      expect(JSON.parse(options.body)).toMatchObject({
+        fullName: "New Name"
+      });
+      expect(JSON.parse(options.body).fullName).not.toBe("Old Name");
+
+      return new Response(
+        JSON.stringify({
+          resident: {
+            id: "RBI-2024-0002",
+            fullName: "New Name",
+            statusColor: "green"
+          }
+        }),
+        {
+          headers: { "content-type": "application/json" }
+        }
+      );
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      updateResident("RBI-2024-0002", {
+        id: "RBI-2024-0002",
+        fullName: "Old Name",
+        name: "New Name",
+        status: "green"
+      })
+    ).resolves.toMatchObject({
+      id: "RBI-2024-0002",
+      name: "New Name",
+      status: "green"
+    });
+  });
 });

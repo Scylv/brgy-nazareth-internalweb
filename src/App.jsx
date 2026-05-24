@@ -404,18 +404,6 @@ export default function App() {
     });
   }
 
-  function handleDocumentInputChange(event) {
-    const documents = event.target.value
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-
-    setFormData((current) => ({
-      ...current,
-      documents
-    }));
-  }
-
   async function handleFormSave(event) {
     event.preventDefault();
 
@@ -560,7 +548,6 @@ export default function App() {
           mode={formMode}
           onCancel={closeResidentForm}
           onChange={handleFormChange}
-          onDocumentInputChange={handleDocumentInputChange}
           onSave={handleFormSave}
         />
       ) : null}

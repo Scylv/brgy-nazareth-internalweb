@@ -665,4 +665,49 @@ describe("authentication and role-based API access", () => {
     expect(JSON.stringify(departmentResponse.body)).not.toContain("remarks");
     expect(JSON.stringify(departmentResponse.body)).not.toContain("caseReason");
   });
+
+  it("returns updated non-confidential resident fields to Department after a Lupon update", async () => {
+    const pool = createResidentUpdatePool();
+    const app = createApp(pool);
+    const luponCookie = await loginAs(app, "lupon", "lupon123");
+
+    const updateResponse = await request(app)
+      .patch("/api/residents/RBI-2024-0002")
+      .set("Cookie", luponCookie)
+      .send({
+        address: "Purok 9, Nazareth",
+        contactNumber: "09998887777",
+        additionalInformation: "Address verified by Lupon staff.",
+        sectors: ["PWD", "Registered Voter"],
+        registeredVoter: true,
+        precinctNumber: "0999A",
+        remarks: "Do not expose this resident-local remark.",
+        caseReason: "Do not expose this resident-local case reason."
+      });
+
+    expect(updateResponse.status).toBe(200);
+
+    const departmentCookie = await loginAs(app, "department", "dept123");
+    const departmentResponse = await request(app)
+      .get("/api/residents/RBI-2024-0002")
+      .set("Cookie", departmentCookie);
+
+    expect(departmentResponse.status).toBe(200);
+    expect(departmentResponse.body.resident).toMatchObject({
+      id: "RBI-2024-0002",
+      address: "Purok 9, Nazareth",
+      contactNumber: "09998887777",
+      additionalInformation: "Address verified by Lupon staff.",
+      sectors: ["PWD", "Registered Voter"],
+      registeredVoter: true,
+      precinctNumber: "0999A"
+    });
+    expect(departmentResponse.body.resident).not.toHaveProperty("remarks");
+    expect(departmentResponse.body.resident).not.toHaveProperty("caseReason");
+    expect(departmentResponse.body).not.toHaveProperty("luponCases");
+    expect(departmentResponse.body).not.toHaveProperty("luponCaseNotes");
+    expect(JSON.stringify(departmentResponse.body)).not.toContain("confidentialSummary");
+    expect(JSON.stringify(departmentResponse.body)).not.toContain("noteBody");
+    expect(JSON.stringify(departmentResponse.body)).not.toContain("Do not expose");
+  });
 });
