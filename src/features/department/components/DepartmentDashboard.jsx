@@ -1,4 +1,5 @@
 import { useState } from "react";
+import RequestStatusBadge from "../../../shared/components/RequestStatusBadge";
 import StatusBadge from "../../../shared/components/StatusBadge";
 import {
   barangayDocumentOptions,
@@ -123,6 +124,9 @@ export default function DepartmentDashboard({
           Search by resident name or RBI ID and review only the verification result
           required for clearance handling.
         </p>
+        <p className="mt-3 inline-flex rounded-full border border-orange-200 bg-white px-3 py-1.5 text-xs font-semibold text-gov-800">
+          Department view: basic resident details, address, status color, and document requests only.
+        </p>
 
         <div className="mt-5 flex flex-col gap-3 md:flex-row">
           <input
@@ -184,7 +188,7 @@ export default function DepartmentDashboard({
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm text-slate-500">Non-confidential request fields only</p>
             <button
-              className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800"
+              className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800 disabled:cursor-not-allowed disabled:bg-slate-300"
               disabled={isDocumentRequestLoading || residents.length === 0}
               onClick={openNewDocumentRequestForm}
               type="button"
@@ -272,6 +276,9 @@ export default function DepartmentDashboard({
                   required
                   value={documentForm.purpose}
                 />
+                <span className="mt-2 block text-xs text-slate-500">
+                  Keep this non-confidential for Department processing records.
+                </span>
               </label>
 
               <label className="block">
@@ -333,6 +340,9 @@ export default function DepartmentDashboard({
                   readOnly
                   value={documentForm.processedBy}
                 />
+                <span className="mt-2 block text-xs text-slate-500">
+                  Filled from the signed-in Department account.
+                </span>
               </label>
             </div>
 
@@ -381,7 +391,7 @@ export default function DepartmentDashboard({
                 <div className="rounded-2xl border border-orange-100 px-4 py-3" key={request.id}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-semibold text-slate-900">{request.documentType}</p>
-                    <span className="text-xs font-semibold text-slate-500">{request.status}</span>
+                    <RequestStatusBadge status={request.status} />
                   </div>
                   <p className="mt-1 text-sm text-slate-600">{getResidentName(request.residentId)}</p>
                   <button
@@ -416,18 +426,18 @@ export default function DepartmentDashboard({
       <section className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">Green</p>
-          <p className="mt-3 text-2xl font-black text-emerald-900">Proceed</p>
-          <p className="mt-2 text-sm text-emerald-800">Cleared for release outside the system.</p>
+          <p className="mt-3 text-2xl font-black text-emerald-900">Cleared - proceed</p>
+          <p className="mt-2 text-sm text-emerald-800">Clearance may continue outside the system.</p>
         </div>
         <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Yellow</p>
-          <p className="mt-3 text-2xl font-black text-amber-900">Refer</p>
-          <p className="mt-2 text-sm text-amber-800">Refer the resident to the Lupon office.</p>
+          <p className="mt-3 text-2xl font-black text-amber-900">Needs Lupon review</p>
+          <p className="mt-2 text-sm text-amber-800">Refer the resident without viewing case reasons.</p>
         </div>
         <div className="rounded-[1.5rem] border border-rose-200 bg-rose-50 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose-700">Red</p>
-          <p className="mt-3 text-2xl font-black text-rose-900">Refer</p>
-          <p className="mt-2 text-sm text-rose-800">Lupon handling is required before clearance proceeds.</p>
+          <p className="mt-3 text-2xl font-black text-rose-900">Hold - Lupon required</p>
+          <p className="mt-2 text-sm text-rose-800">Hold clearance and refer to the Lupon office.</p>
         </div>
       </section>
 

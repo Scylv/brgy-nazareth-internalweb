@@ -1,13 +1,13 @@
 export default function LoginScreen({ users, onLogin, error }) {
   return (
-    <div className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-10">
-      <div className="grid w-full gap-8 overflow-hidden rounded-[2rem] border border-gov-100 bg-white shadow-panel lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="hidden bg-gradient-to-br from-gov-900 via-gov-800 to-gov-600 p-10 text-white lg:flex lg:flex-col lg:justify-between">
+    <div className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-8">
+      <div className="grid w-full gap-6 overflow-hidden rounded-[1.5rem] border border-gov-100 bg-white shadow-panel lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="hidden bg-gradient-to-br from-gov-900 via-gov-800 to-gov-600 p-8 text-white lg:flex lg:flex-col lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-orange-200">
               Barangay Nazareth
             </p>
-            <h1 className="mt-4 max-w-md text-5xl font-black leading-tight">
+            <h1 className="mt-4 max-w-md text-4xl font-black leading-tight">
               Resident Verification and Lupon Registry
             </h1>
             <p className="mt-6 max-w-lg text-sm leading-7 text-orange-100">
@@ -15,22 +15,26 @@ export default function LoginScreen({ users, onLogin, error }) {
               role-based access.
             </p>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-white/10 p-6">
-            <p className="text-sm font-semibold">Available local accounts</p>
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-5">
+            <p className="text-sm font-semibold">Staging test accounts</p>
             <ul className="mt-3 space-y-2 text-sm text-orange-50">
               {users.map((user) => (
-                <li key={user.id}>
-                  {user.role}: <span className="font-semibold">{user.username}</span> /{" "}
-                  <span className="font-semibold">{user.password}</span>
+                <li
+                  className="grid grid-cols-[0.8fr_1fr_1fr] gap-3 rounded-xl bg-white/10 px-3 py-2"
+                  key={user.id}
+                >
+                  <span className="font-semibold capitalize">{user.role}</span>
+                  <span>{user.username}</span>
+                  <span>{user.password}</span>
                 </li>
               ))}
             </ul>
           </div>
         </section>
 
-        <section className="p-8 sm:p-12">
+        <section className="p-7 sm:p-10">
           <div className="mx-auto max-w-md">
-            <div className="mb-10">
+            <div className="mb-8">
               <p className="text-sm font-semibold uppercase tracking-[0.25em] text-gov-700">
                 Internal Access
               </p>

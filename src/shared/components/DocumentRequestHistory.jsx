@@ -1,3 +1,5 @@
+import RequestStatusBadge from "./RequestStatusBadge";
+
 function formatDate(date) {
   if (!date) {
     return "Not set";
@@ -12,10 +14,10 @@ function formatDate(date) {
 
 export default function DocumentRequestHistory({ requests, title = "Document History" }) {
   return (
-    <section className="overflow-hidden rounded-[1.75rem] border border-orange-100 bg-white">
+    <section className="overflow-hidden rounded-[1.5rem] border border-orange-100 bg-white">
       <div className="border-b border-orange-100 bg-orange-50 px-5 py-4">
         <h3 className="text-lg font-black text-slate-900">{title}</h3>
-        <p className="mt-1 text-sm text-slate-600">Linked through resident ID</p>
+        <p className="mt-1 text-sm text-slate-600">Linked through resident ID for staff reference.</p>
       </div>
 
       {requests.length > 0 ? (
@@ -42,7 +44,9 @@ export default function DocumentRequestHistory({ requests, title = "Document His
               <span className="text-slate-600">{formatDate(request.releaseDate)}</span>
               <span className="text-slate-600">{formatDate(request.expiryDate)}</span>
               <span className="text-slate-600">{request.processedBy || "Unassigned"}</span>
-              <span className="font-semibold text-slate-700">{request.status}</span>
+              <span>
+                <RequestStatusBadge status={request.status} />
+              </span>
             </div>
           ))}
         </div>

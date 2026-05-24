@@ -38,6 +38,9 @@ export default function LuponDashboard({
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
           Search resident records and narrow the registry by current clearance status.
         </p>
+        <p className="mt-3 inline-flex rounded-full border border-orange-200 bg-white px-3 py-1.5 text-xs font-semibold text-gov-800">
+          Lupon view: review case summaries and maintain resident status colors.
+        </p>
 
         <div className="mt-5 flex flex-col gap-3 md:flex-row">
           <input
@@ -125,7 +128,7 @@ export default function LuponDashboard({
             return (
               <div
                 className={`grid grid-cols-1 gap-4 bg-white px-5 py-4 lg:grid-cols-[1.3fr_0.8fr_1fr_auto] ${
-                  resident.id === selectedResidentId ? "ring-2 ring-gov-500 ring-inset" : ""
+                  resident.id === selectedResidentId ? "border-l-4 border-gov-600 bg-orange-50/60" : ""
                 }`}
                 key={resident.id}
               >

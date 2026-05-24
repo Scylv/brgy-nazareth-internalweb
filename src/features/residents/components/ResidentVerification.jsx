@@ -25,7 +25,7 @@ export default function ResidentVerification({ documentRequests, resident, onBac
       </button>
 
       <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="rounded-[1.75rem] border border-orange-100 bg-orange-50 p-6">
+        <section className="rounded-[1.5rem] border border-orange-100 bg-orange-50 p-6">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-gov-700">
             Limited Resident Information
           </p>
@@ -55,7 +55,7 @@ export default function ResidentVerification({ documentRequests, resident, onBac
         </section>
 
         <section className="space-y-6">
-          <div className="rounded-[1.75rem] border border-orange-100 bg-white p-6">
+          <div className="rounded-[1.5rem] border border-orange-100 bg-white p-6">
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-gov-700">
               Verification Result
             </p>
@@ -73,20 +73,19 @@ export default function ResidentVerification({ documentRequests, resident, onBac
                 {getStatusAction(resident.status)}
               </h3>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                Department Office must not view confidential Lupon reasons or internal
-                remarks. If the status is yellow or red, refer the resident to the
-                Lupon office.
+                Use this status color for clearance handling only. Yellow or red means
+                the resident should be referred to Lupon without viewing confidential reasons.
               </p>
             </div>
           </div>
 
-          <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6">
+          <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
               Privacy Notice
             </p>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Case reasons, internal remarks, and confidential Lupon details are hidden
-              from Department Office accounts.
+              Case reasons, remarks, notes, evidence, and confidential Lupon details are hidden
+              from Department accounts.
             </p>
           </div>
         </section>

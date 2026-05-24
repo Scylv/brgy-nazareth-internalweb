@@ -6,8 +6,8 @@ const statusOptions = [
 
 function Section({ title, children }) {
   return (
-    <section className="rounded-[1.75rem] border border-orange-100 bg-white p-6">
-      <h3 className="text-xl font-black text-slate-900">{title}</h3>
+    <section className="rounded-[1.5rem] border border-orange-100 bg-white p-5">
+      <h3 className="text-lg font-black text-slate-900">{title}</h3>
       <div className="mt-5 grid gap-4 md:grid-cols-2">{children}</div>
     </section>
   );
@@ -76,6 +76,11 @@ export default function ResidentRecordForm({
             readOnly={isEditMode}
             value={formData.id}
           />
+          {isEditMode ? (
+            <span className="mt-2 block text-xs text-slate-500">
+              Resident ID is locked for existing staging records.
+            </span>
+          ) : null}
         </Field>
 
         <Field error={errors.householdId} label="Household ID">
@@ -207,6 +212,9 @@ export default function ResidentRecordForm({
               </option>
             ))}
           </select>
+          <span className="mt-2 block text-xs leading-5 text-slate-500">
+            Green: Cleared - proceed. Yellow: Needs Lupon review. Red: Hold - Lupon required.
+          </span>
         </Field>
 
         <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">

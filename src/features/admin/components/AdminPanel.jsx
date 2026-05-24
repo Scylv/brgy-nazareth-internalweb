@@ -1,14 +1,6 @@
-import { useState } from "react";
 import { getAccountGroups, getAdminCounters } from "../lib/accountManagement";
 
 const actionLabels = ["Change role", "Disable account", "Reset password"];
-
-const actionMessages = {
-  "Add account": "Account creation is planned after staging profile listing is verified.",
-  "Change role": "Role updates are planned and are not enabled in this staging slice.",
-  "Disable account": "Account deactivation is planned and is not enabled in this staging slice.",
-  "Reset password": "Password reset is not implemented in this staging slice."
-};
 
 const counterCards = [
   {
@@ -40,7 +32,6 @@ export default function AdminPanel({
   residents,
   users
 }) {
-  const [actionNotice, setActionNotice] = useState("");
   const accountGroups = getAccountGroups(users);
   const counters = getAdminCounters({ users, residents, documentRequests });
 
@@ -59,17 +50,20 @@ export default function AdminPanel({
             </p>
           </div>
           <button
-            className="rounded-2xl bg-gov-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gov-800"
-            onClick={() => setActionNotice(actionMessages["Add account"])}
+            className="inline-flex cursor-not-allowed items-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-500"
+            disabled
             type="button"
           >
             Add account
+            <span className="rounded-full bg-white px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-slate-500">
+              Planned
+            </span>
           </button>
         </div>
 
         <div className="mt-5 rounded-[1.25rem] border border-orange-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
           Profile listing is loaded from the database API. Account creation, role updates,
-          deactivation, and password reset remain planned controls for a later slice.
+          deactivation, and password reset are visible as planned controls only.
         </div>
 
         {isLoading ? (
@@ -90,14 +84,6 @@ export default function AdminPanel({
           </div>
         ) : null}
 
-        {actionNotice ? (
-          <div
-            className="mt-3 rounded-[1.25rem] border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-medium leading-6 text-sky-900"
-            role="status"
-          >
-            {actionNotice}
-          </div>
-        ) : null}
       </section>
 
       <section className="grid gap-4 md:grid-cols-4">
@@ -145,12 +131,15 @@ export default function AdminPanel({
                   <div className="mt-4 flex flex-wrap gap-2">
                     {actionLabels.map((action) => (
                       <button
-                        className="rounded-xl border border-orange-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-gov-300 hover:bg-orange-50"
+                        className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500"
+                        disabled
                         key={`${account.id}-${action}`}
-                        onClick={() => setActionNotice(actionMessages[action])}
                         type="button"
                       >
-                        {action} (planned)
+                        {action}
+                        <span className="rounded-full bg-white px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-slate-500">
+                          Planned
+                        </span>
                       </button>
                     ))}
                   </div>
