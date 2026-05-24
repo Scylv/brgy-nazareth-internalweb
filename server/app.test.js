@@ -394,6 +394,153 @@ describe("authentication and role-based API access", () => {
     expect(pool.queries).toHaveLength(2);
   });
 
+  it("maps document request rows for Department users without Lupon confidential fields", async () => {
+    const pool = createPool([
+      [profileRows.department],
+      [profileRows.department],
+      [
+        {
+          id: "DOC-2026-0007",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-001",
+          barangay_document_name: "Barangay Clearance",
+          purpose: "Local employment requirement",
+          status: "processing",
+          request_date: "2026-05-18",
+          release_date: null,
+          expiry_date: "2026-11-18",
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          created_at: "2026-05-18T00:00:00.000Z",
+          updated_at: "2026-05-18T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app).get("/api/document-requests").set("Cookie", cookie);
+
+    expect(response.status).toBe(200);
+    expect(response.body.documentRequests).toEqual([
+      {
+        id: "DOC-2026-0007",
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        barangayDocumentName: "Barangay Clearance",
+        purpose: "Local employment requirement",
+        status: "processing",
+        requestDate: "2026-05-18",
+        releaseDate: null,
+        expiryDate: "2026-11-18",
+        processedByProfileId: "dept-1",
+        processedByName: "Elena Ledesma",
+        createdAt: "2026-05-18T00:00:00.000Z",
+        updatedAt: "2026-05-18T00:00:00.000Z"
+      }
+    ]);
+    expect(JSON.stringify(response.body)).not.toContain("confidentialSummary");
+    expect(JSON.stringify(response.body)).not.toContain("noteBody");
+  });
+
+  it("creates document requests with a lowercase default status and the session profile", async () => {
+    const pool = createPool([
+      [profileRows.department],
+      [profileRows.department],
+      [
+        {
+          id: "DOC-2026-0008",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-001",
+          barangay_document_name: "Barangay Clearance",
+          purpose: "Local employment requirement",
+          status: "pending",
+          request_date: "2026-05-19",
+          release_date: null,
+          expiry_date: null,
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          created_at: "2026-05-19T00:00:00.000Z",
+          updated_at: "2026-05-19T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("x-user-role", "lupon")
+      .set("x-profile-id", "fake-profile")
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-19"
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.documentRequest).toMatchObject({
+      id: "DOC-2026-0008",
+      residentId: "RBI-2024-0001",
+      barangayDocumentId: "BDOC-001",
+      barangayDocumentName: "Barangay Clearance",
+      status: "pending",
+      processedByProfileId: "dept-1",
+      processedByName: "Elena Ledesma"
+    });
+    expect(pool.queries.at(-1).sql).toContain("documents.name AS barangay_document_name");
+    expect(pool.queries.at(-1).sql).toContain("profiles.display_name AS processed_by_name");
+    expect(pool.queries.at(-1).params.slice(1)).toEqual([
+      "RBI-2024-0001",
+      "BDOC-001",
+      "Local employment requirement",
+      "pending",
+      "2026-05-19",
+      null,
+      null,
+      "dept-1"
+    ]);
+  });
+
+  it("rejects missing document request fields before writing to the database", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .send({
+        residentId: "RBI-2024-0001",
+        purpose: "Local employment requirement"
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.fields).toEqual(["barangayDocumentId", "requestDate"]);
+    expect(pool.queries).toHaveLength(2);
+  });
+
+  it("blocks Lupon users from creating Department document requests", async () => {
+    const pool = createPool([[profileRows.lupon], [profileRows.lupon]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-19"
+      });
+
+    expect(response.status).toBe(403);
+    expect(pool.queries).toHaveLength(2);
+  });
+
   it("allows Lupon users to update resident status and non-confidential fields", async () => {
     const pool = createPool([[profileRows.lupon], [profileRows.lupon], [residentRow], [{ ...residentRow, full_name: "Maria S. Santos", status_color: "green" }]]);
     const app = createApp(pool);

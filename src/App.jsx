@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { documentRequests as initialDocumentRequests } from "./data/documentRequests";
 import { residents as initialResidents } from "./data/residents";
 import { users } from "./data/users";
 import AdminPanel from "./features/admin/components/AdminPanel";
 import { fetchCurrentUser, loginUser, logoutUser } from "./features/auth/api/authApi";
 import LoginScreen from "./features/auth/components/LoginScreen";
+import {
+  createDocumentRequest,
+  fetchDocumentRequests
+} from "./features/department/api/documentRequestsApi";
 import DepartmentDashboard from "./features/department/components/DepartmentDashboard";
 import LuponDashboard from "./features/lupon/components/LuponDashboard";
 import { fetchResidents, updateResident } from "./features/residents/api/residentsApi";
@@ -36,11 +39,13 @@ function toDepartmentResident(resident) {
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loginError, setLoginError] = useState("");
-  const [residentList, setResidentList] = useState(initialResidents);
+  const [residentList] = useState(initialResidents);
   const [databaseResidentList, setDatabaseResidentList] = useState([]);
   const [isDepartmentResidentsLoading, setIsDepartmentResidentsLoading] = useState(true);
   const [departmentResidentsError, setDepartmentResidentsError] = useState("");
-  const [documentRequestList, setDocumentRequestList] = useState(initialDocumentRequests);
+  const [documentRequestList, setDocumentRequestList] = useState([]);
+  const [isDocumentRequestsLoading, setIsDocumentRequestsLoading] = useState(false);
+  const [documentRequestsError, setDocumentRequestsError] = useState("");
   const [departmentSearchQuery, setDepartmentSearchQuery] = useState("");
   const [departmentStatusFilter, setDepartmentStatusFilter] = useState("all");
   const [luponSearchQuery, setLuponSearchQuery] = useState("");
@@ -125,6 +130,53 @@ export default function App() {
     };
   }, [currentUser]);
 
+  useEffect(() => {
+    let isActive = true;
+
+    if (!currentUser) {
+      setDocumentRequestList([]);
+      setIsDocumentRequestsLoading(false);
+      setDocumentRequestsError("");
+      return () => {
+        isActive = false;
+      };
+    }
+
+    async function loadDocumentRequests() {
+      setIsDocumentRequestsLoading(true);
+      setDocumentRequestsError("");
+
+      try {
+        const requests = await fetchDocumentRequests();
+
+        if (!isActive) {
+          return;
+        }
+
+        setDocumentRequestList(requests);
+      } catch (_error) {
+        if (!isActive) {
+          return;
+        }
+
+        setDocumentRequestList([]);
+        setDocumentRequestsError(
+          "Document request database API is unavailable. Start the backend with npm run dev:server, then refresh."
+        );
+      } finally {
+        if (isActive) {
+          setIsDocumentRequestsLoading(false);
+        }
+      }
+    }
+
+    loadDocumentRequests();
+
+    return () => {
+      isActive = false;
+    };
+  }, [currentUser]);
+
   const departmentResidentRecords = useMemo(
     () => databaseResidentList.map(toDepartmentResident),
     [databaseResidentList]
@@ -142,7 +194,7 @@ export default function App() {
 
   useEffect(() => {
     if (
-      currentUser?.role === "lupon" &&
+      ["department", "lupon"].includes(currentUser?.role) &&
       databaseResidentList.length > 0 &&
       !databaseResidentList.some((resident) => resident.id === selectedResidentId)
     ) {
@@ -167,17 +219,6 @@ export default function App() {
     departmentResidentRecords.find((resident) => resident.id === selectedResidentId) ??
     departmentResidentRecords[0] ??
     null;
-  const localDepartmentResidents = residentList.map(toDepartmentResident);
-
-  function createDocumentRequestId(requests) {
-    const nextNumber =
-      requests.reduce((highest, request) => {
-        const requestNumber = Number(request.id.replace("DOC-2026-", ""));
-        return Number.isNaN(requestNumber) ? highest : Math.max(highest, requestNumber);
-      }, 0) + 1;
-
-    return `DOC-2026-${String(nextNumber).padStart(4, "0")}`;
-  }
 
   function getLandingPage(role) {
     if (role === "department") {
@@ -234,6 +275,8 @@ export default function App() {
     setDepartmentStatusFilter("all");
     setLuponSearchQuery("");
     setLuponStatusFilter("all");
+    setDocumentRequestList([]);
+    setDocumentRequestsError("");
     setFormErrors({});
     setSelectedResidentId(defaultResident.id);
     setFormMode("edit");
@@ -353,20 +396,26 @@ export default function App() {
     }
   }
 
-  function handleDocumentRequestSave(request) {
-    setDocumentRequestList((current) => {
-      if (request.id) {
-        return current.map((item) => (item.id === request.id ? request : item));
-      }
+  async function handleDocumentRequestSave(request) {
+    if (request.id) {
+      setDocumentRequestsError("Updating existing document requests is not database-backed yet.");
+      return false;
+    }
 
-      return [
-        {
-          ...request,
-          id: createDocumentRequestId(current)
-        },
-        ...current
-      ];
-    });
+    setIsDocumentRequestsLoading(true);
+    setDocumentRequestsError("");
+
+    try {
+      const savedRequest = await createDocumentRequest(request);
+
+      setDocumentRequestList((current) => [savedRequest, ...current]);
+      return savedRequest;
+    } catch (_error) {
+      setDocumentRequestsError("Document request save failed. Check the backend API and try again.");
+      return false;
+    } finally {
+      setIsDocumentRequestsLoading(false);
+    }
   }
 
   if (!currentUser) {
@@ -398,7 +447,10 @@ export default function App() {
     >
       {currentPage === "department" ? (
         <DepartmentDashboard
+          defaultProcessedBy={currentUser.name}
+          documentRequestError={documentRequestsError}
           documentRequests={documentRequestList}
+          isDocumentRequestLoading={isDocumentRequestsLoading}
           onDocumentRequestSave={handleDocumentRequestSave}
           onQueryChange={setDepartmentSearchQuery}
           onSelectResident={openResidentVerification}
@@ -406,7 +458,7 @@ export default function App() {
           query={departmentSearchQuery}
           residentDataSource="Database API"
           residentError={departmentResidentsError}
-          residents={localDepartmentResidents}
+          residents={departmentResidentRecords}
           residentSearchResidents={departmentResidentRecords}
           results={departmentResidents}
           isResidentLoading={isDepartmentResidentsLoading}

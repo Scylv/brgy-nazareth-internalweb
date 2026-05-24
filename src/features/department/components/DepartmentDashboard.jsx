@@ -1,6 +1,10 @@
 import { useState } from "react";
 import StatusBadge from "../../../shared/components/StatusBadge";
 import {
+  barangayDocumentOptions,
+  documentRequestStatusOptions
+} from "../api/documentRequestsApi";
+import {
   countDocumentRequestsByType,
   getDocumentRequestsThisMonth,
   getExpiringSoonCount,
@@ -23,25 +27,20 @@ const statusFilterLabels = {
 const blankDocumentRequest = {
   id: "",
   residentId: "",
+  barangayDocumentId: "BDOC-001",
   documentType: "Barangay Clearance",
   purpose: "",
   requestDate: new Date().toISOString().slice(0, 10),
   releaseDate: "",
   expiryDate: "",
-  status: "Processing",
+  status: "pending",
   processedBy: ""
 };
 
-const documentTypeOptions = [
-  "Barangay Clearance",
-  "Barangay Indigency",
-  "Barangay ID",
-  "Certificate of Residency"
-];
-
-const statusOptions = ["Processing", "Released", "On Hold", "Cancelled"];
-
 export default function DepartmentDashboard({
+  defaultProcessedBy = "",
+  documentRequestError,
+  isDocumentRequestLoading,
   documentRequests,
   onDocumentRequestSave,
   query,
@@ -70,7 +69,11 @@ export default function DepartmentDashboard({
   function openNewDocumentRequestForm() {
     setDocumentForm({
       ...blankDocumentRequest,
-      residentId: residents[0]?.id ?? ""
+      barangayDocumentId: barangayDocumentOptions[0]?.id ?? "",
+      documentType: barangayDocumentOptions[0]?.name ?? "",
+      processedBy: defaultProcessedBy,
+      residentId: residents[0]?.id ?? "",
+      status: "pending"
     });
     setIsDocumentFormOpen(true);
   }
@@ -82,15 +85,32 @@ export default function DepartmentDashboard({
 
   function handleDocumentFormChange(event) {
     const { name, value } = event.target;
+
+    if (name === "barangayDocumentId") {
+      const selectedDocument = barangayDocumentOptions.find((document) => document.id === value);
+
+      setDocumentForm((current) => ({
+        ...current,
+        barangayDocumentId: value,
+        documentType: selectedDocument?.name ?? current.documentType
+      }));
+      return;
+    }
+
     setDocumentForm((current) => ({
       ...current,
       [name]: value
     }));
   }
 
-  function handleDocumentFormSubmit(event) {
+  async function handleDocumentFormSubmit(event) {
     event.preventDefault();
-    onDocumentRequestSave(documentForm);
+    const savedRequest = await onDocumentRequestSave(documentForm);
+
+    if (savedRequest === false) {
+      return;
+    }
+
     setDocumentForm(blankDocumentRequest);
     setIsDocumentFormOpen(false);
   }
@@ -165,6 +185,7 @@ export default function DepartmentDashboard({
             <p className="text-sm text-slate-500">Non-confidential request fields only</p>
             <button
               className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800"
+              disabled={isDocumentRequestLoading || residents.length === 0}
               onClick={openNewDocumentRequestForm}
               type="button"
             >
@@ -172,6 +193,18 @@ export default function DepartmentDashboard({
             </button>
           </div>
         </div>
+
+        {isDocumentRequestLoading ? (
+          <p className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-slate-600">
+            Loading document requests from the database API...
+          </p>
+        ) : null}
+
+        {documentRequestError ? (
+          <p className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {documentRequestError}
+          </p>
+        ) : null}
 
         {isDocumentFormOpen ? (
           <form
@@ -206,6 +239,11 @@ export default function DepartmentDashboard({
                       {resident.name} ({resident.id})
                     </option>
                   ))}
+                  {residents.length === 0 ? (
+                    <option disabled value="">
+                      No residents loaded
+                    </option>
+                  ) : null}
                 </select>
               </label>
 
@@ -213,13 +251,13 @@ export default function DepartmentDashboard({
                 <span className="mb-2 block text-sm font-medium text-slate-700">Document Type</span>
                 <select
                   className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
-                  name="documentType"
+                  name="barangayDocumentId"
                   onChange={handleDocumentFormChange}
-                  value={documentForm.documentType}
+                  value={documentForm.barangayDocumentId}
                 >
-                  {documentTypeOptions.map((documentType) => (
-                    <option key={documentType} value={documentType}>
-                      {documentType}
+                  {barangayDocumentOptions.map((documentType) => (
+                    <option key={documentType.id} value={documentType.id}>
+                      {documentType.name}
                     </option>
                   ))}
                 </select>
@@ -278,7 +316,7 @@ export default function DepartmentDashboard({
                   onChange={handleDocumentFormChange}
                   value={documentForm.status}
                 >
-                  {statusOptions.map((status) => (
+                  {documentRequestStatusOptions.map((status) => (
                     <option key={status} value={status}>
                       {status}
                     </option>
@@ -292,7 +330,7 @@ export default function DepartmentDashboard({
                   className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
                   name="processedBy"
                   onChange={handleDocumentFormChange}
-                  required
+                  readOnly
                   value={documentForm.processedBy}
                 />
               </label>
@@ -300,6 +338,7 @@ export default function DepartmentDashboard({
 
             <button
               className="mt-4 rounded-2xl bg-gov-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gov-800"
+              disabled={isDocumentRequestLoading}
               type="submit"
             >
               {documentForm.id ? "Save Changes" : "Create Request"}

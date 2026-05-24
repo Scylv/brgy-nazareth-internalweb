@@ -20,7 +20,7 @@ Lupon Staff maintain resident records, encode RBI information, update statuses, 
 - View limited resident information
 - Use green, yellow, and red status filters
 - View non-confidential barangay document request metrics
-- Create and update barangay-issued document requests linked to residents
+- Create barangay-issued document requests linked to residents
 - Decide whether clearance may proceed
 
 ### Lupon Staff
@@ -188,9 +188,9 @@ lupon / lupon123
 
 Department routes do not expose `lupon_cases.confidential_summary` or `lupon_case_notes.note_body`. Lupon case routes require the `lupon` role.
 
-## Frontend Database-Backed Residents
+## Frontend Database-Backed Department Flows
 
-The Department resident search/list and verification flow now reads resident data from the backend API. The backend must be running for database-backed resident data to load in the React app.
+The Department resident search/list and verification flow now reads resident data from the backend API. Department document request metrics, verification history, and new-request creation also use the backend document request API. The backend must be running for database-backed Department data to load in the React app.
 
 The frontend uses:
 
@@ -198,7 +198,7 @@ The frontend uses:
 VITE_API_BASE_URL=http://localhost:3001
 ```
 
-If `VITE_API_BASE_URL` is not set, the frontend defaults to `http://localhost:3001`. If the backend is off, resident API loading fails and the Department resident list shows an error state.
+If `VITE_API_BASE_URL` is not set, the frontend defaults to `http://localhost:3001`. If the backend is off, resident and document request API loading fails and the Department dashboard shows error states.
 
 See [Frontend Database Integration](docs/frontend-database-integration.md) for setup, verification steps, curl checks, and current limitations.
 
@@ -277,6 +277,7 @@ Known staging limitations:
   server-side. A copied token remains valid until expiry; this is acceptable for
   synthetic-data staging, not final production.
 - Some React screens still use local mock data.
+- Department document request reads and creates are database-backed; editing existing requests is not database-backed yet.
 - File uploads, backups, production user provisioning, and hardened database-level access policies are not implemented yet.
 - Department users must not see Lupon confidential summaries or notes; this boundary is covered by backend tests and should be checked again during acceptance testing.
 
@@ -331,7 +332,7 @@ Notes for the LAN demo:
 
 ## Prototype Notes
 
-- The Department resident search/list and verification flow uses the database API.
+- The Department resident search/list, verification, and document request create/read flows use the database API.
 - Other React screens may still use mock/local data.
 - The backend is a minimal database-backed foundation and does not replace all React prototype state yet.
 - There are no file uploads yet.

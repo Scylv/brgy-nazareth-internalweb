@@ -56,30 +56,49 @@ export function createDocumentRequestsRouter(pool) {
       }
 
       const result = await pool.query(
-        `INSERT INTO document_requests (
-          id,
-          resident_id,
-          barangay_document_id,
-          purpose,
-          status,
-          request_date,
-          release_date,
-          expiry_date,
-          processed_by_profile_id
+        `WITH inserted AS (
+          INSERT INTO document_requests (
+            id,
+            resident_id,
+            barangay_document_id,
+            purpose,
+            status,
+            request_date,
+            release_date,
+            expiry_date,
+            processed_by_profile_id
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          RETURNING
+            id,
+            resident_id,
+            barangay_document_id,
+            purpose,
+            status,
+            request_date,
+            release_date,
+            expiry_date,
+            processed_by_profile_id,
+            created_at,
+            updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING
-          id,
-          resident_id,
-          barangay_document_id,
-          purpose,
-          status,
-          request_date,
-          release_date,
-          expiry_date,
-          processed_by_profile_id,
-          created_at,
-          updated_at`,
+        SELECT
+          inserted.id,
+          inserted.resident_id,
+          inserted.barangay_document_id,
+          documents.name AS barangay_document_name,
+          inserted.purpose,
+          inserted.status,
+          inserted.request_date,
+          inserted.release_date,
+          inserted.expiry_date,
+          inserted.processed_by_profile_id,
+          profiles.display_name AS processed_by_name,
+          inserted.created_at,
+          inserted.updated_at
+        FROM inserted
+        INNER JOIN barangay_documents documents ON documents.id = inserted.barangay_document_id
+        LEFT JOIN profiles ON profiles.id = inserted.processed_by_profile_id`,
         [
           req.body.id ?? createId("DOC"),
           req.body.residentId,

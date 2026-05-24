@@ -163,6 +163,30 @@ VALUES
     'internal',
     'Internal document used when a resident must be referred to the Lupon office.',
     NULL
+  ),
+  (
+    'BDOC-003',
+    'BRGY-INDIGENCY',
+    'Barangay Indigency',
+    'public',
+    'Certificate for assistance and indigency requirements.',
+    90
+  ),
+  (
+    'BDOC-004',
+    'BRGY-ID',
+    'Barangay ID',
+    'public',
+    'Resident identification document issued by the barangay.',
+    365
+  ),
+  (
+    'BDOC-005',
+    'CERT-RESIDENCY',
+    'Certificate of Residency',
+    'public',
+    'Certificate confirming current barangay residency.',
+    90
   );
 
 INSERT INTO lupon_cases (
