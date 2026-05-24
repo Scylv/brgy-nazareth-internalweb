@@ -1,12 +1,18 @@
-import { useMemo, useState } from "react";
-import { documentRequests as initialDocumentRequests } from "./data/documentRequests";
+import { useEffect, useMemo, useState } from "react";
 import { residents as initialResidents } from "./data/residents";
 import { users } from "./data/users";
+import { fetchAdminProfiles } from "./features/admin/api/adminProfilesApi";
 import AdminPanel from "./features/admin/components/AdminPanel";
+import { fetchCurrentUser, loginUser, logoutUser } from "./features/auth/api/authApi";
 import LoginScreen from "./features/auth/components/LoginScreen";
-import { findUser } from "./features/auth/lib/findUser";
+import {
+  createDocumentRequest,
+  fetchDocumentRequests
+} from "./features/department/api/documentRequestsApi";
 import DepartmentDashboard from "./features/department/components/DepartmentDashboard";
+import { fetchLuponCases } from "./features/lupon/api/luponCasesApi";
 import LuponDashboard from "./features/lupon/components/LuponDashboard";
+import { fetchResidents, updateResident } from "./features/residents/api/residentsApi";
 import ResidentRecordForm from "./features/residents/components/ResidentRecordForm";
 import ResidentVerification from "./features/residents/components/ResidentVerification";
 import { cloneResident } from "./features/residents/lib/cloneResident";
@@ -35,8 +41,19 @@ function toDepartmentResident(resident) {
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loginError, setLoginError] = useState("");
-  const [residentList, setResidentList] = useState(initialResidents);
-  const [documentRequestList, setDocumentRequestList] = useState(initialDocumentRequests);
+  const [residentList] = useState(initialResidents);
+  const [databaseResidentList, setDatabaseResidentList] = useState([]);
+  const [isDepartmentResidentsLoading, setIsDepartmentResidentsLoading] = useState(true);
+  const [departmentResidentsError, setDepartmentResidentsError] = useState("");
+  const [documentRequestList, setDocumentRequestList] = useState([]);
+  const [adminProfileList, setAdminProfileList] = useState([]);
+  const [isAdminProfilesLoading, setIsAdminProfilesLoading] = useState(false);
+  const [adminProfilesError, setAdminProfilesError] = useState("");
+  const [isDocumentRequestsLoading, setIsDocumentRequestsLoading] = useState(false);
+  const [documentRequestsError, setDocumentRequestsError] = useState("");
+  const [luponCaseList, setLuponCaseList] = useState([]);
+  const [isLuponCasesLoading, setIsLuponCasesLoading] = useState(false);
+  const [luponCasesError, setLuponCasesError] = useState("");
   const [departmentSearchQuery, setDepartmentSearchQuery] = useState("");
   const [departmentStatusFilter, setDepartmentStatusFilter] = useState("all");
   const [luponSearchQuery, setLuponSearchQuery] = useState("");
@@ -47,40 +64,265 @@ export default function App() {
   const [formData, setFormData] = useState(cloneResident(defaultResident));
   const [formErrors, setFormErrors] = useState({});
 
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadCurrentUser() {
+      try {
+        const user = await fetchCurrentUser();
+
+        if (!isActive) {
+          return;
+        }
+
+        setCurrentUser(user);
+        setCurrentPage(getLandingPage(user.role));
+      } catch (_error) {
+        if (isActive) {
+          setCurrentUser(null);
+        }
+      }
+    }
+
+    loadCurrentUser();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!currentUser || !["department", "lupon"].includes(currentUser.role)) {
+      setDatabaseResidentList([]);
+      setIsDepartmentResidentsLoading(false);
+      setDepartmentResidentsError("");
+      return () => {
+        isActive = false;
+      };
+    }
+
+    async function loadDatabaseResidents() {
+      setIsDepartmentResidentsLoading(true);
+      setDepartmentResidentsError("");
+
+      try {
+        const residents = await fetchResidents();
+
+        if (!isActive) {
+          return;
+        }
+
+        setDatabaseResidentList(residents);
+      } catch (_error) {
+        if (!isActive) {
+          return;
+        }
+
+        setDatabaseResidentList([]);
+        setDepartmentResidentsError(
+          "Resident database API is unavailable. Start the backend with npm run dev:server, then refresh."
+        );
+      } finally {
+        if (isActive) {
+          setIsDepartmentResidentsLoading(false);
+        }
+      }
+    }
+
+    loadDatabaseResidents();
+
+    return () => {
+      isActive = false;
+    };
+  }, [currentUser]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (currentUser?.role !== "admin") {
+      setAdminProfileList([]);
+      setIsAdminProfilesLoading(false);
+      setAdminProfilesError("");
+      return () => {
+        isActive = false;
+      };
+    }
+
+    async function loadAdminProfiles() {
+      setIsAdminProfilesLoading(true);
+      setAdminProfilesError("");
+
+      try {
+        const profiles = await fetchAdminProfiles();
+
+        if (!isActive) {
+          return;
+        }
+
+        setAdminProfileList(profiles);
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        setAdminProfileList([]);
+        setAdminProfilesError(
+          error?.status === 403
+            ? "Only Admin accounts can load database profiles."
+            : "Admin profile database API is unavailable. Start the backend with npm run dev:server, then refresh."
+        );
+      } finally {
+        if (isActive) {
+          setIsAdminProfilesLoading(false);
+        }
+      }
+    }
+
+    loadAdminProfiles();
+
+    return () => {
+      isActive = false;
+    };
+  }, [currentUser]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!currentUser) {
+      setDocumentRequestList([]);
+      setIsDocumentRequestsLoading(false);
+      setDocumentRequestsError("");
+      return () => {
+        isActive = false;
+      };
+    }
+
+    async function loadDocumentRequests() {
+      setIsDocumentRequestsLoading(true);
+      setDocumentRequestsError("");
+
+      try {
+        const requests = await fetchDocumentRequests();
+
+        if (!isActive) {
+          return;
+        }
+
+        setDocumentRequestList(requests);
+      } catch (_error) {
+        if (!isActive) {
+          return;
+        }
+
+        setDocumentRequestList([]);
+        setDocumentRequestsError(
+          "Document request database API is unavailable. Start the backend with npm run dev:server, then refresh."
+        );
+      } finally {
+        if (isActive) {
+          setIsDocumentRequestsLoading(false);
+        }
+      }
+    }
+
+    loadDocumentRequests();
+
+    return () => {
+      isActive = false;
+    };
+  }, [currentUser]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (currentUser?.role !== "lupon") {
+      setLuponCaseList([]);
+      setIsLuponCasesLoading(false);
+      setLuponCasesError("");
+      return () => {
+        isActive = false;
+      };
+    }
+
+    async function loadLuponCases() {
+      setIsLuponCasesLoading(true);
+      setLuponCasesError("");
+
+      try {
+        const cases = await fetchLuponCases();
+
+        if (!isActive) {
+          return;
+        }
+
+        setLuponCaseList(cases);
+      } catch (_error) {
+        if (!isActive) {
+          return;
+        }
+
+        setLuponCaseList([]);
+        setLuponCasesError(
+          "Lupon case database API is unavailable. Start the backend with npm run dev:server, then refresh."
+        );
+      } finally {
+        if (isActive) {
+          setIsLuponCasesLoading(false);
+        }
+      }
+    }
+
+    loadLuponCases();
+
+    return () => {
+      isActive = false;
+    };
+  }, [currentUser]);
+
+  const departmentResidentRecords = useMemo(
+    () => databaseResidentList.map(toDepartmentResident),
+    [databaseResidentList]
+  );
+
   const departmentResidents = useMemo(
     () =>
       filterResidents({
         query: departmentSearchQuery,
         statusFilter: departmentStatusFilter,
-        residents: residentList
-      }).map(toDepartmentResident),
-    [departmentSearchQuery, departmentStatusFilter, residentList]
+        residents: departmentResidentRecords
+      }),
+    [departmentSearchQuery, departmentResidentRecords, departmentStatusFilter]
   );
+
+  useEffect(() => {
+    if (
+      ["department", "lupon"].includes(currentUser?.role) &&
+      databaseResidentList.length > 0 &&
+      !databaseResidentList.some((resident) => resident.id === selectedResidentId)
+    ) {
+      setSelectedResidentId(databaseResidentList[0].id);
+    }
+  }, [currentUser, databaseResidentList, selectedResidentId]);
 
   const luponResidents = useMemo(
     () =>
       filterResidents({
         query: luponSearchQuery,
         statusFilter: luponStatusFilter,
-        residents: residentList
+        residents: databaseResidentList
       }),
-    [luponSearchQuery, luponStatusFilter, residentList]
+    [databaseResidentList, luponSearchQuery, luponStatusFilter]
   );
 
   const selectedResident =
-    residentList.find((resident) => resident.id === selectedResidentId) ?? residentList[0];
-  const selectedDepartmentResident = toDepartmentResident(selectedResident);
-  const departmentResidentList = residentList.map(toDepartmentResident);
-
-  function createDocumentRequestId(requests) {
-    const nextNumber =
-      requests.reduce((highest, request) => {
-        const requestNumber = Number(request.id.replace("DOC-2026-", ""));
-        return Number.isNaN(requestNumber) ? highest : Math.max(highest, requestNumber);
-      }, 0) + 1;
-
-    return `DOC-2026-${String(nextNumber).padStart(4, "0")}`;
-  }
+    databaseResidentList.find((resident) => resident.id === selectedResidentId) ??
+    databaseResidentList[0];
+  const selectedDepartmentResident =
+    departmentResidentRecords.find((resident) => resident.id === selectedResidentId) ??
+    departmentResidentRecords[0] ??
+    null;
 
   function getLandingPage(role) {
     if (role === "department") {
@@ -94,26 +336,42 @@ export default function App() {
     return "admin";
   }
 
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
 
     const form = new FormData(event.currentTarget);
-    const user = findUser(form.get("username") ?? "", form.get("password") ?? "", users);
+    const username = form.get("username") ?? "";
+    const password = form.get("password") ?? "";
 
-    if (!user) {
-      setLoginError("Invalid credentials. Use one of the local accounts shown on the login screen.");
+    try {
+      const user = await loginUser({ username, password });
+
+      setCurrentUser(user);
+      setLoginError("");
+      setSelectedResidentId(defaultResident.id);
+      setFormMode("edit");
+      setFormData(cloneResident(defaultResident));
+      setCurrentPage(getLandingPage(user.role));
+    } catch (error) {
+      if (error?.status === 401 || error?.status === 400) {
+        setLoginError("Invalid credentials. Use one of the local accounts shown on the login screen.");
+        return;
+      }
+
+      setLoginError(
+        "Authentication API is unavailable. Start the backend with npm run dev:server, then try again."
+      );
       return;
     }
-
-    setCurrentUser(user);
-    setLoginError("");
-    setSelectedResidentId(defaultResident.id);
-    setFormMode("edit");
-    setFormData(cloneResident(defaultResident));
-    setCurrentPage(getLandingPage(user.role));
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await logoutUser();
+    } catch (_error) {
+      // Local state still needs to clear if the backend is unavailable.
+    }
+
     setCurrentUser(null);
     setCurrentPage("login");
     setLoginError("");
@@ -121,6 +379,12 @@ export default function App() {
     setDepartmentStatusFilter("all");
     setLuponSearchQuery("");
     setLuponStatusFilter("all");
+    setDocumentRequestList([]);
+    setDocumentRequestsError("");
+    setAdminProfileList([]);
+    setAdminProfilesError("");
+    setLuponCaseList([]);
+    setLuponCasesError("");
     setFormErrors({});
     setSelectedResidentId(defaultResident.id);
     setFormMode("edit");
@@ -133,7 +397,7 @@ export default function App() {
   }
 
   function openResidentForm(residentId) {
-    const resident = residentList.find((item) => item.id === residentId);
+    const resident = databaseResidentList.find((item) => item.id === residentId);
     if (!resident) {
       return;
     }
@@ -150,7 +414,7 @@ export default function App() {
       return;
     }
 
-    const newResident = createBlankResident(residentList);
+    const newResident = createBlankResident(databaseResidentList);
     setSelectedResidentId(newResident.id);
     setFormMode("add");
     setFormData(newResident);
@@ -195,19 +459,7 @@ export default function App() {
     });
   }
 
-  function handleDocumentInputChange(event) {
-    const documents = event.target.value
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-
-    setFormData((current) => ({
-      ...current,
-      documents
-    }));
-  }
-
-  function handleFormSave(event) {
+  async function handleFormSave(event) {
     event.preventDefault();
 
     const validation = validateResidentForm(formData);
@@ -216,32 +468,50 @@ export default function App() {
       return;
     }
 
-    const savedResident = cloneResident(formData);
-    setResidentList((current) =>
-      formMode === "add"
-        ? [...current, savedResident]
-        : current.map((resident) => (resident.id === selectedResidentId ? savedResident : resident))
-    );
-    setSelectedResidentId(formData.id);
-    setFormMode("edit");
-    setFormErrors({});
-    setCurrentPage("lupon");
+    if (formMode === "add") {
+      setFormErrors({
+        form: "Adding new residents is not database-backed yet. Edit an existing resident for staging."
+      });
+      return;
+    }
+
+    try {
+      const savedResident = await updateResident(selectedResidentId, formData);
+
+      setDatabaseResidentList((current) =>
+        current.map((resident) => (resident.id === selectedResidentId ? savedResident : resident))
+      );
+      setSelectedResidentId(savedResident.id);
+      setFormMode("edit");
+      setFormErrors({});
+      setCurrentPage("lupon");
+    } catch (_error) {
+      setFormErrors({
+        form: "Resident database save failed. Check the backend API and try again."
+      });
+    }
   }
 
-  function handleDocumentRequestSave(request) {
-    setDocumentRequestList((current) => {
-      if (request.id) {
-        return current.map((item) => (item.id === request.id ? request : item));
-      }
+  async function handleDocumentRequestSave(request) {
+    if (request.id) {
+      setDocumentRequestsError("Updating existing document requests is not database-backed yet.");
+      return false;
+    }
 
-      return [
-        {
-          ...request,
-          id: createDocumentRequestId(current)
-        },
-        ...current
-      ];
-    });
+    setIsDocumentRequestsLoading(true);
+    setDocumentRequestsError("");
+
+    try {
+      const savedRequest = await createDocumentRequest(request);
+
+      setDocumentRequestList((current) => [savedRequest, ...current]);
+      return savedRequest;
+    } catch (_error) {
+      setDocumentRequestsError("Document request save failed. Check the backend API and try again.");
+      return false;
+    } finally {
+      setIsDocumentRequestsLoading(false);
+    }
   }
 
   if (!currentUser) {
@@ -251,7 +521,9 @@ export default function App() {
   const actions = (
     <AppNavigation
       currentPage={currentPage}
-      hasSelectedResident={Boolean(selectedResident)}
+      hasSelectedResident={
+        currentUser.role === "department" ? Boolean(selectedDepartmentResident) : Boolean(selectedResident)
+      }
       onOpenAdmin={() => setCurrentPage("admin")}
       onOpenDepartment={() => setCurrentPage("department")}
       onOpenLupon={() => setCurrentPage("lupon")}
@@ -271,19 +543,26 @@ export default function App() {
     >
       {currentPage === "department" ? (
         <DepartmentDashboard
+          defaultProcessedBy={currentUser.name}
+          documentRequestError={documentRequestsError}
           documentRequests={documentRequestList}
+          isDocumentRequestLoading={isDocumentRequestsLoading}
           onDocumentRequestSave={handleDocumentRequestSave}
           onQueryChange={setDepartmentSearchQuery}
           onSelectResident={openResidentVerification}
           onStatusFilterChange={setDepartmentStatusFilter}
           query={departmentSearchQuery}
-          residents={departmentResidentList}
+          residentDataSource="Database API"
+          residentError={departmentResidentsError}
+          residents={departmentResidentRecords}
+          residentSearchResidents={departmentResidentRecords}
           results={departmentResidents}
+          isResidentLoading={isDepartmentResidentsLoading}
           statusFilter={departmentStatusFilter}
         />
       ) : null}
 
-      {currentPage === "verification" ? (
+      {currentPage === "verification" && selectedDepartmentResident ? (
         <ResidentVerification
           documentRequests={documentRequestList}
           onBack={() => setCurrentPage("department")}
@@ -291,9 +570,19 @@ export default function App() {
         />
       ) : null}
 
+      {currentPage === "verification" && !selectedDepartmentResident ? (
+        <section className="rounded-[1.75rem] border border-orange-100 bg-white p-6 text-sm text-slate-600">
+          Resident database data is not loaded yet. Return to the Department dashboard and try again
+          after the backend API is available.
+        </section>
+      ) : null}
+
       {currentPage === "lupon" ? (
         <LuponDashboard
           documentRequests={documentRequestList}
+          isLuponCaseLoading={isLuponCasesLoading}
+          luponCaseError={luponCasesError}
+          luponCases={luponCaseList}
           onQueryChange={setLuponSearchQuery}
           onAddResident={openNewResidentForm}
           onOpenForm={openResidentForm}
@@ -314,7 +603,6 @@ export default function App() {
           mode={formMode}
           onCancel={closeResidentForm}
           onChange={handleFormChange}
-          onDocumentInputChange={handleDocumentInputChange}
           onSave={handleFormSave}
         />
       ) : null}
@@ -322,8 +610,10 @@ export default function App() {
       {currentPage === "admin" ? (
         <AdminPanel
           documentRequests={documentRequestList}
+          error={adminProfilesError}
+          isLoading={isAdminProfilesLoading}
           residents={residentList}
-          users={users}
+          users={adminProfileList}
         />
       ) : null}
     </AppShell>

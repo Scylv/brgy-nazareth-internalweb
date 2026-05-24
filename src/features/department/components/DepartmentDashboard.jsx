@@ -1,6 +1,10 @@
 import { useState } from "react";
 import StatusBadge from "../../../shared/components/StatusBadge";
 import {
+  barangayDocumentOptions,
+  documentRequestStatusOptions
+} from "../api/documentRequestsApi";
+import {
   countDocumentRequestsByType,
   getDocumentRequestsThisMonth,
   getExpiringSoonCount,
@@ -23,30 +27,29 @@ const statusFilterLabels = {
 const blankDocumentRequest = {
   id: "",
   residentId: "",
+  barangayDocumentId: "BDOC-001",
   documentType: "Barangay Clearance",
   purpose: "",
   requestDate: new Date().toISOString().slice(0, 10),
   releaseDate: "",
   expiryDate: "",
-  status: "Processing",
+  status: "pending",
   processedBy: ""
 };
 
-const documentTypeOptions = [
-  "Barangay Clearance",
-  "Barangay Indigency",
-  "Barangay ID",
-  "Certificate of Residency"
-];
-
-const statusOptions = ["Processing", "Released", "On Hold", "Cancelled"];
-
 export default function DepartmentDashboard({
+  defaultProcessedBy = "",
+  documentRequestError,
+  isDocumentRequestLoading,
   documentRequests,
   onDocumentRequestSave,
   query,
   results,
+  residentDataSource,
+  residentError,
+  residentSearchResidents,
   residents,
+  isResidentLoading,
   onQueryChange,
   onSelectResident,
   onStatusFilterChange,
@@ -56,7 +59,8 @@ export default function DepartmentDashboard({
   const [documentForm, setDocumentForm] = useState(blankDocumentRequest);
   const documentTypeCounts = countDocumentRequestsByType(documentRequests);
   const recentRequests = getRecentDocumentRequests(documentRequests, 4);
-  const statusCounts = getResidentStatusCounts(searchResidents(query, residents));
+  const searchResidentList = residentSearchResidents ?? residents;
+  const statusCounts = getResidentStatusCounts(searchResidents(query, searchResidentList));
 
   function getResidentName(residentId) {
     return residents.find((resident) => resident.id === residentId)?.name ?? residentId;
@@ -65,7 +69,11 @@ export default function DepartmentDashboard({
   function openNewDocumentRequestForm() {
     setDocumentForm({
       ...blankDocumentRequest,
-      residentId: residents[0]?.id ?? ""
+      barangayDocumentId: barangayDocumentOptions[0]?.id ?? "",
+      documentType: barangayDocumentOptions[0]?.name ?? "",
+      processedBy: defaultProcessedBy,
+      residentId: residents[0]?.id ?? "",
+      status: "pending"
     });
     setIsDocumentFormOpen(true);
   }
@@ -77,15 +85,32 @@ export default function DepartmentDashboard({
 
   function handleDocumentFormChange(event) {
     const { name, value } = event.target;
+
+    if (name === "barangayDocumentId") {
+      const selectedDocument = barangayDocumentOptions.find((document) => document.id === value);
+
+      setDocumentForm((current) => ({
+        ...current,
+        barangayDocumentId: value,
+        documentType: selectedDocument?.name ?? current.documentType
+      }));
+      return;
+    }
+
     setDocumentForm((current) => ({
       ...current,
       [name]: value
     }));
   }
 
-  function handleDocumentFormSubmit(event) {
+  async function handleDocumentFormSubmit(event) {
     event.preventDefault();
-    onDocumentRequestSave(documentForm);
+    const savedRequest = await onDocumentRequestSave(documentForm);
+
+    if (savedRequest === false) {
+      return;
+    }
+
     setDocumentForm(blankDocumentRequest);
     setIsDocumentFormOpen(false);
   }
@@ -110,6 +135,12 @@ export default function DepartmentDashboard({
             {results.length} resident{results.length === 1 ? "" : "s"} found
           </div>
         </div>
+
+        {residentDataSource ? (
+          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Data source: {residentDataSource}
+          </p>
+        ) : null}
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {RESIDENT_STATUS_FILTERS.map((filter) => (
@@ -154,6 +185,7 @@ export default function DepartmentDashboard({
             <p className="text-sm text-slate-500">Non-confidential request fields only</p>
             <button
               className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800"
+              disabled={isDocumentRequestLoading || residents.length === 0}
               onClick={openNewDocumentRequestForm}
               type="button"
             >
@@ -161,6 +193,18 @@ export default function DepartmentDashboard({
             </button>
           </div>
         </div>
+
+        {isDocumentRequestLoading ? (
+          <p className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-slate-600">
+            Loading document requests from the database API...
+          </p>
+        ) : null}
+
+        {documentRequestError ? (
+          <p className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {documentRequestError}
+          </p>
+        ) : null}
 
         {isDocumentFormOpen ? (
           <form
@@ -195,6 +239,11 @@ export default function DepartmentDashboard({
                       {resident.name} ({resident.id})
                     </option>
                   ))}
+                  {residents.length === 0 ? (
+                    <option disabled value="">
+                      No residents loaded
+                    </option>
+                  ) : null}
                 </select>
               </label>
 
@@ -202,13 +251,13 @@ export default function DepartmentDashboard({
                 <span className="mb-2 block text-sm font-medium text-slate-700">Document Type</span>
                 <select
                   className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
-                  name="documentType"
+                  name="barangayDocumentId"
                   onChange={handleDocumentFormChange}
-                  value={documentForm.documentType}
+                  value={documentForm.barangayDocumentId}
                 >
-                  {documentTypeOptions.map((documentType) => (
-                    <option key={documentType} value={documentType}>
-                      {documentType}
+                  {barangayDocumentOptions.map((documentType) => (
+                    <option key={documentType.id} value={documentType.id}>
+                      {documentType.name}
                     </option>
                   ))}
                 </select>
@@ -267,7 +316,7 @@ export default function DepartmentDashboard({
                   onChange={handleDocumentFormChange}
                   value={documentForm.status}
                 >
-                  {statusOptions.map((status) => (
+                  {documentRequestStatusOptions.map((status) => (
                     <option key={status} value={status}>
                       {status}
                     </option>
@@ -281,7 +330,7 @@ export default function DepartmentDashboard({
                   className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
                   name="processedBy"
                   onChange={handleDocumentFormChange}
-                  required
+                  readOnly
                   value={documentForm.processedBy}
                 />
               </label>
@@ -289,6 +338,7 @@ export default function DepartmentDashboard({
 
             <button
               className="mt-4 rounded-2xl bg-gov-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gov-800"
+              disabled={isDocumentRequestLoading}
               type="submit"
             >
               {documentForm.id ? "Save Changes" : "Create Request"}
@@ -389,34 +439,48 @@ export default function DepartmentDashboard({
             <span>Action</span>
           </div>
 
-          {results.map((resident) => (
-            <div
-              className="grid grid-cols-1 gap-4 bg-white px-5 py-4 md:grid-cols-[1.4fr_1fr_auto]"
-              key={resident.id}
-            >
-              <div>
-                <div className="font-semibold text-slate-900">{resident.name}</div>
-                <div className="text-sm text-slate-600">{resident.id}</div>
-                <div className="text-sm text-slate-500">{resident.address}</div>
-              </div>
-
-              <div className="flex items-center">
-                <StatusBadge status={resident.status} />
-              </div>
-
-              <div className="flex items-center">
-                <button
-                  className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800"
-                  onClick={() => onSelectResident(resident.id)}
-                  type="button"
-                >
-                  Verify
-                </button>
-              </div>
+          {isResidentLoading ? (
+            <div className="bg-white px-5 py-8 text-center text-sm text-slate-500">
+              Loading residents from the database API...
             </div>
-          ))}
+          ) : null}
 
-          {results.length === 0 ? (
+          {!isResidentLoading && residentError ? (
+            <div className="bg-white px-5 py-8 text-center text-sm text-rose-700">
+              {residentError}
+            </div>
+          ) : null}
+
+          {!isResidentLoading && !residentError
+            ? results.map((resident) => (
+                <div
+                  className="grid grid-cols-1 gap-4 bg-white px-5 py-4 md:grid-cols-[1.4fr_1fr_auto]"
+                  key={resident.id}
+                >
+                  <div>
+                    <div className="font-semibold text-slate-900">{resident.name}</div>
+                    <div className="text-sm text-slate-600">{resident.id}</div>
+                    <div className="text-sm text-slate-500">{resident.address}</div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <StatusBadge status={resident.status} />
+                  </div>
+
+                  <div className="flex items-center">
+                    <button
+                      className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800"
+                      onClick={() => onSelectResident(resident.id)}
+                      type="button"
+                    >
+                      Verify
+                    </button>
+                  </div>
+                </div>
+              ))
+            : null}
+
+          {!isResidentLoading && !residentError && results.length === 0 ? (
             <div className="bg-white px-5 py-8 text-center text-sm text-slate-500">
               No residents match the current search and status filter.
             </div>

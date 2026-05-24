@@ -4,10 +4,10 @@ import { getAccountGroups, getAdminCounters } from "../lib/accountManagement";
 const actionLabels = ["Change role", "Disable account", "Reset password"];
 
 const actionMessages = {
-  "Add account": "Account creation will be available after database and authentication integration.",
-  "Change role": "Role updates will be available after database and authentication integration.",
-  "Disable account": "Account disabling will be available after database and authentication integration.",
-  "Reset password": "Password reset will be available after database and authentication integration."
+  "Add account": "Account creation is planned after staging profile listing is verified.",
+  "Change role": "Role updates are planned and are not enabled in this staging slice.",
+  "Disable account": "Account deactivation is planned and is not enabled in this staging slice.",
+  "Reset password": "Password reset is not implemented in this staging slice."
 };
 
 const counterCards = [
@@ -33,7 +33,13 @@ const counterCards = [
   }
 ];
 
-export default function AdminPanel({ documentRequests, residents, users }) {
+export default function AdminPanel({
+  documentRequests,
+  error = "",
+  isLoading = false,
+  residents,
+  users
+}) {
   const [actionNotice, setActionNotice] = useState("");
   const accountGroups = getAccountGroups(users);
   const counters = getAdminCounters({ users, residents, documentRequests });
@@ -48,8 +54,8 @@ export default function AdminPanel({ documentRequests, residents, users }) {
             </p>
             <h2 className="mt-3 text-3xl font-black text-slate-900">System Access</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Manage local mock accounts by role while keeping document processing and Lupon case
-              details outside the Admin workspace.
+              View database-backed staff profiles by role while keeping document processing and
+              Lupon case details outside the Admin workspace.
             </p>
           </div>
           <button
@@ -62,9 +68,27 @@ export default function AdminPanel({ documentRequests, residents, users }) {
         </div>
 
         <div className="mt-5 rounded-[1.25rem] border border-orange-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
-          Account changes shown here are prototype-only and are not persisted to authentication,
-          password storage, an API, or a database.
+          Profile listing is loaded from the database API. Account creation, role updates,
+          deactivation, and password reset remain planned controls for a later slice.
         </div>
+
+        {isLoading ? (
+          <div
+            className="mt-3 rounded-[1.25rem] border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium leading-6 text-gov-700"
+            role="status"
+          >
+            Loading database profiles...
+          </div>
+        ) : null}
+
+        {error ? (
+          <div
+            className="mt-3 rounded-[1.25rem] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-800"
+            role="alert"
+          >
+            {error}
+          </div>
+        ) : null}
 
         {actionNotice ? (
           <div
@@ -108,8 +132,13 @@ export default function AdminPanel({ documentRequests, residents, users }) {
                       <p className="font-semibold text-slate-900">{account.name}</p>
                       <p className="mt-1 text-sm text-slate-600">@{account.username}</p>
                       <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
-                        Active
+                        Database profile
                       </p>
+                      {account.createdAt ? (
+                        <p className="mt-2 text-xs text-slate-500">
+                          Created {String(account.createdAt).slice(0, 10)}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
 
@@ -121,7 +150,7 @@ export default function AdminPanel({ documentRequests, residents, users }) {
                         onClick={() => setActionNotice(actionMessages[action])}
                         type="button"
                       >
-                        {action}
+                        {action} (planned)
                       </button>
                     ))}
                   </div>
@@ -130,7 +159,7 @@ export default function AdminPanel({ documentRequests, residents, users }) {
 
               {group.accounts.length === 0 ? (
                 <div className="px-5 py-8 text-center text-sm text-slate-500">
-                  No mock accounts assigned to this role.
+                  No database profiles assigned to this role.
                 </div>
               ) : null}
             </div>

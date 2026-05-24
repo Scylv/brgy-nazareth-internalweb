@@ -1,0 +1,26 @@
+
+> brgy-nazareth-internalweb@0.0.0 test
+> vitest run
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mC:/Users/Kea/Projects/brgy-nazareth-internalweb[39m
+
+ [32mΓ£ô[39m src/shared/lib/canProceedWithClearance.test.js [2m ([22m[2m4 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32mΓ£ô[39m server/lib/statusValues.test.js [2m ([22m[2m3 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32mΓ£ô[39m src/features/admin/lib/accountManagement.test.js [2m ([22m[2m2 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32mΓ£ô[39m src/features/residents/lib/validateResidentForm.test.js [2m ([22m[2m6 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32mΓ£ô[39m src/shared/lib/documentRequests.test.js [2m ([22m[2m6 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32mΓ£ô[39m src/shared/lib/permissions.test.js [2m ([22m[2m6 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32mΓ£ô[39m src/shared/api/client.test.js [2m ([22m[2m2 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [32mΓ£ô[39m src/features/residents/api/residentsApi.test.js [2m ([22m[2m2 tests[22m[2m)[22m[90m 19[2mms[22m[39m
+ [32mΓ£ô[39m src/features/residents/lib/searchResident.test.js [2m ([22m[2m6 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32mΓ£ô[39m src/shared/lib/filterResidents.test.js [2m ([22m[2m10 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32mΓ£ô[39m src/shared/lib/status.test.js [2m ([22m[2m4 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32mΓ£ô[39m src/features/residents/lib/createBlankResident.test.js [2m ([22m[2m1 test[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32mΓ£ô[39m server/app.test.js [2m ([22m[2m6 tests[22m[2m)[22m[90m 70[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m13 passed[39m[22m[90m (13)[39m
+[2m      Tests [22m [1m[32m58 passed[39m[22m[90m (58)[39m
+[2m   Start at [22m 21:37:07
+[2m   Duration [22m 1.76s[2m (transform 599ms, setup 3ms, collect 1.75s, tests 192ms, environment 5ms, prepare 4.22s)[22m
+

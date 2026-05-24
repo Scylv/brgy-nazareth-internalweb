@@ -12,7 +12,7 @@ export const pageCopy = {
   lupon: {
     title: "Lupon Dashboard",
     subtitle:
-      "Review internal resident records, update remarks, and maintain the local resident registry."
+      "Review database-backed Lupon case summaries and maintain resident status."
   },
   form: {
     title: "Resident Record Form",
