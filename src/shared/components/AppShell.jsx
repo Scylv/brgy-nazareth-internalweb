@@ -1,3 +1,5 @@
+import Button from "./Button";
+
 export default function AppShell({ user, title, subtitle, actions, children, onLogout }) {
   const roleContext = {
     admin: "Admin view",
@@ -26,13 +28,9 @@ export default function AppShell({ user, title, subtitle, actions, children, onL
               <div className="font-semibold text-slate-900">{user.name}</div>
               <div className="text-xs uppercase tracking-[0.16em] text-slate-500">{user.role}</div>
             </div>
-            <button
-              className="rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-gov-300 hover:text-gov-800"
-              onClick={onLogout}
-              type="button"
-            >
+            <Button onClick={onLogout} size="lg" variant="quiet">
               Log out
-            </button>
+            </Button>
           </div>
         </header>
 

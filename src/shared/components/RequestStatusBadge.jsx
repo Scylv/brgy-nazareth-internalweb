@@ -17,7 +17,7 @@ export default function RequestStatusBadge({ status }) {
     REQUEST_STATUS_STYLES[normalizedStatus] ?? "border-slate-200 bg-slate-50 text-slate-700";
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${className}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold leading-5 ${className}`}>
       {formatStatus(status)}
     </span>
   );

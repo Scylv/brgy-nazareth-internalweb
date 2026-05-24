@@ -1,3 +1,9 @@
+import Button from "../../../shared/components/Button";
+import MetricCard from "../../../shared/components/MetricCard";
+import Notice from "../../../shared/components/Notice";
+import SectionCard from "../../../shared/components/SectionCard";
+import SectionHeader from "../../../shared/components/SectionHeader";
+import StateMessage from "../../../shared/components/StateMessage";
 import { getAccountGroups, getAdminCounters } from "../lib/accountManagement";
 
 const actionLabels = ["Change role", "Disable account", "Reset password"];
@@ -6,22 +12,22 @@ const counterCards = [
   {
     key: "totalResidents",
     label: "Residents",
-    tone: "border-orange-100 bg-orange-50 text-gov-700"
+    tone: "orange"
   },
   {
     key: "totalDepartmentAccounts",
     label: "Department Accounts",
-    tone: "border-sky-100 bg-sky-50 text-sky-700"
+    tone: "sky"
   },
   {
     key: "totalLuponAccounts",
     label: "Lupon Accounts",
-    tone: "border-emerald-100 bg-emerald-50 text-emerald-700"
+    tone: "emerald"
   },
   {
     key: "totalDocumentRequests",
     label: "Document Requests",
-    tone: "border-amber-100 bg-amber-50 text-amber-700"
+    tone: "amber"
   }
 ];
 
@@ -37,67 +43,53 @@ export default function AdminPanel({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[1.75rem] border border-orange-100 bg-gradient-to-r from-orange-50 to-white p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-gov-700">
-              Account Management
-            </p>
-            <h2 className="mt-3 text-3xl font-black text-slate-900">System Access</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              View database-backed staff profiles by role while keeping document processing and
-              Lupon case details outside the Admin workspace.
-            </p>
-          </div>
-          <button
-            className="inline-flex cursor-not-allowed items-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-500"
-            disabled
-            type="button"
-          >
-            Add account
-            <span className="rounded-full bg-white px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-slate-500">
-              Planned
-            </span>
-          </button>
-        </div>
+      <SectionCard variant="hero">
+        <SectionHeader
+          actions={
+            <Button disabled size="lg" variant="planned">
+              Add account
+              <span className="rounded-full bg-white px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-slate-500">
+                Planned
+              </span>
+            </Button>
+          }
+          description="View database-backed staff profiles by role while keeping document processing and Lupon case details outside the Admin workspace."
+          eyebrow="Account Management"
+          title="System Access"
+        />
 
-        <div className="mt-5 rounded-[1.25rem] border border-orange-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600">
+        <Notice className="mt-4">
           Profile listing is loaded from the database API. Account creation, role updates,
           deactivation, and password reset are visible as planned controls only.
-        </div>
+        </Notice>
 
         {isLoading ? (
-          <div
-            className="mt-3 rounded-[1.25rem] border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium leading-6 text-gov-700"
-            role="status"
-          >
+          <StateMessage className="mt-3" tone="info">
             Loading database profiles...
-          </div>
+          </StateMessage>
         ) : null}
 
         {error ? (
-          <div
-            className="mt-3 rounded-[1.25rem] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-800"
-            role="alert"
-          >
+          <StateMessage className="mt-3" tone="danger">
             {error}
-          </div>
+          </StateMessage>
         ) : null}
-
-      </section>
+      </SectionCard>
 
       <section className="grid gap-4 md:grid-cols-4">
         {counterCards.map((card) => (
-          <div className={`rounded-[1.25rem] border p-4 ${card.tone}`} key={card.key}>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em]">{card.label}</p>
-            <p className="mt-2 text-3xl font-black text-slate-900">{counters[card.key]}</p>
-          </div>
+          <MetricCard
+            key={card.key}
+            label={card.label}
+            tone={card.tone}
+            value={counters[card.key]}
+          />
         ))}
       </section>
 
       <section className="grid gap-5 xl:grid-cols-3">
         {accountGroups.map((group) => (
-          <div className="overflow-hidden rounded-[1.5rem] border border-orange-100 bg-white" key={group.role}>
+          <SectionCard className="overflow-hidden" key={group.role} padding="none">
             <div className="flex items-center justify-between gap-4 bg-orange-50 px-5 py-4">
               <div>
                 <h3 className="text-lg font-black text-slate-900">{group.label}</h3>
@@ -130,29 +122,24 @@ export default function AdminPanel({
 
                   <div className="mt-4 flex flex-wrap gap-2">
                     {actionLabels.map((action) => (
-                      <button
-                        className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500"
-                        disabled
-                        key={`${account.id}-${action}`}
-                        type="button"
-                      >
+                      <Button disabled key={`${account.id}-${action}`} size="sm" variant="planned">
                         {action}
                         <span className="rounded-full bg-white px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-slate-500">
                           Planned
                         </span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </article>
               ))}
 
               {group.accounts.length === 0 ? (
-                <div className="px-5 py-8 text-center text-sm text-slate-500">
+                <StateMessage className="rounded-none border-0 bg-white px-5 py-8 text-center" tone="neutral">
                   No database profiles assigned to this role.
-                </div>
+                </StateMessage>
               ) : null}
             </div>
-          </div>
+          </SectionCard>
         ))}
       </section>
     </div>
