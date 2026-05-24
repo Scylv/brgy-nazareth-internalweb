@@ -2,42 +2,61 @@
 
 ## Purpose
 
-This step proves the React frontend can read and create selected Department records through the Express backend API. The connected flow is intentionally small so the existing prototype stays stable while the database-backed foundation is introduced.
+This document tracks the React frontend flows that use the Express backend and
+PostgreSQL database for Milestone 3 hosted staging.
 
-## Connected First
+## Database-Backed Staging Flows
 
-The Department resident search, resident list, status filters, and resident verification detail view are connected to:
+Authentication is database-backed through:
+
+```text
+POST /api/auth/login
+GET  /api/auth/me
+POST /api/auth/logout
+```
+
+The backend signs an HTTP-only `barangay_session` cookie. Frontend API calls use
+browser cookie credentials and do not send development role headers.
+
+Department resident verification is connected to:
 
 ```text
 GET /api/residents
+GET /api/residents/:id
 ```
 
-The Department document request metrics, recent request list, verification history, and new-request form are connected to:
+Department document request metrics, recent request lists, verification history,
+and new-request creation are connected to:
 
 ```text
 GET  /api/document-requests
 POST /api/document-requests
 ```
 
-The frontend maps the backend response shape:
+Lupon case display and resident edit/status persistence are connected to:
+
+```text
+GET   /api/lupon/cases
+GET   /api/residents/:id
+PATCH /api/residents/:id
+```
+
+Admin profile listing is connected to:
+
+```text
+GET /api/admin/profiles
+```
+
+The frontend maps backend response shapes such as:
 
 ```text
 { residents: [...] }
 { documentRequests: [...] }
+{ luponCases: [...] }
+{ profiles: [...] }
 ```
 
 into the field names expected by the existing React components.
-
-## What Is Still Local
-
-Other areas still depend on mock/local state and should be connected in later, focused steps.
-
-Still mock/local for now:
-
-- dashboards outside the connected Department resident and document request flows
-- Lupon screens
-- Excel import
-- file uploads
 
 ## API Base URL
 
@@ -59,17 +78,42 @@ If `VITE_API_BASE_URL` is not set, the frontend defaults to:
 http://localhost:3001
 ```
 
-Do not commit a real `.env` file.
-
-## Authenticated Session
-
-The frontend logs in through:
+For hosted staging with separate frontend and backend services, set
+`VITE_API_BASE_URL` to the backend HTTPS origin, for example:
 
 ```text
-POST /api/auth/login
+VITE_API_BASE_URL=https://example-staging-backend.onrender.com
 ```
 
-The backend sets an HTTP-only `barangay_session` cookie. Frontend API calls use browser cookie credentials and do not send development role headers.
+Do not commit a real `.env` file.
+
+## Hosted Staging Cookies And CORS
+
+Separate frontend/backend staging hosts require matching CORS and cookie
+settings:
+
+Backend:
+
+```text
+NODE_ENV=staging
+CORS_ORIGINS=https://example-staging-frontend.onrender.com
+AUTH_COOKIE_SAMESITE=None
+AUTH_COOKIE_SECURE=true
+AUTH_SESSION_SECRET=replace-with-a-long-random-secret
+```
+
+Frontend:
+
+```text
+VITE_API_BASE_URL=https://example-staging-backend.onrender.com
+```
+
+`CORS_ORIGINS` must exactly match the deployed frontend origin, including scheme
+and host. Do not use `*` because credentialed requests need an exact allowed
+origin. Cross-site HTTP-only cookies require `SameSite=None` and `Secure=true`;
+the backend rejects `SameSite=None` when `AUTH_COOKIE_SECURE=false`.
+
+## Seed Accounts
 
 Seed accounts are synthetic only:
 
@@ -78,6 +122,9 @@ admin / admin123
 department / dept123
 lupon / lupon123
 ```
+
+These accounts are for local/staging verification and are not production
+credentials.
 
 ## Run The Full Local Stack
 
@@ -89,12 +136,13 @@ lupon / lupon123
 
 ## Verify The Frontend Uses The Database
 
-1. Update a resident name in PostgreSQL.
-2. Refresh the React app.
-3. Log in as Department and open the resident search/list flow.
-4. Confirm the changed resident value appears in the UI.
-5. Create a Department document request.
-6. Confirm the new row appears through `GET /api/document-requests`.
+1. Log in as Department and open the resident search/list flow.
+2. Confirm resident values match PostgreSQL seed or edited data.
+3. Create a Department document request.
+4. Confirm the new row appears through `GET /api/document-requests`.
+5. Log in as Lupon and update an existing resident status.
+6. Log back in as Department and confirm the updated status is visible.
+7. Log in as Admin and confirm profile rows load from `GET /api/admin/profiles`.
 
 The Department search area also shows:
 
@@ -104,7 +152,7 @@ Data source: Database API
 
 ## Manual Curl Checks
 
-Residents should be accessible to Department:
+Residents and document requests should be accessible to Department after login:
 
 ```powershell
 curl.exe -c .\.tmp-cookies.txt -H "Content-Type: application/json" -d '{"username":"department","password":"dept123"}' http://localhost:3001/api/auth/login
@@ -121,14 +169,15 @@ curl.exe -b .\.tmp-cookies.txt http://localhost:3001/api/lupon/cases
 
 Expected result:
 
-- Department can access residents.
-- Department cannot access Lupon cases.
+- Department can access residents and document request create/read routes.
+- Department cannot access Lupon case routes.
+- Department responses do not include `confidentialSummary` or `noteBody`.
 
 ## Known Limitations
 
-- The frontend is not fully integrated yet.
 - Authentication uses synthetic seed accounts only.
-- Dashboards may still use mock data.
+- Logout clears the browser cookie, but the signed stateless token is not revoked server-side.
+- Resident creation is not database-backed yet.
 - Department document request reads and creates are database-backed; editing existing requests is not database-backed yet.
-- Lupon screens may still use mock data.
+- Admin profile listing is database-backed; account creation, role edits, deactivation, and password reset are planned.
 - Excel import and file uploads are not implemented yet.

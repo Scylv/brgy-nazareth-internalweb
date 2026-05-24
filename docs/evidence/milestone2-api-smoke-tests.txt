@@ -4,6 +4,11 @@ Backend: http://localhost:3001
 Database: brgy_nazareth_dev
 Date: 05/23/2026 12:07:22
 
+Superseded for Milestone 3:
+This evidence uses the old development-only x-user-role header flow. Milestone 3
+uses database-backed synthetic accounts and signed HTTP-only session cookies via
+POST /api/auth/login. Keep this file only as historical Milestone 2 evidence.
+
 
 === Health Check: GET /api/health ===
 Command:

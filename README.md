@@ -10,7 +10,7 @@ The main purpose of the system is to allow the Department Office to search for a
 - **Yellow** = refer to Lupon
 - **Red** = refer to Lupon
 
-Lupon Staff maintain resident records, encode RBI information, update statuses, add remarks, and manage resident-related case context. Admin manages users and roles through a mock account management screen.
+Lupon Staff maintain resident records, encode RBI information, update statuses, add remarks, and manage resident-related case context. Admin can view database-backed staff profile listings; account creation, role edits, deactivation, and password reset remain planned.
 
 ## User Roles
 
@@ -34,13 +34,13 @@ Lupon Staff maintain resident records, encode RBI information, update statuses, 
 
 ### Admin
 
-- View account management mock screen
+- View database-backed staff profile listings
 - Review users and roles
-- View basic system administration placeholders
+- See planned account management actions
 
 ## Local Demo Accounts
 
-Use these prototype-only accounts on the login screen:
+Use these database-seeded synthetic accounts on the login screen:
 
 | Role | Username | Password |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ Use these prototype-only accounts on the login screen:
 | Lupon | `lupon` | `lupon123` |
 | Admin | `admin` | `admin123` |
 
-These are local mock accounts only. They are not production authentication credentials.
+These are seeded staging/demo accounts only. They are not production authentication credentials.
 
 ## Tech Stack
 
@@ -60,7 +60,8 @@ These are local mock accounts only. They are not production authentication crede
 - Express
 - PostgreSQL
 - `pg`
-- Local mock data for unintegrated prototype screens
+- Database-backed authentication and core staging workflows
+- Local mock data only for remaining unintegrated prototype behavior
 
 ## Install Dependencies
 
@@ -89,13 +90,21 @@ Edit `.env` for your local database:
 ```text
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/brgy_nazareth_internalweb
 PORT=3001
+NODE_ENV=development
 AUTH_SESSION_SECRET=development-change-me
+AUTH_COOKIE_SAMESITE=Lax
+AUTH_COOKIE_SECURE=false
 ```
 
 `AUTH_SESSION_SECRET` signs the HTTP-only session cookie. The checked-in value in
 `.env.example` is for local development only; use a long random value for staging
 or production. Outside `NODE_ENV=development`, the backend fails at startup if
 `AUTH_SESSION_SECRET` is missing.
+
+Local development cookies use `SameSite=Lax` and do not require `Secure`. Hosted
+staging and production with separate HTTPS frontend/backend origins must use
+`SameSite=None` and `Secure=true`; the backend rejects `SameSite=None` when
+`AUTH_COOKIE_SECURE=false`.
 
 Do not commit real database credentials or production secrets.
 
@@ -171,11 +180,13 @@ GET  /api/auth/me
 POST /api/auth/logout
 GET  /api/residents
 GET  /api/residents/:id
+PATCH /api/residents/:id
 GET  /api/document-requests
 POST /api/document-requests
 GET  /api/lupon/cases
 POST /api/lupon/cases
 POST /api/lupon/cases/:id/notes
+GET  /api/admin/profiles
 ```
 
 The backend uses database-backed synthetic users, scrypt password hashes, and an HTTP-only session cookie:
@@ -188,9 +199,9 @@ lupon / lupon123
 
 Department routes do not expose `lupon_cases.confidential_summary` or `lupon_case_notes.note_body`. Lupon case routes require the `lupon` role.
 
-## Frontend Database-Backed Department Flows
+## Frontend Database-Backed Flows
 
-The Department resident search/list and verification flow now reads resident data from the backend API. Department document request metrics, verification history, and new-request creation also use the backend document request API. The backend must be running for database-backed Department data to load in the React app.
+The login flow, Department resident search/list and verification flow, Department document request metrics/history/create flow, Lupon case display/status update flow, and Admin profile listing read or write through the backend API. The backend must be running for database-backed staging data to load in the React app.
 
 The frontend uses:
 
@@ -220,11 +231,21 @@ PORT=3001
 NODE_ENV=staging
 CORS_ORIGINS=https://example-staging-frontend.onrender.com
 AUTH_SESSION_SECRET=replace-with-a-long-random-secret
+AUTH_COOKIE_SAMESITE=None
+AUTH_COOKIE_SECURE=true
 ```
 
 Localhost CORS origins are included automatically only in local development.
 For staging and production, every credentialed frontend origin must be listed in
-`CORS_ORIGINS`. Do not use wildcard CORS with credentialed session cookies.
+`CORS_ORIGINS`. The value must exactly match the deployed frontend origin,
+including scheme and host, for example `https://example-staging-frontend.onrender.com`.
+Do not use wildcard CORS with credentialed session cookies.
+
+Hosted staging uses separate frontend and backend HTTPS origins. The frontend
+calls the backend through `VITE_API_BASE_URL`, and the browser sends the signed
+HTTP-only `barangay_session` cookie on API requests. Cross-site cookies require
+`AUTH_COOKIE_SAMESITE=None` and `AUTH_COOKIE_SECURE=true`; do not use
+`SameSite=None` without `Secure`.
 
 Required frontend environment variable:
 
@@ -276,8 +297,9 @@ Known staging limitations:
 - Logout clears the browser cookie, but the signed stateless token is not revoked
   server-side. A copied token remains valid until expiry; this is acceptable for
   synthetic-data staging, not final production.
-- Some React screens still use local mock data.
+- Resident creation is not database-backed yet; edit existing residents for staging.
 - Department document request reads and creates are database-backed; editing existing requests is not database-backed yet.
+- Admin profile listing is database-backed; account creation, role edits, deactivation, and password reset are planned.
 - File uploads, backups, production user provisioning, and hardened database-level access policies are not implemented yet.
 - Department users must not see Lupon confidential summaries or notes; this boundary is covered by backend tests and should be checked again during acceptance testing.
 
@@ -328,13 +350,13 @@ Notes for the LAN demo:
 8. Show the Lupon dashboard, resident status, and case context.
 9. Explain that Lupon confidential remarks and internal case context are hidden from Department users.
 10. Log out, then log in as Admin using `admin` / `admin123`.
-11. Show the account management mock screen.
+11. Show the database-backed Admin profile listing and planned account management actions.
 
 ## Prototype Notes
 
-- The Department resident search/list, verification, and document request create/read flows use the database API.
-- Other React screens may still use mock/local data.
-- The backend is a minimal database-backed foundation and does not replace all React prototype state yet.
+- Database-backed staging flows include auth, Department resident verification, Department document request create/read, Lupon case display, Lupon resident status updates, Lupon resident edit persistence, and Admin profile listing.
+- Resident creation, document request editing, Admin account mutations, Excel import, and file uploads are not implemented yet.
+- The backend is a minimal database-backed foundation and does not replace all future production services yet.
 - There are no file uploads yet.
 - Document request tracking is transaction-based and linked to residents.
 - Department handles barangay-issued document requests.

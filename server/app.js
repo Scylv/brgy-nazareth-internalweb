@@ -1,5 +1,5 @@
 import express from "express";
-import { getAuthSessionSecret, getCorsOrigins } from "./config/env.js";
+import { getAuthCookieConfig, getAuthSessionSecret, getCorsOrigins } from "./config/env.js";
 import { createAuthMiddleware } from "./middleware/auth.js";
 import { createAdminRouter } from "./routes/admin.js";
 import { createAuthRouter } from "./routes/auth.js";
@@ -12,6 +12,7 @@ export function createApp(pool) {
   const allowedOrigins = getCorsOrigins();
 
   getAuthSessionSecret();
+  getAuthCookieConfig();
 
   app.use((req, res, next) => {
     const origin = req.get("origin");

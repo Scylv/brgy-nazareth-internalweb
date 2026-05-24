@@ -173,6 +173,50 @@ describe("authentication and role-based API access", () => {
     expect(response.headers["set-cookie"]?.[0]).toContain("HttpOnly");
   });
 
+  it("uses local development session cookie attributes", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const app = createApp(createPool([[profileRows.department]]));
+
+    const response = await request(app).post("/api/auth/login").send({
+      username: "department",
+      password: "dept123"
+    });
+
+    const cookie = response.headers["set-cookie"]?.[0] ?? "";
+
+    expect(response.status).toBe(200);
+    expect(cookie).toContain("HttpOnly");
+    expect(cookie).toContain("SameSite=Lax");
+    expect(cookie).not.toContain("Secure");
+  });
+
+  it("uses hosted-safe staging session cookie attributes", async () => {
+    vi.stubEnv("NODE_ENV", "staging");
+    const app = createApp(createPool([[profileRows.department]]));
+
+    const response = await request(app).post("/api/auth/login").send({
+      username: "department",
+      password: "dept123"
+    });
+
+    const cookie = response.headers["set-cookie"]?.[0] ?? "";
+
+    expect(response.status).toBe(200);
+    expect(cookie).toContain("HttpOnly");
+    expect(cookie).toContain("SameSite=None");
+    expect(cookie).toContain("Secure");
+  });
+
+  it("rejects insecure SameSite=None cookie configuration at startup", () => {
+    vi.stubEnv("NODE_ENV", "staging");
+    vi.stubEnv("AUTH_COOKIE_SAMESITE", "None");
+    vi.stubEnv("AUTH_COOKIE_SECURE", "false");
+
+    expect(() => createApp(createPool())).toThrow(
+      "AUTH_COOKIE_SECURE must be true when AUTH_COOKIE_SAMESITE is None"
+    );
+  });
+
   it("rejects an invalid password for a database user", async () => {
     const app = createApp(createPool([[profileRows.department]]));
 

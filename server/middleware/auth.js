@@ -1,4 +1,4 @@
-import { getAuthSessionSecret } from "../config/env.js";
+import { getAuthCookieConfig, getAuthSessionSecret } from "../config/env.js";
 import { SESSION_TTL_SECONDS, verifySessionToken } from "../lib/sessionTokens.js";
 
 export const SESSION_COOKIE_NAME = "barangay_session";
@@ -34,14 +34,15 @@ function getSessionCookie(req) {
 }
 
 function getCookieAttributes(maxAge) {
+  const cookieConfig = getAuthCookieConfig();
   const attributes = [
     "HttpOnly",
     "Path=/",
-    "SameSite=Lax",
+    `SameSite=${cookieConfig.sameSite}`,
     `Max-Age=${maxAge}`
   ];
 
-  if (process.env.NODE_ENV === "production") {
+  if (cookieConfig.secure) {
     attributes.push("Secure");
   }
 

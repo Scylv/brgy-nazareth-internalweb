@@ -1,8 +1,10 @@
 # Database Schema Plan
 
 This document describes the PostgreSQL-compatible schema for the Barangay
-Nazareth Internal Web App database foundation. Some frontend screens still use
-local mock data; the backend API can be run separately for database-backed routes.
+Nazareth Internal Web App database foundation. Milestone 3 staging flows use the
+backend API for authentication, Department resident verification, Department
+document requests, Lupon case display/status updates, resident edit persistence,
+and Admin profile listing.
 
 The plan is not tied to a specific hosted database product. It should be
 deployable later on a local/internal PostgreSQL server or on an approved secure
@@ -257,9 +259,9 @@ Tracks row-level import results for review and correction.
 
 ## Future Implementation Notes
 
-- Keep the React app on mock data until wiring it to the backend is explicitly
-  approved.
-- Add a reviewed authentication design before connecting `profiles` to real
-  login behavior.
+- Resident creation, existing document request editing, Admin account mutations,
+  Excel import, and file uploads remain future work.
+- Current authentication uses synthetic seed profiles with scrypt password hashes
+  and signed HTTP-only cookies for local and staging verification.
 - Add production backup, audit review, and data privacy procedures before real
   resident data is stored.
