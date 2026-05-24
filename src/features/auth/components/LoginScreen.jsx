@@ -19,6 +19,9 @@ function AccountList({ users }) {
 }
 
 export default function LoginScreen({ users, onLogin, error }) {
+  const showStagingAccounts =
+    import.meta.env.DEV || import.meta.env.VITE_SHOW_STAGING_ACCOUNTS === "true";
+
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl items-center px-4 py-4 sm:px-6 lg:py-5">
       <div className="grid w-full overflow-hidden rounded-[1.5rem] border border-orange-100 bg-orange-50 shadow-panel lg:grid-cols-[1.05fr_0.95fr]">
@@ -75,7 +78,7 @@ export default function LoginScreen({ users, onLogin, error }) {
                   <input
                     className="w-full rounded-xl border border-gov-500 bg-white px-4 py-3 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-gov-700 focus:ring-2 focus:ring-orange-100"
                     name="username"
-                    placeholder="department"
+                    placeholder="Enter username"
                     type="text"
                   />
                 </label>
@@ -85,7 +88,7 @@ export default function LoginScreen({ users, onLogin, error }) {
                   <input
                     className="w-full rounded-xl border border-gov-500 bg-white px-4 py-3 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-gov-700 focus:ring-2 focus:ring-orange-100"
                     name="password"
-                    placeholder="dept123"
+                    placeholder="Enter password"
                     type="password"
                   />
                 </label>
@@ -104,7 +107,7 @@ export default function LoginScreen({ users, onLogin, error }) {
                   Access is role-based after sign-in.
                 </p>
 
-                {import.meta.env.DEV ? (
+                {showStagingAccounts ? (
                   <details className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3">
                     <summary className="cursor-pointer text-sm font-semibold text-gov-800">
                       Staging test accounts
