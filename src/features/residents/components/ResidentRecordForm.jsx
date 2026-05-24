@@ -208,26 +208,12 @@ export default function ResidentRecordForm({
           {errors.documents ? <span className="mt-2 block text-sm text-rose-600">{errors.documents}</span> : null}
         </Field>
 
-        <div className="md:col-span-2">
-          <Field label="Lupon Remarks">
-            <textarea
-              className={`${inputClassName} min-h-28`}
-              name="remarks"
-              onChange={onChange}
-              value={formData.remarks}
-            />
-          </Field>
-        </div>
-
-        <div className="md:col-span-2">
-          <Field label="Confidential Lupon Details">
-            <textarea
-              className={`${inputClassName} min-h-28`}
-              name="caseReason"
-              onChange={onChange}
-              value={formData.caseReason}
-            />
-          </Field>
+        <div className="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-semibold text-amber-900">Lupon case details</p>
+          <p className="mt-2 text-sm leading-6 text-amber-800">
+            Confidential Lupon summaries and notes are managed through Lupon cases, not resident
+            profile fields.
+          </p>
         </div>
       </Section>
     </form>

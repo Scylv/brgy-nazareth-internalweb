@@ -21,8 +21,6 @@ export function mapApiResidentToResident(apiResident) {
     statusColor: apiResident.statusColor ?? apiResident.status,
     createdAt: apiResident.createdAt,
     updatedAt: apiResident.updatedAt,
-    remarks: apiResident.remarks ?? "",
-    caseReason: apiResident.caseReason ?? "",
     documents: Array.isArray(apiResident.documents) ? apiResident.documents : []
   };
 }

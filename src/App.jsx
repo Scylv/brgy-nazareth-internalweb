@@ -9,6 +9,7 @@ import {
   fetchDocumentRequests
 } from "./features/department/api/documentRequestsApi";
 import DepartmentDashboard from "./features/department/components/DepartmentDashboard";
+import { fetchLuponCases } from "./features/lupon/api/luponCasesApi";
 import LuponDashboard from "./features/lupon/components/LuponDashboard";
 import { fetchResidents, updateResident } from "./features/residents/api/residentsApi";
 import ResidentRecordForm from "./features/residents/components/ResidentRecordForm";
@@ -46,6 +47,9 @@ export default function App() {
   const [documentRequestList, setDocumentRequestList] = useState([]);
   const [isDocumentRequestsLoading, setIsDocumentRequestsLoading] = useState(false);
   const [documentRequestsError, setDocumentRequestsError] = useState("");
+  const [luponCaseList, setLuponCaseList] = useState([]);
+  const [isLuponCasesLoading, setIsLuponCasesLoading] = useState(false);
+  const [luponCasesError, setLuponCasesError] = useState("");
   const [departmentSearchQuery, setDepartmentSearchQuery] = useState("");
   const [departmentStatusFilter, setDepartmentStatusFilter] = useState("all");
   const [luponSearchQuery, setLuponSearchQuery] = useState("");
@@ -177,6 +181,53 @@ export default function App() {
     };
   }, [currentUser]);
 
+  useEffect(() => {
+    let isActive = true;
+
+    if (currentUser?.role !== "lupon") {
+      setLuponCaseList([]);
+      setIsLuponCasesLoading(false);
+      setLuponCasesError("");
+      return () => {
+        isActive = false;
+      };
+    }
+
+    async function loadLuponCases() {
+      setIsLuponCasesLoading(true);
+      setLuponCasesError("");
+
+      try {
+        const cases = await fetchLuponCases();
+
+        if (!isActive) {
+          return;
+        }
+
+        setLuponCaseList(cases);
+      } catch (_error) {
+        if (!isActive) {
+          return;
+        }
+
+        setLuponCaseList([]);
+        setLuponCasesError(
+          "Lupon case database API is unavailable. Start the backend with npm run dev:server, then refresh."
+        );
+      } finally {
+        if (isActive) {
+          setIsLuponCasesLoading(false);
+        }
+      }
+    }
+
+    loadLuponCases();
+
+    return () => {
+      isActive = false;
+    };
+  }, [currentUser]);
+
   const departmentResidentRecords = useMemo(
     () => databaseResidentList.map(toDepartmentResident),
     [databaseResidentList]
@@ -277,6 +328,8 @@ export default function App() {
     setLuponStatusFilter("all");
     setDocumentRequestList([]);
     setDocumentRequestsError("");
+    setLuponCaseList([]);
+    setLuponCasesError("");
     setFormErrors({});
     setSelectedResidentId(defaultResident.id);
     setFormMode("edit");
@@ -484,6 +537,9 @@ export default function App() {
       {currentPage === "lupon" ? (
         <LuponDashboard
           documentRequests={documentRequestList}
+          isLuponCaseLoading={isLuponCasesLoading}
+          luponCaseError={luponCasesError}
+          luponCases={luponCaseList}
           onQueryChange={setLuponSearchQuery}
           onAddResident={openNewResidentForm}
           onOpenForm={openResidentForm}

@@ -2,6 +2,7 @@ import StatusBadge from "../../../shared/components/StatusBadge";
 import DocumentRequestHistory from "../../../shared/components/DocumentRequestHistory";
 import { getDocumentRequestsForResident } from "../../../shared/lib/documentRequests";
 import { RESIDENT_STATUS_FILTERS } from "../../../shared/lib/filterResidents";
+import { getResidentLuponCaseDisplay } from "../lib/luponCaseDisplay";
 
 const statusFilterLabels = {
   all: "All",
@@ -12,6 +13,9 @@ const statusFilterLabels = {
 
 export default function LuponDashboard({
   documentRequests,
+  isLuponCaseLoading = false,
+  luponCaseError = "",
+  luponCases = [],
   query,
   residents,
   selectedResident,
@@ -70,13 +74,25 @@ export default function LuponDashboard({
             </button>
           ))}
         </div>
+
+        {isLuponCaseLoading ? (
+          <p className="mt-4 rounded-2xl border border-orange-100 bg-white px-4 py-3 text-sm text-slate-600">
+            Loading Lupon cases from the database API...
+          </p>
+        ) : null}
+
+        {luponCaseError ? (
+          <p className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {luponCaseError}
+          </p>
+        ) : null}
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-[1.5rem] border border-orange-100 bg-orange-50 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gov-700">Registry</p>
           <p className="mt-3 text-3xl font-black text-slate-900">{residents.length}</p>
-          <p className="mt-2 text-sm text-slate-600">Resident records loaded from local data</p>
+          <p className="mt-2 text-sm text-slate-600">Resident records loaded from the database API</p>
         </div>
         <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">For Review</p>
@@ -99,44 +115,53 @@ export default function LuponDashboard({
           <div className="grid grid-cols-[1.3fr_0.8fr_1fr_auto] gap-4 bg-orange-50 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-gov-700">
             <span>Resident</span>
             <span>Status</span>
-            <span>Internal Remarks</span>
+            <span>Lupon Case Summary</span>
             <span>Edit</span>
           </div>
 
-          {residents.map((resident) => (
-            <div
-              className={`grid grid-cols-1 gap-4 bg-white px-5 py-4 lg:grid-cols-[1.3fr_0.8fr_1fr_auto] ${
-                resident.id === selectedResidentId ? "ring-2 ring-gov-500 ring-inset" : ""
-              }`}
-              key={resident.id}
-            >
-              <button
-                className="text-left"
-                onClick={() => onSelectResident(resident.id)}
-                type="button"
+          {residents.map((resident) => {
+            const caseDisplay = getResidentLuponCaseDisplay(resident, luponCases);
+
+            return (
+              <div
+                className={`grid grid-cols-1 gap-4 bg-white px-5 py-4 lg:grid-cols-[1.3fr_0.8fr_1fr_auto] ${
+                  resident.id === selectedResidentId ? "ring-2 ring-gov-500 ring-inset" : ""
+                }`}
+                key={resident.id}
               >
-                <div className="font-semibold text-slate-900">{resident.name}</div>
-                <div className="text-sm text-slate-600">{resident.id}</div>
-                <div className="text-sm text-slate-500">{resident.caseReason || "No active case reason"}</div>
-              </button>
-
-              <div className="flex items-center">
-                <StatusBadge status={resident.status} />
-              </div>
-
-              <div className="flex items-center text-sm text-slate-600">{resident.remarks}</div>
-
-              <div className="flex items-center">
                 <button
-                  className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800"
-                  onClick={() => onOpenForm(resident.id)}
+                  className="text-left"
+                  onClick={() => onSelectResident(resident.id)}
                   type="button"
                 >
-                  Edit record
+                  <div className="font-semibold text-slate-900">{resident.name}</div>
+                  <div className="text-sm text-slate-600">{resident.id}</div>
+                  <div className="text-sm text-slate-500">{caseDisplay.caseLine}</div>
                 </button>
+
+                <div className="flex flex-col justify-center gap-2">
+                  <StatusBadge status={resident.status} />
+                  {caseDisplay.statusLabel ? (
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      {caseDisplay.statusLabel}
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="flex items-center text-sm text-slate-600">{caseDisplay.summary}</div>
+
+                <div className="flex items-center">
+                  <button
+                    className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800"
+                    onClick={() => onOpenForm(resident.id)}
+                    type="button"
+                  >
+                    Edit record
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {residents.length === 0 ? (
             <div className="bg-white px-5 py-8 text-center text-sm text-slate-500">

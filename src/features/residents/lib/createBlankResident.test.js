@@ -17,5 +17,7 @@ describe("createBlankResident", () => {
       sectors: [],
       documents: []
     });
+    expect(resident).not.toHaveProperty("remarks");
+    expect(resident).not.toHaveProperty("caseReason");
   });
 });

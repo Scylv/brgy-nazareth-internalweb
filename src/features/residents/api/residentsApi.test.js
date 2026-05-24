@@ -40,6 +40,25 @@ describe("residents API", () => {
     });
   });
 
+  it("strips legacy confidential Lupon resident fields from API responses", () => {
+    const resident = mapApiResidentToResident({
+      id: "RBI-2026-0003",
+      fullName: "Carla Mendoza",
+      statusColor: "red",
+      remarks: "Do not expose this resident-local remark.",
+      caseReason: "Do not expose this resident-local case reason."
+    });
+
+    expect(resident).toMatchObject({
+      id: "RBI-2026-0003",
+      name: "Carla Mendoza",
+      status: "red"
+    });
+    expect(resident).not.toHaveProperty("remarks");
+    expect(resident).not.toHaveProperty("caseReason");
+    expect(JSON.stringify(resident)).not.toContain("Do not expose");
+  });
+
   it("fetches and maps residents from the database API response", async () => {
     vi.stubGlobal(
       "fetch",

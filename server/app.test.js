@@ -271,12 +271,19 @@ describe("authentication and role-based API access", () => {
   });
 
   it("blocks Department users from Lupon case routes", async () => {
-    const app = createApp(createPool([[profileRows.department], [profileRows.department]]));
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
     const cookie = await loginAs(app, "department", "dept123");
 
     const response = await request(app).get("/api/lupon/cases").set("Cookie", cookie);
 
     expect(response.status).toBe(403);
+    expect(JSON.stringify(response.body)).not.toContain("luponCases");
+    expect(JSON.stringify(response.body)).not.toContain("luponCaseNotes");
+    expect(JSON.stringify(response.body)).not.toContain("confidentialSummary");
+    expect(JSON.stringify(response.body)).not.toContain("noteBody");
+    expect(pool.queries).toHaveLength(2);
+    expect(pool.queries.at(-1).sql).not.toContain("FROM lupon_cases");
   });
 
   it("allows Lupon users to access Lupon case routes", async () => {
@@ -308,6 +315,7 @@ describe("authentication and role-based API access", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.luponCases[0].confidentialSummary).toContain("Address mismatch");
+    expect(JSON.stringify(response.body)).not.toContain("noteBody");
   });
 
   it("does not return Lupon confidential fields to Department resident routes", async () => {
@@ -321,10 +329,14 @@ describe("authentication and role-based API access", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.resident).toMatchObject({ id: "RBI-2024-0002", statusColor: "yellow" });
+    expect(response.body.resident).not.toHaveProperty("remarks");
+    expect(response.body.resident).not.toHaveProperty("caseReason");
     expect(response.body).not.toHaveProperty("luponCases");
     expect(response.body).not.toHaveProperty("luponCaseNotes");
     expect(JSON.stringify(response.body)).not.toContain("confidentialSummary");
     expect(JSON.stringify(response.body)).not.toContain("noteBody");
+    expect(JSON.stringify(response.body)).not.toContain("remarks");
+    expect(JSON.stringify(response.body)).not.toContain("caseReason");
     expect(pool.queries).toHaveLength(3);
   });
 
@@ -644,9 +656,13 @@ describe("authentication and role-based API access", () => {
       id: "RBI-2024-0002",
       statusColor: "red"
     });
+    expect(departmentResponse.body.resident).not.toHaveProperty("remarks");
+    expect(departmentResponse.body.resident).not.toHaveProperty("caseReason");
     expect(departmentResponse.body).not.toHaveProperty("luponCases");
     expect(departmentResponse.body).not.toHaveProperty("luponCaseNotes");
     expect(JSON.stringify(departmentResponse.body)).not.toContain("confidentialSummary");
     expect(JSON.stringify(departmentResponse.body)).not.toContain("noteBody");
+    expect(JSON.stringify(departmentResponse.body)).not.toContain("remarks");
+    expect(JSON.stringify(departmentResponse.body)).not.toContain("caseReason");
   });
 });
