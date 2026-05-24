@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchResidents, mapApiResidentToResident } from "./residentsApi";
+import { fetchResidents, mapApiResidentToResident, updateResident } from "./residentsApi";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -69,5 +69,69 @@ describe("residents API", () => {
         status: "green"
       })
     ]);
+  });
+
+  it("updates allowed resident fields without sending confidential Lupon form fields", async () => {
+    const fetchMock = vi.fn(async (_path, options) => {
+      expect(options.method).toBe("PATCH");
+      expect(JSON.parse(options.body)).toEqual({
+        householdId: "HH-NAZ-1034",
+        fullName: "Maria S. Santos",
+        birthDate: "1992-07-20",
+        gender: "Female",
+        civilStatus: "Single",
+        occupation: "Vendor",
+        address: "Purok 2, Lower Nazareth",
+        contactNumber: "09181112222",
+        email: "maria.santos@example.com",
+        additionalInformation: "Needs address re-verification.",
+        sectors: ["Solo Parent"],
+        registeredVoter: true,
+        precinctNumber: "0187B",
+        status: "green"
+      });
+
+      return new Response(
+        JSON.stringify({
+          resident: {
+            id: "RBI-2024-0002",
+            fullName: "Maria S. Santos",
+            statusColor: "green"
+          }
+        }),
+        {
+          headers: { "content-type": "application/json" }
+        }
+      );
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      updateResident("RBI-2024-0002", {
+        id: "RBI-2024-0002",
+        householdId: "HH-NAZ-1034",
+        name: "Maria S. Santos",
+        birthDate: "1992-07-20",
+        gender: "Female",
+        civilStatus: "Single",
+        occupation: "Vendor",
+        address: "Purok 2, Lower Nazareth",
+        contactNumber: "09181112222",
+        email: "maria.santos@example.com",
+        additionalInformation: "Needs address re-verification.",
+        sectors: ["Solo Parent"],
+        registeredVoter: true,
+        precinctNumber: "0187B",
+        status: "green",
+        remarks: "Confidential note",
+        caseReason: "Confidential case reason",
+        documents: ["Incident Report"]
+      })
+    ).resolves.toMatchObject({
+      id: "RBI-2024-0002",
+      name: "Maria S. Santos",
+      status: "green"
+    });
   });
 });

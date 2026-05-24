@@ -18,6 +18,66 @@ function createPool(rowsByQuery = []) {
   };
 }
 
+function createResidentUpdatePool(initialResident = residentRow) {
+  const queries = [];
+  let resident = { ...initialResident };
+
+  return {
+    queries,
+    async query(sql, params = []) {
+      queries.push({ sql, params });
+
+      if (sql.includes("FROM profiles")) {
+        const profile = Object.values(profileRows).find(
+          (row) => row.id === params[0] || row.username === params[0]
+        );
+        return {
+          rows: profile ? [profile] : [],
+          rowCount: profile ? 1 : 0
+        };
+      }
+
+      if (sql.includes("UPDATE residents")) {
+        resident = {
+          ...resident,
+          household_id: params[0],
+          full_name: params[1],
+          birth_date: params[2],
+          gender: params[3],
+          civil_status: params[4],
+          occupation: params[5],
+          address: params[6],
+          contact_number: params[7],
+          email: params[8],
+          additional_information: params[9],
+          sectors: params[10],
+          registered_voter: params[11],
+          precinct_number: params[12],
+          status_color: params[13],
+          updated_at: "2026-05-24T00:00:00.000Z"
+        };
+
+        return {
+          rows: [resident],
+          rowCount: 1
+        };
+      }
+
+      if (sql.includes("FROM residents")) {
+        return {
+          rows: [resident],
+          rowCount: 1
+        };
+      }
+
+      return {
+        rows: [],
+        rowCount: 0
+      };
+    }
+  };
+}
+
 const residentRow = {
   id: "RBI-2024-0002",
   household_id: "HH-NAZ-1034",
@@ -332,5 +392,114 @@ describe("authentication and role-based API access", () => {
     expect(response.status).toBe(400);
     expect(response.body.error).toContain("Invalid document request status");
     expect(pool.queries).toHaveLength(2);
+  });
+
+  it("allows Lupon users to update resident status and non-confidential fields", async () => {
+    const pool = createPool([[profileRows.lupon], [profileRows.lupon], [residentRow], [{ ...residentRow, full_name: "Maria S. Santos", status_color: "green" }]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .patch("/api/residents/RBI-2024-0002")
+      .set("Cookie", cookie)
+      .send({
+        fullName: "Maria S. Santos",
+        status: "green",
+        remarks: "Do not write this to residents.",
+        caseReason: "Confidential Lupon detail."
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.resident).toMatchObject({
+      id: "RBI-2024-0002",
+      fullName: "Maria S. Santos",
+      statusColor: "green"
+    });
+    expect(JSON.stringify(pool.queries.at(-1).params)).not.toContain("Confidential Lupon detail");
+  });
+
+  it("blocks Department users from updating resident status", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .patch("/api/residents/RBI-2024-0002")
+      .set("Cookie", cookie)
+      .send({ status: "green" });
+
+    expect(response.status).toBe(403);
+    expect(pool.queries).toHaveLength(2);
+  });
+
+  it("rejects unauthenticated resident status updates", async () => {
+    const pool = createPool();
+    const app = createApp(pool);
+
+    const response = await request(app)
+      .patch("/api/residents/RBI-2024-0002")
+      .send({ status: "green" });
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toContain("Authentication is required");
+    expect(pool.queries).toHaveLength(0);
+  });
+
+  it("rejects invalid resident status updates before writing to the database", async () => {
+    const pool = createPool([[profileRows.lupon], [profileRows.lupon]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .patch("/api/residents/RBI-2024-0002")
+      .set("Cookie", cookie)
+      .send({ status: "blue" });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("Invalid resident status");
+    expect(pool.queries).toHaveLength(2);
+  });
+
+  it("rejects empty resident update payloads before writing to the database", async () => {
+    const pool = createPool([[profileRows.lupon], [profileRows.lupon]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .patch("/api/residents/RBI-2024-0002")
+      .set("Cookie", cookie)
+      .send({});
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("At least one allowed resident field is required");
+    expect(pool.queries).toHaveLength(2);
+  });
+
+  it("returns updated resident status to Department after a Lupon update", async () => {
+    const pool = createResidentUpdatePool();
+    const app = createApp(pool);
+    const luponCookie = await loginAs(app, "lupon", "lupon123");
+
+    const updateResponse = await request(app)
+      .patch("/api/residents/RBI-2024-0002")
+      .set("Cookie", luponCookie)
+      .send({ status: "red" });
+
+    expect(updateResponse.status).toBe(200);
+
+    const departmentCookie = await loginAs(app, "department", "dept123");
+    const departmentResponse = await request(app)
+      .get("/api/residents/RBI-2024-0002")
+      .set("Cookie", departmentCookie);
+
+    expect(departmentResponse.status).toBe(200);
+    expect(departmentResponse.body.resident).toMatchObject({
+      id: "RBI-2024-0002",
+      statusColor: "red"
+    });
+    expect(departmentResponse.body).not.toHaveProperty("luponCases");
+    expect(departmentResponse.body).not.toHaveProperty("luponCaseNotes");
+    expect(JSON.stringify(departmentResponse.body)).not.toContain("confidentialSummary");
+    expect(JSON.stringify(departmentResponse.body)).not.toContain("noteBody");
   });
 });

@@ -53,6 +53,12 @@ export default function ResidentRecordForm({
         </button>
       </div>
 
+      {errors.form ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {errors.form}
+        </div>
+      ) : null}
+
       <Section title="Personal Information">
         <Field error={errors.name} label="Full Name">
           <input className={inputClassName} name="name" onChange={onChange} value={formData.name} />

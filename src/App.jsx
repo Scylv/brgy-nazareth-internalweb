@@ -7,7 +7,7 @@ import { fetchCurrentUser, loginUser, logoutUser } from "./features/auth/api/aut
 import LoginScreen from "./features/auth/components/LoginScreen";
 import DepartmentDashboard from "./features/department/components/DepartmentDashboard";
 import LuponDashboard from "./features/lupon/components/LuponDashboard";
-import { fetchResidents } from "./features/residents/api/residentsApi";
+import { fetchResidents, updateResident } from "./features/residents/api/residentsApi";
 import ResidentRecordForm from "./features/residents/components/ResidentRecordForm";
 import ResidentVerification from "./features/residents/components/ResidentVerification";
 import { cloneResident } from "./features/residents/lib/cloneResident";
@@ -81,7 +81,7 @@ export default function App() {
   useEffect(() => {
     let isActive = true;
 
-    if (!currentUser || currentUser.role !== "department") {
+    if (!currentUser || !["department", "lupon"].includes(currentUser.role)) {
       setDatabaseResidentList([]);
       setIsDepartmentResidentsLoading(false);
       setDepartmentResidentsError("");
@@ -90,7 +90,7 @@ export default function App() {
       };
     }
 
-    async function loadDepartmentResidents() {
+    async function loadDatabaseResidents() {
       setIsDepartmentResidentsLoading(true);
       setDepartmentResidentsError("");
 
@@ -118,7 +118,7 @@ export default function App() {
       }
     }
 
-    loadDepartmentResidents();
+    loadDatabaseResidents();
 
     return () => {
       isActive = false;
@@ -140,18 +140,29 @@ export default function App() {
     [departmentSearchQuery, departmentResidentRecords, departmentStatusFilter]
   );
 
+  useEffect(() => {
+    if (
+      currentUser?.role === "lupon" &&
+      databaseResidentList.length > 0 &&
+      !databaseResidentList.some((resident) => resident.id === selectedResidentId)
+    ) {
+      setSelectedResidentId(databaseResidentList[0].id);
+    }
+  }, [currentUser, databaseResidentList, selectedResidentId]);
+
   const luponResidents = useMemo(
     () =>
       filterResidents({
         query: luponSearchQuery,
         statusFilter: luponStatusFilter,
-        residents: residentList
+        residents: databaseResidentList
       }),
-    [luponSearchQuery, luponStatusFilter, residentList]
+    [databaseResidentList, luponSearchQuery, luponStatusFilter]
   );
 
   const selectedResident =
-    residentList.find((resident) => resident.id === selectedResidentId) ?? residentList[0];
+    databaseResidentList.find((resident) => resident.id === selectedResidentId) ??
+    databaseResidentList[0];
   const selectedDepartmentResident =
     departmentResidentRecords.find((resident) => resident.id === selectedResidentId) ??
     departmentResidentRecords[0] ??
@@ -235,7 +246,7 @@ export default function App() {
   }
 
   function openResidentForm(residentId) {
-    const resident = residentList.find((item) => item.id === residentId);
+    const resident = databaseResidentList.find((item) => item.id === residentId);
     if (!resident) {
       return;
     }
@@ -252,7 +263,7 @@ export default function App() {
       return;
     }
 
-    const newResident = createBlankResident(residentList);
+    const newResident = createBlankResident(databaseResidentList);
     setSelectedResidentId(newResident.id);
     setFormMode("add");
     setFormData(newResident);
@@ -309,7 +320,7 @@ export default function App() {
     }));
   }
 
-  function handleFormSave(event) {
+  async function handleFormSave(event) {
     event.preventDefault();
 
     const validation = validateResidentForm(formData);
@@ -318,16 +329,28 @@ export default function App() {
       return;
     }
 
-    const savedResident = cloneResident(formData);
-    setResidentList((current) =>
-      formMode === "add"
-        ? [...current, savedResident]
-        : current.map((resident) => (resident.id === selectedResidentId ? savedResident : resident))
-    );
-    setSelectedResidentId(formData.id);
-    setFormMode("edit");
-    setFormErrors({});
-    setCurrentPage("lupon");
+    if (formMode === "add") {
+      setFormErrors({
+        form: "Adding new residents is not database-backed yet. Edit an existing resident for staging."
+      });
+      return;
+    }
+
+    try {
+      const savedResident = await updateResident(selectedResidentId, formData);
+
+      setDatabaseResidentList((current) =>
+        current.map((resident) => (resident.id === selectedResidentId ? savedResident : resident))
+      );
+      setSelectedResidentId(savedResident.id);
+      setFormMode("edit");
+      setFormErrors({});
+      setCurrentPage("lupon");
+    } catch (_error) {
+      setFormErrors({
+        form: "Resident database save failed. Check the backend API and try again."
+      });
+    }
   }
 
   function handleDocumentRequestSave(request) {
