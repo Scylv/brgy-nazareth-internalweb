@@ -3,8 +3,8 @@ import { documentRequests as initialDocumentRequests } from "./data/documentRequ
 import { residents as initialResidents } from "./data/residents";
 import { users } from "./data/users";
 import AdminPanel from "./features/admin/components/AdminPanel";
+import { fetchCurrentUser, loginUser, logoutUser } from "./features/auth/api/authApi";
 import LoginScreen from "./features/auth/components/LoginScreen";
-import { findUser } from "./features/auth/lib/findUser";
 import DepartmentDashboard from "./features/department/components/DepartmentDashboard";
 import LuponDashboard from "./features/lupon/components/LuponDashboard";
 import { fetchResidents } from "./features/residents/api/residentsApi";
@@ -54,6 +54,42 @@ export default function App() {
   useEffect(() => {
     let isActive = true;
 
+    async function loadCurrentUser() {
+      try {
+        const user = await fetchCurrentUser();
+
+        if (!isActive) {
+          return;
+        }
+
+        setCurrentUser(user);
+        setCurrentPage(getLandingPage(user.role));
+      } catch (_error) {
+        if (isActive) {
+          setCurrentUser(null);
+        }
+      }
+    }
+
+    loadCurrentUser();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!currentUser || currentUser.role !== "department") {
+      setDatabaseResidentList([]);
+      setIsDepartmentResidentsLoading(false);
+      setDepartmentResidentsError("");
+      return () => {
+        isActive = false;
+      };
+    }
+
     async function loadDepartmentResidents() {
       setIsDepartmentResidentsLoading(true);
       setDepartmentResidentsError("");
@@ -87,7 +123,7 @@ export default function App() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [currentUser]);
 
   const departmentResidentRecords = useMemo(
     () => databaseResidentList.map(toDepartmentResident),
@@ -144,26 +180,42 @@ export default function App() {
     return "admin";
   }
 
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
 
     const form = new FormData(event.currentTarget);
-    const user = findUser(form.get("username") ?? "", form.get("password") ?? "", users);
+    const username = form.get("username") ?? "";
+    const password = form.get("password") ?? "";
 
-    if (!user) {
-      setLoginError("Invalid credentials. Use one of the local accounts shown on the login screen.");
+    try {
+      const user = await loginUser({ username, password });
+
+      setCurrentUser(user);
+      setLoginError("");
+      setSelectedResidentId(defaultResident.id);
+      setFormMode("edit");
+      setFormData(cloneResident(defaultResident));
+      setCurrentPage(getLandingPage(user.role));
+    } catch (error) {
+      if (error?.status === 401 || error?.status === 400) {
+        setLoginError("Invalid credentials. Use one of the local accounts shown on the login screen.");
+        return;
+      }
+
+      setLoginError(
+        "Authentication API is unavailable. Start the backend with npm run dev:server, then try again."
+      );
       return;
     }
-
-    setCurrentUser(user);
-    setLoginError("");
-    setSelectedResidentId(defaultResident.id);
-    setFormMode("edit");
-    setFormData(cloneResident(defaultResident));
-    setCurrentPage(getLandingPage(user.role));
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await logoutUser();
+    } catch (_error) {
+      // Local state still needs to clear if the backend is unavailable.
+    }
+
     setCurrentUser(null);
     setCurrentPage("login");
     setLoginError("");

@@ -1,8 +1,8 @@
 # Database Schema Plan
 
 This document describes the PostgreSQL-compatible schema for the Barangay
-Nazareth Internal Web App database foundation. The frontend still uses local
-mock data; the backend API can be run separately for database-backed routes.
+Nazareth Internal Web App database foundation. Some frontend screens still use
+local mock data; the backend API can be run separately for database-backed routes.
 
 The plan is not tied to a specific hosted database product. It should be
 deployable later on a local/internal PostgreSQL server or on an approved secure
@@ -18,7 +18,7 @@ hosted PostgreSQL server.
 - Track document request status events.
 - Prepare attachment metadata for future approved file uploads.
 - Prepare audit logging and import tracking tables for future operations.
-- Keep authentication and password storage out of this schema until approved.
+- Store scrypt password hashes for synthetic internal seed users.
 
 ## Privacy Boundary
 
@@ -36,8 +36,8 @@ Lupon-only details belong in:
 
 ### profiles
 
-Stores internal user profile records and role assignment. This table does not
-store passwords.
+Stores internal user profile records, role assignment, and password hashes. This
+table does not store plaintext passwords.
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -45,6 +45,7 @@ store passwords.
 | username | text | Unique local username or future auth mapping. |
 | display_name | text | Staff display name. |
 | role | text | `admin`, `department`, or `lupon`. |
+| password_hash | text | Scrypt password hash for synthetic seed users. |
 | status | text | `active` or `disabled`. |
 | created_at | timestamptz | Creation timestamp. |
 | updated_at | timestamptz | Last update timestamp. |
