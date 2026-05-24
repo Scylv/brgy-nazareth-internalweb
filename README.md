@@ -217,11 +217,31 @@ See [Frontend Database Integration](docs/frontend-database-integration.md) for s
 
 Use staging only for Milestone 3 internal testing and acceptance checks. Staging must use synthetic data only; do not load real resident records, real Lupon case details, or production secrets into the staging database.
 
-Recommended staging services:
+Current Milestone 3 staging deployment:
 
-- **Frontend host:** Vercel, Render Static Site, Netlify, or another static frontend host.
-- **Backend host:** Render Web Service or another Node.js service that can run the Express API.
-- **Database provider:** Render PostgreSQL, Neon, Supabase PostgreSQL, or another hosted PostgreSQL database.
+| Item | Value |
+| --- | --- |
+| Frontend Staging URL | `https://brgy-nazareth-internalweb-1.onrender.com/` |
+| Backend/API Staging URL | `https://brgy-nazareth-internalweb.onrender.com` |
+| Backend Health Check URL | `https://brgy-nazareth-internalweb.onrender.com/api/health` |
+| Database provider | Render PostgreSQL |
+| Branch deployed | `staging` |
+| Release tag | `v1.0.0-alpha.2` |
+
+Staging services:
+
+- **Frontend host:** Render Static Site.
+- **Backend host:** Render Web Service running the Express API.
+- **Database provider:** Render PostgreSQL through the backend `DATABASE_URL` environment variable.
+- **Database credential storage:** Render environment variables only. Do not print, commit, or document the actual `DATABASE_URL` because it contains credentials.
+
+Staging demo accounts:
+
+| Role | Username | Password |
+| --- | --- | --- |
+| Department | `department` | `dept123` |
+| Lupon | `lupon` | `lupon123` |
+| Admin | `admin` | `admin123` |
 
 Required backend environment variables:
 
@@ -250,10 +270,10 @@ HTTP-only `barangay_session` cookie on API requests. Cross-site cookies require
 Required frontend environment variable:
 
 ```text
-VITE_API_BASE_URL=https://example-staging-backend.onrender.com
+VITE_API_BASE_URL=https://brgy-nazareth-internalweb.onrender.com
 ```
 
-Set real staging values in the hosting provider dashboard. Do not commit `.env` files or real database credentials.
+Set real staging values in the hosting provider dashboard. Do not commit `.env` files or real database credentials. The actual Render PostgreSQL `DATABASE_URL` must stay only in Render environment variables.
 
 Frontend deployment:
 
