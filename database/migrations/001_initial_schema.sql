@@ -12,6 +12,7 @@ CREATE TABLE profiles (
       'lupon'
     )
   ),
+  password_hash text NOT NULL,
   status text NOT NULL DEFAULT 'active' CHECK (
     status IN (
       'active',

@@ -1,7 +1,7 @@
 # Access Control Matrix
 
-This matrix documents data boundaries for the PostgreSQL schema and minimal
-backend foundation. The current React UI still uses local mock data.
+This matrix documents data boundaries for the PostgreSQL schema and backend
+foundation. Some React screens still use local mock data.
 
 ## Roles
 
@@ -40,7 +40,7 @@ backend foundation. The current React UI still uses local mock data.
 | Document request purpose/status/dates | Summary/read | Read/write | Read linked resident history |
 | Public barangay document definitions | Read/write | Read | Read |
 | Internal barangay document definitions | Read/write | Read if needed for processing | Read |
-| Passwords/auth secrets | Not stored | Not stored | Not stored |
+| Password hashes/auth secrets | Server-only | No access | No access |
 
 ## Department Boundary
 
@@ -65,8 +65,7 @@ Department users must not see:
 - The `residents` table must not store confidential Lupon remarks or case reasons.
 - Confidential Lupon information belongs only in `lupon_cases` and
   `lupon_case_notes`.
-- Real enforcement should happen outside React UI state, such as through
-  database roles, service-layer authorization, or approved PostgreSQL policies.
-- The current backend enforces the first service-layer boundary with a
-  development-only `x-user-role` header. This is not real authentication.
-- This schema does not implement authentication or password storage.
+- Role enforcement happens outside React UI state through backend authentication
+  middleware and route-level authorization.
+- Passwords are never stored as plaintext; synthetic seed users use scrypt
+  password hashes.

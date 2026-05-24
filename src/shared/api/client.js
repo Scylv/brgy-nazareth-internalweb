@@ -1,5 +1,4 @@
 const DEFAULT_API_BASE_URL = "http://localhost:3001";
-const DEVELOPMENT_ROLE = "department";
 
 export class ApiError extends Error {
   constructor(message, { status, body } = {}) {
@@ -30,12 +29,13 @@ async function parseResponse(response) {
 }
 
 export async function apiFetch(path, options = {}) {
+  const { headers, ...fetchOptions } = options;
   const response = await fetch(getApiUrl(path), {
-    ...options,
+    ...fetchOptions,
+    credentials: "include",
     headers: {
       Accept: "application/json",
-      "x-user-role": DEVELOPMENT_ROLE,
-      ...options.headers
+      ...headers
     }
   });
   const body = await parseResponse(response);

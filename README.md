@@ -89,7 +89,13 @@ Edit `.env` for your local database:
 ```text
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/brgy_nazareth_internalweb
 PORT=3001
+AUTH_SESSION_SECRET=development-change-me
 ```
+
+`AUTH_SESSION_SECRET` signs the HTTP-only session cookie. The checked-in value in
+`.env.example` is for local development only; use a long random value for staging
+or production. Outside `NODE_ENV=development`, the backend fails at startup if
+`AUTH_SESSION_SECRET` is missing.
 
 Do not commit real database credentials or production secrets.
 
@@ -160,6 +166,9 @@ http://localhost:3001/
 Available API routes:
 
 ```text
+POST /api/auth/login
+GET  /api/auth/me
+POST /api/auth/logout
 GET  /api/residents
 GET  /api/residents/:id
 GET  /api/document-requests
@@ -169,18 +178,12 @@ POST /api/lupon/cases
 POST /api/lupon/cases/:id/notes
 ```
 
-The backend currently uses a simple development-only role header instead of real authentication:
+The backend uses database-backed synthetic users, scrypt password hashes, and an HTTP-only session cookie:
 
 ```text
-x-user-role: admin
-x-user-role: department
-x-user-role: lupon
-```
-
-Optional write attribution can use:
-
-```text
-x-profile-id: dept-1
+admin / admin123
+department / dept123
+lupon / lupon123
 ```
 
 Department routes do not expose `lupon_cases.confidential_summary` or `lupon_case_notes.note_body`. Lupon case routes require the `lupon` role.
@@ -214,8 +217,14 @@ Required backend environment variables:
 ```text
 DATABASE_URL=postgres://...
 PORT=3001
-CORS_ORIGINS=http://localhost:5173,https://example-staging-frontend.onrender.com
+NODE_ENV=staging
+CORS_ORIGINS=https://example-staging-frontend.onrender.com
+AUTH_SESSION_SECRET=replace-with-a-long-random-secret
 ```
+
+Localhost CORS origins are included automatically only in local development.
+For staging and production, every credentialed frontend origin must be listed in
+`CORS_ORIGINS`. Do not use wildcard CORS with credentialed session cookies.
 
 Required frontend environment variable:
 
@@ -263,10 +272,12 @@ The current migration and seed scripts are intended for a fresh staging database
 
 Known staging limitations:
 
-- Authentication is still prototype-only and uses a development `x-user-role` header on API requests.
-- Demo login accounts are mock local accounts, not production credentials.
+- Authentication uses synthetic seed accounts only; these are not production credentials.
+- Logout clears the browser cookie, but the signed stateless token is not revoked
+  server-side. A copied token remains valid until expiry; this is acceptable for
+  synthetic-data staging, not final production.
 - Some React screens still use local mock data.
-- File uploads, backups, production auth, and hardened database-level access policies are not implemented yet.
+- File uploads, backups, production user provisioning, and hardened database-level access policies are not implemented yet.
 - Department users must not see Lupon confidential summaries or notes; this boundary is covered by backend tests and should be checked again during acceptance testing.
 
 ## Run On The Local Network

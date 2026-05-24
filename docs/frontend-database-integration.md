@@ -26,7 +26,6 @@ Only the resident search/list/details flow was connected in this step because it
 
 Still mock/local for now:
 
-- login and authentication
 - dashboards outside the connected resident search/list flow
 - document requests
 - Lupon screens
@@ -55,17 +54,23 @@ http://localhost:3001
 
 Do not commit a real `.env` file.
 
-## Development Role Header
+## Authenticated Session
 
-The frontend sends:
+The frontend logs in through:
 
 ```text
-x-user-role: department
+POST /api/auth/login
 ```
 
-This matches the current backend role middleware and lets the Department flow read residents while still blocking Lupon-only data.
+The backend sets an HTTP-only `barangay_session` cookie. Frontend API calls use browser cookie credentials and do not send development role headers.
 
-`x-user-role` is development-only. It must be replaced by real authentication and server-issued authorization before production use.
+Seed accounts are synthetic only:
+
+```text
+admin / admin123
+department / dept123
+lupon / lupon123
+```
 
 ## Run The Full Local Stack
 
@@ -93,13 +98,14 @@ Data source: Database API
 Residents should be accessible to Department:
 
 ```powershell
-curl.exe -H "x-user-role: department" http://localhost:3001/api/residents
+curl.exe -c .\.tmp-cookies.txt -H "Content-Type: application/json" -d '{"username":"department","password":"dept123"}' http://localhost:3001/api/auth/login
+curl.exe -b .\.tmp-cookies.txt http://localhost:3001/api/residents
 ```
 
 Lupon cases should be blocked for Department:
 
 ```powershell
-curl.exe -H "x-user-role: department" http://localhost:3001/api/lupon/cases
+curl.exe -b .\.tmp-cookies.txt http://localhost:3001/api/lupon/cases
 ```
 
 Expected result:
@@ -110,7 +116,7 @@ Expected result:
 ## Known Limitations
 
 - The frontend is not fully integrated yet.
-- Login is still not real authentication.
+- Authentication uses synthetic seed accounts only.
 - Dashboards may still use mock data.
 - Document requests may still use mock data.
 - Lupon screens may still use mock data.

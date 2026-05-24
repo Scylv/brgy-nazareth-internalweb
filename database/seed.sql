@@ -1,30 +1,34 @@
 -- Seed data matching the current local mock records at a planning level.
--- Passwords from the mock frontend are intentionally not stored here.
+-- Synthetic user passwords are stored only as scrypt hashes.
 
 INSERT INTO profiles (
   id,
   username,
   display_name,
-  role
+  role,
+  password_hash
 )
 VALUES
   (
     'admin-1',
     'admin',
     'Ricardo Morales',
-    'admin'
+    'admin',
+    'scrypt$admin-seed-salt$8fd8c3981c564ec9a792e99f26a580fdd1485204853c59650cea36193b8f1588e338726df3e6721fbe011617bbfe06714df135942371be109c1d8779e780a842'
   ),
   (
     'dept-1',
     'department',
     'Elena Ledesma',
-    'department'
+    'department',
+    'scrypt$department-seed-salt$d5910b629e20aa4ba66f9a07256e8acc269f2f4ba713a8b46aab166b8de71ea97fbca318438a72a178c6c572fdb5abf258bb6e2ee136b82df1da1cd8219f562c'
   ),
   (
     'lupon-1',
     'lupon',
     'Juan Santos',
-    'lupon'
+    'lupon',
+    'scrypt$lupon-seed-salt$87a90e262f2aaa5bd1727567f438bfef2148ba4e9f6b8e1bbd70eadd19aae19d8feff17bc39443e2b4ddf4b19ec73547bc77403f81b9d2df4ab3f3dd8cfc240a'
   );
 
 INSERT INTO residents (

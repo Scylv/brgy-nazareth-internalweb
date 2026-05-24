@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 describe("apiFetch", () => {
-  it("uses the configured API base URL and development role header", async () => {
+  it("uses the configured API base URL with cookie credentials", async () => {
     vi.stubEnv("VITE_API_BASE_URL", "http://api.test/");
     const fetchMock = vi.fn(async () =>
       new Response(JSON.stringify({ ok: true }), {
@@ -20,9 +20,9 @@ describe("apiFetch", () => {
     await apiFetch("/api/residents");
 
     expect(fetchMock).toHaveBeenCalledWith("http://api.test/api/residents", {
+      credentials: "include",
       headers: {
-        Accept: "application/json",
-        "x-user-role": "department"
+        Accept: "application/json"
       }
     });
   });
