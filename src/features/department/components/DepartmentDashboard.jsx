@@ -1,4 +1,11 @@
 import { useState } from "react";
+import Button from "../../../shared/components/Button";
+import MetricCard from "../../../shared/components/MetricCard";
+import Notice from "../../../shared/components/Notice";
+import RequestStatusBadge from "../../../shared/components/RequestStatusBadge";
+import SectionCard from "../../../shared/components/SectionCard";
+import SectionHeader from "../../../shared/components/SectionHeader";
+import StateMessage from "../../../shared/components/StateMessage";
 import StatusBadge from "../../../shared/components/StatusBadge";
 import {
   barangayDocumentOptions,
@@ -117,14 +124,13 @@ export default function DepartmentDashboard({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[1.75rem] border border-orange-100 bg-gradient-to-r from-orange-50 to-white p-6">
-        <h2 className="text-2xl font-black text-slate-900">Resident Search</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Search by resident name or RBI ID and review only the verification result
-          required for clearance handling.
-        </p>
+      <SectionCard padding="compact" variant="hero">
+        <SectionHeader title="Resident Search" />
+        <Notice className="mt-3 inline-flex max-w-full" tone="info">
+          Department view: basic resident details, address, status color, and document requests only.
+        </Notice>
 
-        <div className="mt-5 flex flex-col gap-3 md:flex-row">
+        <div className="mt-4 flex flex-col gap-3 md:flex-row">
           <input
             className="flex-1 rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
             onChange={(event) => onQueryChange(event.target.value)}
@@ -137,12 +143,12 @@ export default function DepartmentDashboard({
         </div>
 
         {residentDataSource ? (
-          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
             Data source: {residentDataSource}
           </p>
         ) : null}
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {RESIDENT_STATUS_FILTERS.map((filter) => (
             <button
               className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition ${
@@ -171,267 +177,21 @@ export default function DepartmentDashboard({
             </span>
           </div>
         </div>
-      </section>
 
-      <section className="rounded-[1.75rem] border border-orange-100 bg-white p-6">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-gov-700">
-              Document Requests
-            </p>
-            <h2 className="mt-2 text-2xl font-black text-slate-900">Department Metrics</h2>
+        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+          <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-emerald-800">
+            <span className="font-semibold">Green:</span> Cleared - proceed
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-slate-500">Non-confidential request fields only</p>
-            <button
-              className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800"
-              disabled={isDocumentRequestLoading || residents.length === 0}
-              onClick={openNewDocumentRequestForm}
-              type="button"
-            >
-              New Document Request
-            </button>
+          <div className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-900">
+            <span className="font-semibold">Yellow:</span> Needs Lupon review
+          </div>
+          <div className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-rose-800">
+            <span className="font-semibold">Red:</span> Hold - Lupon required
           </div>
         </div>
+      </SectionCard>
 
-        {isDocumentRequestLoading ? (
-          <p className="mt-4 rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-slate-600">
-            Loading document requests from the database API...
-          </p>
-        ) : null}
-
-        {documentRequestError ? (
-          <p className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            {documentRequestError}
-          </p>
-        ) : null}
-
-        {isDocumentFormOpen ? (
-          <form
-            className="mt-5 rounded-[1.5rem] border border-orange-100 bg-orange-50 p-5"
-            onSubmit={handleDocumentFormSubmit}
-          >
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <h3 className="text-lg font-black text-slate-900">
-                {documentForm.id ? "Update Document Request" : "New Document Request"}
-              </h3>
-              <button
-                className="rounded-2xl border border-orange-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-300"
-                onClick={() => setIsDocumentFormOpen(false)}
-                type="button"
-              >
-                Cancel
-              </button>
-            </div>
-
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Resident</span>
-                <select
-                  className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
-                  name="residentId"
-                  onChange={handleDocumentFormChange}
-                  required
-                  value={documentForm.residentId}
-                >
-                  {residents.map((resident) => (
-                    <option key={resident.id} value={resident.id}>
-                      {resident.name} ({resident.id})
-                    </option>
-                  ))}
-                  {residents.length === 0 ? (
-                    <option disabled value="">
-                      No residents loaded
-                    </option>
-                  ) : null}
-                </select>
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Document Type</span>
-                <select
-                  className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
-                  name="barangayDocumentId"
-                  onChange={handleDocumentFormChange}
-                  value={documentForm.barangayDocumentId}
-                >
-                  {barangayDocumentOptions.map((documentType) => (
-                    <option key={documentType.id} value={documentType.id}>
-                      {documentType.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block md:col-span-2">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Purpose</span>
-                <input
-                  className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
-                  name="purpose"
-                  onChange={handleDocumentFormChange}
-                  required
-                  value={documentForm.purpose}
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Request Date</span>
-                <input
-                  className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
-                  name="requestDate"
-                  onChange={handleDocumentFormChange}
-                  required
-                  type="date"
-                  value={documentForm.requestDate}
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Release Date</span>
-                <input
-                  className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
-                  name="releaseDate"
-                  onChange={handleDocumentFormChange}
-                  type="date"
-                  value={documentForm.releaseDate}
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Expiry Date</span>
-                <input
-                  className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
-                  name="expiryDate"
-                  onChange={handleDocumentFormChange}
-                  type="date"
-                  value={documentForm.expiryDate}
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Status</span>
-                <select
-                  className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
-                  name="status"
-                  onChange={handleDocumentFormChange}
-                  value={documentForm.status}
-                >
-                  {documentRequestStatusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block md:col-span-2">
-                <span className="mb-2 block text-sm font-medium text-slate-700">Processed By</span>
-                <input
-                  className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
-                  name="processedBy"
-                  onChange={handleDocumentFormChange}
-                  readOnly
-                  value={documentForm.processedBy}
-                />
-              </label>
-            </div>
-
-            <button
-              className="mt-4 rounded-2xl bg-gov-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gov-800"
-              disabled={isDocumentRequestLoading}
-              type="submit"
-            >
-              {documentForm.id ? "Save Changes" : "Create Request"}
-            </button>
-          </form>
-        ) : null}
-
-        <div className="mt-5 grid gap-3 md:grid-cols-4">
-          <div className="rounded-[1.25rem] border border-orange-100 bg-orange-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gov-700">Total</p>
-            <p className="mt-2 text-2xl font-black text-slate-900">
-              {getTotalDocumentRequests(documentRequests)}
-            </p>
-          </div>
-          <div className="rounded-[1.25rem] border border-sky-100 bg-sky-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">This Month</p>
-            <p className="mt-2 text-2xl font-black text-sky-900">
-              {getDocumentRequestsThisMonth(documentRequests)}
-            </p>
-          </div>
-          <div className="rounded-[1.25rem] border border-amber-100 bg-amber-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Expiring Soon</p>
-            <p className="mt-2 text-2xl font-black text-amber-900">
-              {getExpiringSoonCount(documentRequests)}
-            </p>
-          </div>
-          <div className="rounded-[1.25rem] border border-emerald-100 bg-emerald-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Types</p>
-            <p className="mt-2 text-2xl font-black text-emerald-900">
-              {Object.keys(documentTypeCounts).length}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1fr]">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900">Recent Requests</h3>
-            <div className="mt-3 space-y-3">
-              {recentRequests.map((request) => (
-                <div className="rounded-2xl border border-orange-100 px-4 py-3" key={request.id}>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-semibold text-slate-900">{request.documentType}</p>
-                    <span className="text-xs font-semibold text-slate-500">{request.status}</span>
-                  </div>
-                  <p className="mt-1 text-sm text-slate-600">{getResidentName(request.residentId)}</p>
-                  <button
-                    className="mt-3 rounded-xl border border-orange-200 px-3 py-1.5 text-xs font-semibold text-gov-800 transition hover:bg-orange-50"
-                    onClick={() => openEditDocumentRequestForm(request)}
-                    type="button"
-                  >
-                    Edit Request
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-bold text-slate-900">By Document Type</h3>
-            <div className="mt-3 space-y-3">
-              {Object.entries(documentTypeCounts).map(([documentType, count]) => (
-                <div
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-orange-100 px-4 py-3 text-sm"
-                  key={documentType}
-                >
-                  <span className="font-medium text-slate-700">{documentType}</span>
-                  <span className="font-black text-slate-900">{count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">Green</p>
-          <p className="mt-3 text-2xl font-black text-emerald-900">Proceed</p>
-          <p className="mt-2 text-sm text-emerald-800">Cleared for release outside the system.</p>
-        </div>
-        <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-amber-700">Yellow</p>
-          <p className="mt-3 text-2xl font-black text-amber-900">Refer</p>
-          <p className="mt-2 text-sm text-amber-800">Refer the resident to the Lupon office.</p>
-        </div>
-        <div className="rounded-[1.5rem] border border-rose-200 bg-rose-50 p-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose-700">Red</p>
-          <p className="mt-3 text-2xl font-black text-rose-900">Refer</p>
-          <p className="mt-2 text-sm text-rose-800">Lupon handling is required before clearance proceeds.</p>
-        </div>
-      </section>
-
-      <section className="overflow-hidden rounded-[1.75rem] border border-orange-100">
+      <SectionCard className="overflow-hidden lg:max-h-[48vh] lg:overflow-y-auto" padding="none">
         <div className="grid gap-px bg-orange-100">
           <div className="grid grid-cols-[1.4fr_1fr_auto] gap-4 bg-orange-50 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-gov-700">
             <span>Resident</span>
@@ -440,15 +200,15 @@ export default function DepartmentDashboard({
           </div>
 
           {isResidentLoading ? (
-            <div className="bg-white px-5 py-8 text-center text-sm text-slate-500">
+            <StateMessage className="rounded-none border-0 bg-white px-5 py-8 text-center" tone="neutral">
               Loading residents from the database API...
-            </div>
+            </StateMessage>
           ) : null}
 
           {!isResidentLoading && residentError ? (
-            <div className="bg-white px-5 py-8 text-center text-sm text-rose-700">
+            <StateMessage className="rounded-none border-0 bg-white px-5 py-8 text-center" tone="danger">
               {residentError}
-            </div>
+            </StateMessage>
           ) : null}
 
           {!isResidentLoading && !residentError
@@ -468,25 +228,240 @@ export default function DepartmentDashboard({
                   </div>
 
                   <div className="flex items-center">
-                    <button
-                      className="rounded-2xl bg-gov-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gov-800"
-                      onClick={() => onSelectResident(resident.id)}
-                      type="button"
-                    >
+                    <Button onClick={() => onSelectResident(resident.id)}>
                       Verify
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))
             : null}
 
           {!isResidentLoading && !residentError && results.length === 0 ? (
-            <div className="bg-white px-5 py-8 text-center text-sm text-slate-500">
+            <StateMessage className="rounded-none border-0 bg-white px-5 py-8 text-center" tone="neutral">
               No residents match the current search and status filter.
-            </div>
+            </StateMessage>
           ) : null}
         </div>
-      </section>
+      </SectionCard>
+
+      <SectionCard>
+        <SectionHeader
+          actions={
+            <Button
+              disabled={isDocumentRequestLoading || residents.length === 0}
+              onClick={openNewDocumentRequestForm}
+            >
+              New Document Request
+            </Button>
+          }
+          eyebrow="Document Requests"
+          title="Document Request Summary"
+        />
+
+        {isDocumentRequestLoading ? (
+          <StateMessage className="mt-4" tone="info">
+            Loading document requests from the database API...
+          </StateMessage>
+        ) : null}
+
+        {documentRequestError ? (
+          <StateMessage className="mt-4" tone="danger">
+            {documentRequestError}
+          </StateMessage>
+        ) : null}
+
+        <div
+          className={`mt-5 grid gap-5 ${
+            isDocumentFormOpen ? "lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)] lg:items-start" : ""
+          }`}
+        >
+          <div>
+            <div className="grid gap-3 md:grid-cols-4">
+              <MetricCard label="Total" tone="orange" value={getTotalDocumentRequests(documentRequests)} />
+              <MetricCard label="This Month" tone="sky" value={getDocumentRequestsThisMonth(documentRequests)} />
+              <MetricCard label="Expiring Soon" tone="amber" value={getExpiringSoonCount(documentRequests)} />
+              <MetricCard label="Types" tone="emerald" value={Object.keys(documentTypeCounts).length} />
+            </div>
+
+            <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Recent Requests</h3>
+                <div className="mt-3 space-y-3">
+                  {recentRequests.map((request) => (
+                    <div className="rounded-2xl border border-orange-100 px-4 py-3" key={request.id}>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-semibold text-slate-900">{request.documentType}</p>
+                        <RequestStatusBadge status={request.status} />
+                      </div>
+                      <p className="mt-1 text-sm text-slate-600">{getResidentName(request.residentId)}</p>
+                      <Button
+                        className="mt-3"
+                        onClick={() => openEditDocumentRequestForm(request)}
+                        size="sm"
+                        variant="secondary"
+                      >
+                        Edit Request
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">By Document Type</h3>
+                <div className="mt-3 space-y-3">
+                  {Object.entries(documentTypeCounts).map(([documentType, count]) => (
+                    <div
+                      className="flex items-center justify-between gap-4 rounded-2xl border border-orange-100 px-4 py-3 text-sm"
+                      key={documentType}
+                    >
+                      <span className="font-medium text-slate-700">{documentType}</span>
+                      <span className="font-black text-slate-900">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {isDocumentFormOpen ? (
+            <aside className="rounded-2xl border border-orange-100 bg-orange-50 p-5 lg:sticky lg:top-4">
+              <form onSubmit={handleDocumentFormSubmit}>
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 className="text-lg font-black text-slate-900">
+                    {documentForm.id ? "Update Document Request" : "New Document Request"}
+                  </h3>
+                  <Button onClick={() => setIsDocumentFormOpen(false)} variant="secondary">
+                    Cancel
+                  </Button>
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-1">
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-700">Resident</span>
+                    <select
+                      className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
+                      name="residentId"
+                      onChange={handleDocumentFormChange}
+                      required
+                      value={documentForm.residentId}
+                    >
+                      {residents.map((resident) => (
+                        <option key={resident.id} value={resident.id}>
+                          {resident.name} ({resident.id})
+                        </option>
+                      ))}
+                      {residents.length === 0 ? (
+                        <option disabled value="">
+                          No residents loaded
+                        </option>
+                      ) : null}
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-700">Document Type</span>
+                    <select
+                      className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
+                      name="barangayDocumentId"
+                      onChange={handleDocumentFormChange}
+                      value={documentForm.barangayDocumentId}
+                    >
+                      {barangayDocumentOptions.map((documentType) => (
+                        <option key={documentType.id} value={documentType.id}>
+                          {documentType.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block md:col-span-2 lg:col-span-1">
+                    <span className="mb-2 block text-sm font-medium text-slate-700">Purpose</span>
+                    <input
+                      className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
+                      name="purpose"
+                      onChange={handleDocumentFormChange}
+                      required
+                      value={documentForm.purpose}
+                    />
+                    <span className="mt-2 block text-xs text-slate-500">
+                      Keep this non-confidential for Department processing records.
+                    </span>
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-700">Request Date</span>
+                    <input
+                      className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
+                      name="requestDate"
+                      onChange={handleDocumentFormChange}
+                      required
+                      type="date"
+                      value={documentForm.requestDate}
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-700">Release Date</span>
+                    <input
+                      className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
+                      name="releaseDate"
+                      onChange={handleDocumentFormChange}
+                      type="date"
+                      value={documentForm.releaseDate}
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-700">Expiry Date</span>
+                    <input
+                      className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
+                      name="expiryDate"
+                      onChange={handleDocumentFormChange}
+                      type="date"
+                      value={documentForm.expiryDate}
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-medium text-slate-700">Status</span>
+                    <select
+                      className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
+                      name="status"
+                      onChange={handleDocumentFormChange}
+                      value={documentForm.status}
+                    >
+                      {documentRequestStatusOptions.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block md:col-span-2 lg:col-span-1">
+                    <span className="mb-2 block text-sm font-medium text-slate-700">Processed By</span>
+                    <input
+                      className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-3 outline-none transition focus:border-gov-500"
+                      name="processedBy"
+                      onChange={handleDocumentFormChange}
+                      readOnly
+                      value={documentForm.processedBy}
+                    />
+                    <span className="mt-2 block text-xs text-slate-500">
+                      Filled from the signed-in Department account.
+                    </span>
+                  </label>
+                </div>
+
+                <Button className="mt-4" disabled={isDocumentRequestLoading} type="submit">
+                  {documentForm.id ? "Save Changes" : "Create Request"}
+                </Button>
+              </form>
+            </aside>
+          ) : null}
+        </div>
+      </SectionCard>
     </div>
   );
 }
