@@ -354,7 +354,7 @@ export default function App() {
       setCurrentPage(getLandingPage(user.role));
     } catch (error) {
       if (error?.status === 401 || error?.status === 400) {
-        setLoginError("Invalid credentials. Use one of the local accounts shown on the login screen.");
+        setLoginError("Invalid credentials. Use one of the local accounts");
         return;
       }
 
