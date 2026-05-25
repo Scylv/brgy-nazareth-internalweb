@@ -33,12 +33,15 @@ export default function AdminPanel({
   actionError = "",
   actionMessage = "",
   documentRequests,
+  excelImportCommitSummary = null,
   excelImportError = "",
   excelImportPreview = null,
   error = "",
+  isExcelImportCommitLoading = false,
   isExcelImportPreviewLoading = false,
   isLoading = false,
   isMutating = false,
+  onCommitExcelImport,
   onCreateAccount,
   onPreviewExcelImport,
   onResetPassword,
@@ -57,6 +60,11 @@ export default function AdminPanel({
     temporaryPassword: ""
   });
   const [selectedImportFile, setSelectedImportFile] = useState(null);
+  const [previewedImportFile, setPreviewedImportFile] = useState(null);
+  const [excelImportConfirmations, setExcelImportConfirmations] = useState({
+    importConfirmed: false,
+    backupConfirmed: false
+  });
   const accountGroups = getAccountGroups(users);
   const counters = getAdminCounters({ users, residents, documentRequests });
   const excelImportRows = excelImportPreview?.previewRows ?? [];
@@ -91,7 +99,36 @@ export default function AdminPanel({
 
   async function handleExcelPreview(event) {
     event.preventDefault();
-    await onPreviewExcelImport?.(selectedImportFile);
+    setExcelImportConfirmations({
+      importConfirmed: false,
+      backupConfirmed: false
+    });
+    const preview = await onPreviewExcelImport?.(selectedImportFile);
+
+    setPreviewedImportFile(preview ? selectedImportFile : null);
+  }
+
+  async function handleExcelCommit(event) {
+    event.preventDefault();
+    await onCommitExcelImport?.(previewedImportFile, excelImportConfirmations);
+  }
+
+  function handleExcelImportConfirmationChange(event) {
+    const { checked, name } = event.target;
+
+    setExcelImportConfirmations((current) => ({
+      ...current,
+      [name]: checked
+    }));
+  }
+
+  function handleExcelFileChange(event) {
+    setSelectedImportFile(event.target.files?.[0] ?? null);
+    setPreviewedImportFile(null);
+    setExcelImportConfirmations({
+      importConfirmed: false,
+      backupConfirmed: false
+    });
   }
 
   function openResetForm(profileId) {
@@ -169,12 +206,12 @@ export default function AdminPanel({
               <input
                 accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-2xl file:border file:border-orange-200 file:bg-white file:px-4 file:py-2 file:text-sm file:font-semibold file:text-gov-800 hover:file:bg-orange-50"
-                onChange={(event) => setSelectedImportFile(event.target.files?.[0] ?? null)}
+                onChange={handleExcelFileChange}
                 type="file"
               />
             </label>
             <Button
-              disabled={!selectedImportFile || isExcelImportPreviewLoading}
+              disabled={!selectedImportFile || isExcelImportPreviewLoading || isExcelImportCommitLoading}
               size="lg"
               type="submit"
             >
@@ -366,6 +403,108 @@ export default function AdminPanel({
                 </table>
               </div>
             </div>
+
+            <form className="border-t border-orange-100 pt-5" onSubmit={handleExcelCommit}>
+              <div className="grid gap-3 lg:grid-cols-2">
+                <label className="flex items-start gap-3 text-sm font-semibold text-slate-700">
+                  <input
+                    checked={excelImportConfirmations.importConfirmed}
+                    className="mt-1 h-4 w-4 rounded border-orange-200 text-gov-700 focus:ring-gov-500"
+                    name="importConfirmed"
+                    onChange={handleExcelImportConfirmationChange}
+                    type="checkbox"
+                  />
+                  <span>I confirm this preview is ready to import valid resident rows.</span>
+                </label>
+                <label className="flex items-start gap-3 text-sm font-semibold text-slate-700">
+                  <input
+                    checked={excelImportConfirmations.backupConfirmed}
+                    className="mt-1 h-4 w-4 rounded border-orange-200 text-gov-700 focus:ring-gov-500"
+                    name="backupConfirmed"
+                    onChange={handleExcelImportConfirmationChange}
+                    type="checkbox"
+                  />
+                  <span>I confirm a database backup was created before this import.</span>
+                </label>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <Button
+                  disabled={
+                    !selectedImportFile ||
+                    !previewedImportFile ||
+                    selectedImportFile !== previewedImportFile ||
+                    !excelImportConfirmations.importConfirmed ||
+                    !excelImportConfirmations.backupConfirmed ||
+                    isExcelImportPreviewLoading ||
+                    isExcelImportCommitLoading
+                  }
+                  size="lg"
+                  type="submit"
+                >
+                  {isExcelImportCommitLoading ? "Importing" : "Commit Import"}
+                </Button>
+                <p className="text-sm font-semibold text-slate-600">
+                  Valid rows import; duplicate and invalid rows stay skipped.
+                </p>
+              </div>
+            </form>
+          </div>
+        ) : null}
+
+        {excelImportCommitSummary ? (
+          <div className="mt-5 border-t border-emerald-100 pt-5">
+            <h3 className="text-sm font-black uppercase tracking-[0.16em] text-emerald-700">
+              Import Summary
+            </h3>
+            <dl className="mt-3 grid gap-4 md:grid-cols-5">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                  Rows
+                </dt>
+                <dd className="mt-2 text-2xl font-black text-slate-900">
+                  {excelImportCommitSummary.rowsDetected}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                  Created
+                </dt>
+                <dd className="mt-2 text-2xl font-black text-slate-900">
+                  {excelImportCommitSummary.created}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                  Duplicates
+                </dt>
+                <dd className="mt-2 text-2xl font-black text-slate-900">
+                  {excelImportCommitSummary.skippedDuplicates}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                  Failed
+                </dt>
+                <dd className="mt-2 text-2xl font-black text-slate-900">
+                  {excelImportCommitSummary.failedValidation}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                  History
+                </dt>
+                <dd className="mt-2 text-2xl font-black text-slate-900">
+                  {excelImportCommitSummary.documentHistoryCreated}
+                </dd>
+              </div>
+            </dl>
+            {excelImportCommitSummary.documentHistoryDeferred ? (
+              <StateMessage className="mt-4" tone="info">
+                {excelImportCommitSummary.documentHistoryDeferred} assistance history item
+                {excelImportCommitSummary.documentHistoryDeferred === 1 ? "" : "s"} deferred.
+              </StateMessage>
+            ) : null}
           </div>
         ) : null}
       </SectionCard>

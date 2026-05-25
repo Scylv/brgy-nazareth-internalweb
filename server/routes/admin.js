@@ -1,5 +1,6 @@
 import { Router, raw } from "express";
 import { writeAuditLog } from "../lib/audit.js";
+import { commitPhase1ExcelImport } from "../lib/excelImportCommit.js";
 import { parseExcelImportPreview } from "../lib/excelImportPreview.js";
 import { createId } from "../lib/ids.js";
 import { hashPassword } from "../lib/passwords.js";
@@ -68,6 +69,10 @@ function isSupportedXlsxUpload(req) {
 
 function shouldIncludeExcelDateDebug() {
   return process.env.NODE_ENV !== "production" && process.env.EXCEL_IMPORT_DEBUG_DATES === "true";
+}
+
+function isHeaderConfirmation(value) {
+  return String(value ?? "").trim().toLowerCase() === "true";
 }
 
 async function loadExistingResidentsForImportPreview(pool) {
@@ -153,6 +158,59 @@ export function createAdminRouter(pool) {
         });
 
         return res.json(preview);
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          (error.message.includes(".xlsx") ||
+            error.message.includes("Sheet") ||
+            error.message.includes("workbook"))
+        ) {
+          return res.status(400).json({ error: error.message });
+        }
+
+        return next(error);
+      }
+    }
+  );
+
+  router.post(
+    "/excel-import/commit",
+    requireRole("admin"),
+    raw({
+      limit: EXCEL_PREVIEW_UPLOAD_LIMIT,
+      type: "*/*"
+    }),
+    async (req, res, next) => {
+      if (!isHeaderConfirmation(req.get("x-import-confirmed"))) {
+        return res.status(400).json({
+          error: "Explicit Admin import confirmation is required before commit."
+        });
+      }
+
+      if (!isHeaderConfirmation(req.get("x-backup-confirmed"))) {
+        return res.status(400).json({
+          error: "backup confirmation is required before import commit."
+        });
+      }
+
+      if (!isSupportedXlsxUpload(req)) {
+        return res.status(415).json({
+          error: "Only .xlsx workbook uploads are supported for this import commit."
+        });
+      }
+
+      if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+        return res.status(400).json({ error: "An .xlsx workbook file is required." });
+      }
+
+      try {
+        const result = await commitPhase1ExcelImport(pool, {
+          actor: req.user,
+          sourceFilename: getUploadFilename(req),
+          workbookBuffer: req.body
+        });
+
+        return res.json(result);
       } catch (error) {
         if (
           error instanceof Error &&
