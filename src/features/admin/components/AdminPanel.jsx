@@ -33,10 +33,14 @@ export default function AdminPanel({
   actionError = "",
   actionMessage = "",
   documentRequests,
+  excelImportError = "",
+  excelImportPreview = null,
   error = "",
+  isExcelImportPreviewLoading = false,
   isLoading = false,
   isMutating = false,
   onCreateAccount,
+  onPreviewExcelImport,
   onResetPassword,
   onToggleAccountStatus,
   residents,
@@ -52,8 +56,14 @@ export default function AdminPanel({
     profileId: "",
     temporaryPassword: ""
   });
+  const [selectedImportFile, setSelectedImportFile] = useState(null);
   const accountGroups = getAccountGroups(users);
   const counters = getAdminCounters({ users, residents, documentRequests });
+  const excelImportRows = excelImportPreview?.previewRows ?? [];
+  const excelImportErrors = excelImportPreview?.errors ?? [];
+  const excelImportWarnings = excelImportPreview?.warnings ?? [];
+  const ignoredImportColumns = excelImportPreview?.ignoredColumns ?? [];
+  const documentRequestPairs = excelImportPreview?.documentRequestPairsDetected ?? [];
 
   function handleAccountFormChange(event) {
     const { name, value } = event.target;
@@ -77,6 +87,11 @@ export default function AdminPanel({
         temporaryPassword: ""
       });
     }
+  }
+
+  async function handleExcelPreview(event) {
+    event.preventDefault();
+    await onPreviewExcelImport?.(selectedImportFile);
   }
 
   function openResetForm(profileId) {
@@ -143,6 +158,211 @@ export default function AdminPanel({
           />
         ))}
       </section>
+
+      <SectionCard>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <SectionHeader eyebrow="Excel Import" title="Resident Registry Preview" />
+
+          <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={handleExcelPreview}>
+            <label className="space-y-2 text-sm font-semibold text-slate-700">
+              Workbook
+              <input
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-2xl file:border file:border-orange-200 file:bg-white file:px-4 file:py-2 file:text-sm file:font-semibold file:text-gov-800 hover:file:bg-orange-50"
+                onChange={(event) => setSelectedImportFile(event.target.files?.[0] ?? null)}
+                type="file"
+              />
+            </label>
+            <Button
+              disabled={!selectedImportFile || isExcelImportPreviewLoading}
+              size="lg"
+              type="submit"
+            >
+              {isExcelImportPreviewLoading ? "Previewing" : "Preview"}
+            </Button>
+          </form>
+        </div>
+
+        {excelImportError ? (
+          <StateMessage className="mt-4" tone="danger">
+            {excelImportError}
+          </StateMessage>
+        ) : null}
+
+        {excelImportPreview ? (
+          <div className="mt-5 space-y-5">
+            <dl className="grid gap-4 border-y border-orange-100 py-4 md:grid-cols-4">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-gov-700">
+                  Rows
+                </dt>
+                <dd className="mt-2 text-2xl font-black text-slate-900">
+                  {excelImportPreview.totalRowsDetected}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-gov-700">
+                  Errors
+                </dt>
+                <dd className="mt-2 text-2xl font-black text-slate-900">
+                  {excelImportErrors.length}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-gov-700">
+                  Warnings
+                </dt>
+                <dd className="mt-2 text-2xl font-black text-slate-900">
+                  {excelImportWarnings.length}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-gov-700">
+                  Request Pairs
+                </dt>
+                <dd className="mt-2 text-2xl font-black text-slate-900">
+                  {documentRequestPairs.length}
+                </dd>
+              </div>
+            </dl>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-[0.16em] text-slate-700">
+                  Ignored Columns
+                </h3>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {ignoredImportColumns.map((column) => (
+                    <span
+                      className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-gov-800"
+                      key={column.column}
+                    >
+                      {column.column}: {column.reason}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-[0.16em] text-slate-700">
+                  Assistance Pairs
+                </h3>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {documentRequestPairs.map((pair) => (
+                    <span
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700"
+                      key={`${pair.assistanceColumn}-${pair.dateColumn}`}
+                    >
+                      {pair.assistanceColumn}/{pair.dateColumn}
+                    </span>
+                  ))}
+                  {documentRequestPairs.length === 0 ? (
+                    <span className="text-sm text-slate-600">None detected.</span>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            {excelImportErrors.length > 0 ? (
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-[0.16em] text-rose-700">
+                  Errors
+                </h3>
+                <div className="mt-3 overflow-hidden rounded-2xl border border-rose-100">
+                  <table className="min-w-full divide-y divide-rose-100 text-left text-sm">
+                    <thead className="bg-rose-50 text-xs font-semibold uppercase tracking-[0.12em] text-rose-800">
+                      <tr>
+                        <th className="px-4 py-3">Row</th>
+                        <th className="px-4 py-3">Field</th>
+                        <th className="px-4 py-3">Issue</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-rose-100 bg-white">
+                      {excelImportErrors.slice(0, 8).map((errorItem) => (
+                        <tr key={`${errorItem.rowNumber}-${errorItem.code}`}>
+                          <td className="px-4 py-3 font-semibold text-slate-900">
+                            {errorItem.rowNumber}
+                          </td>
+                          <td className="px-4 py-3 text-slate-700">{errorItem.field}</td>
+                          <td className="px-4 py-3 text-slate-700">{errorItem.message}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
+
+            {excelImportWarnings.length > 0 ? (
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-[0.16em] text-amber-700">
+                  Warnings
+                </h3>
+                <div className="mt-3 overflow-hidden rounded-2xl border border-amber-100">
+                  <table className="min-w-full divide-y divide-amber-100 text-left text-sm">
+                    <thead className="bg-amber-50 text-xs font-semibold uppercase tracking-[0.12em] text-amber-800">
+                      <tr>
+                        <th className="px-4 py-3">Row</th>
+                        <th className="px-4 py-3">Field</th>
+                        <th className="px-4 py-3">Issue</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-amber-100 bg-white">
+                      {excelImportWarnings.slice(0, 8).map((warning) => (
+                        <tr key={`${warning.rowNumber}-${warning.code}-${warning.field}`}>
+                          <td className="px-4 py-3 font-semibold text-slate-900">
+                            {warning.rowNumber}
+                          </td>
+                          <td className="px-4 py-3 text-slate-700">{warning.field}</td>
+                          <td className="px-4 py-3 text-slate-700">{warning.message}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
+
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-[0.16em] text-slate-700">
+                Preview Rows
+              </h3>
+              <div className="mt-3 overflow-x-auto rounded-2xl border border-orange-100">
+                <table className="min-w-[60rem] divide-y divide-orange-100 text-left text-sm">
+                  <thead className="bg-orange-50 text-xs font-semibold uppercase tracking-[0.12em] text-gov-800">
+                    <tr>
+                      <th className="px-4 py-3">Row</th>
+                      <th className="px-4 py-3">Full Name</th>
+                      <th className="px-4 py-3">Address</th>
+                      <th className="px-4 py-3">Exact Address</th>
+                      <th className="px-4 py-3">Birthday</th>
+                      <th className="px-4 py-3">Contact</th>
+                      <th className="px-4 py-3">Precinct</th>
+                      <th className="px-4 py-3">History</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-orange-100 bg-white">
+                    {excelImportRows.map((row) => (
+                      <tr key={row.rowNumber}>
+                        <td className="px-4 py-3 font-semibold text-slate-900">{row.rowNumber}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.fullName || "-"}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.address || "-"}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.exactAddress || "-"}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.birthDate || "-"}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.contactNumber || "-"}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.precinctNo || "-"}</td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {row.documentRequestHistoryPreview.length}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </SectionCard>
 
       <SectionCard>
         <SectionHeader eyebrow="Provision Account" title="Create Staff Access" />
