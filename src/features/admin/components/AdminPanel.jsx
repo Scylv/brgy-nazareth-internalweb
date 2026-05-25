@@ -328,7 +328,7 @@ export default function AdminPanel({
                 Preview Rows
               </h3>
               <div className="mt-3 overflow-x-auto rounded-2xl border border-orange-100">
-                <table className="min-w-[60rem] divide-y divide-orange-100 text-left text-sm">
+                <table className="min-w-[72rem] divide-y divide-orange-100 text-left text-sm">
                   <thead className="bg-orange-50 text-xs font-semibold uppercase tracking-[0.12em] text-gov-800">
                     <tr>
                       <th className="px-4 py-3">Row</th>
@@ -336,6 +336,8 @@ export default function AdminPanel({
                       <th className="px-4 py-3">Address</th>
                       <th className="px-4 py-3">Exact Address</th>
                       <th className="px-4 py-3">Birthday</th>
+                      <th className="px-4 py-3">Civil Status</th>
+                      <th className="px-4 py-3">Employment</th>
                       <th className="px-4 py-3">Contact</th>
                       <th className="px-4 py-3">Precinct</th>
                       <th className="px-4 py-3">History</th>
@@ -348,7 +350,11 @@ export default function AdminPanel({
                         <td className="px-4 py-3 text-slate-700">{row.fullName || "-"}</td>
                         <td className="px-4 py-3 text-slate-700">{row.address || "-"}</td>
                         <td className="px-4 py-3 text-slate-700">{row.exactAddress || "-"}</td>
-                        <td className="px-4 py-3 text-slate-700">{row.birthDate || "-"}</td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {row.birthDateDisplay || row.birthDate || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">{row.civilStatus || "-"}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.employment || "-"}</td>
                         <td className="px-4 py-3 text-slate-700">{row.contactNumber || "-"}</td>
                         <td className="px-4 py-3 text-slate-700">{row.precinctNo || "-"}</td>
                         <td className="px-4 py-3 text-slate-700">

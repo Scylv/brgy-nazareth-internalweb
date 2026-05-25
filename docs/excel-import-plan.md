@@ -25,9 +25,9 @@ records.
 | Phase | Workbook sheet | Scope | Status |
 | --- | --- | --- | --- |
 | Phase 1 | `Brgy Nazareth Inhabitatns` | Main resident registry only, about 8,006 rows x 35 columns. | Plan first implementation. |
-| Phase 2 | `Non-Voters` | Separate non-voter list. Decide whether it updates resident voter flags or remains a separate list. | Exclude until duplicate matching is designed. |
-| Phase 3 | `Senior Citizen Chapter Masterli` | Senior citizen masterlist with senior-specific fields such as OSCA ID and gender markers. | Exclude until senior profile behavior is approved. |
-| Phase 4 | `New Senior` | Smaller/newer senior citizen list. | Exclude until Phase 3 rules are settled. |
+| Phase 2 | `Non-Voters` | Separate non-voter list. Some people may be absent from the main resident registry, so this phase must support match-or-create behavior instead of only updating Phase 1 residents. | Exclude until duplicate matching is designed. |
+| Phase 3 | `Senior Citizen Chapter Masterli` | Senior citizen masterlist with senior-specific fields such as OSCA ID and gender markers. Some seniors may be absent from the main resident registry, so this phase must support match-or-create behavior and later senior-specific profile fields. | Exclude until senior profile behavior is approved. |
+| Phase 4 | `New Senior` | Smaller/newer senior citizen list. Some seniors may be absent from both Phase 1 and Phase 3 data, so this phase must use the same match-or-create and senior-profile review rules. | Exclude until Phase 3 rules are settled. |
 
 ## Phase 1 Source Sheet
 
