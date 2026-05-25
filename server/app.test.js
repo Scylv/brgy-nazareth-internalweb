@@ -9,6 +9,14 @@ function createPool(rowsByQuery = []) {
     queries,
     async query(sql, params = []) {
       queries.push({ sql, params });
+
+      if (sql.includes("INSERT INTO audit_logs")) {
+        return {
+          rows: [],
+          rowCount: 1
+        };
+      }
+
       const rows = rowsByQuery[queries.length - 1] ?? [];
       return {
         rows,
@@ -16,6 +24,14 @@ function createPool(rowsByQuery = []) {
       };
     }
   };
+}
+
+function findAuditQueries(pool) {
+  return pool.queries.filter((query) => query.sql.includes("INSERT INTO audit_logs"));
+}
+
+function getAuditMetadata(auditQuery) {
+  return auditQuery?.params?.[5] ?? {};
 }
 
 function createResidentUpdatePool(initialResident = residentRow) {
@@ -59,6 +75,13 @@ function createResidentUpdatePool(initialResident = residentRow) {
 
         return {
           rows: [resident],
+          rowCount: 1
+        };
+      }
+
+      if (sql.includes("INSERT INTO audit_logs")) {
+        return {
+          rows: [],
           rowCount: 1
         };
       }
@@ -128,6 +151,8 @@ const profileRows = {
   }
 };
 
+const TRUSTED_ORIGIN = "https://barangay-staff.example.test";
+
 async function loginAs(app, username, password) {
   const response = await request(app).post("/api/auth/login").send({ username, password });
 
@@ -139,6 +164,7 @@ async function loginAs(app, username, password) {
 
 beforeEach(() => {
   vi.stubEnv("AUTH_SESSION_SECRET", "test-auth-session-secret");
+  vi.stubEnv("CORS_ORIGINS", TRUSTED_ORIGIN);
 });
 
 afterEach(() => {
@@ -230,6 +256,29 @@ describe("authentication and role-based API access", () => {
     expect(response.headers["set-cookie"]).toBeUndefined();
   });
 
+  it("rate limits repeated invalid login attempts", async () => {
+    const pool = createPool(Array.from({ length: 5 }, () => [profileRows.department]));
+    const app = createApp(pool);
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const response = await request(app).post("/api/auth/login").send({
+        username: "department",
+        password: "wrong-password"
+      });
+
+      expect(response.status).toBe(401);
+    }
+
+    const response = await request(app).post("/api/auth/login").send({
+      username: "department",
+      password: "wrong-password"
+    });
+
+    expect(response.status).toBe(429);
+    expect(response.body.error).toContain("Too many login attempts");
+    expect(pool.queries).toHaveLength(5);
+  });
+
   it("rejects empty login input before querying the database", async () => {
     const pool = createPool();
     const app = createApp(pool);
@@ -276,6 +325,22 @@ describe("authentication and role-based API access", () => {
 
     expect(response.status).toBe(401);
     expect(response.body.error).toContain("Authentication is required");
+  });
+
+  it("does not require an origin header for protected GET requests", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department], [residentRow]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .get("/api/residents/RBI-2024-0002")
+      .set("Cookie", cookie);
+
+    expect(response.status).toBe(200);
+    expect(response.body.resident).toMatchObject({
+      id: "RBI-2024-0002",
+      statusColor: "yellow"
+    });
   });
 
   it("allows Vite frontend preflight requests with cookie credentials", async () => {
@@ -326,6 +391,20 @@ describe("authentication and role-based API access", () => {
     expect(JSON.stringify(response.body)).not.toContain("luponCaseNotes");
     expect(JSON.stringify(response.body)).not.toContain("confidentialSummary");
     expect(JSON.stringify(response.body)).not.toContain("noteBody");
+    expect(pool.queries).toHaveLength(2);
+    expect(pool.queries.at(-1).sql).not.toContain("FROM lupon_cases");
+  });
+
+  it("blocks Admin users from Lupon case routes", async () => {
+    const pool = createPool([[profileRows.admin], [profileRows.admin]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+
+    const response = await request(app).get("/api/lupon/cases").set("Cookie", cookie);
+
+    expect(response.status).toBe(403);
+    expect(JSON.stringify(response.body)).not.toContain("luponCases");
+    expect(JSON.stringify(response.body)).not.toContain("confidentialSummary");
     expect(pool.queries).toHaveLength(2);
     expect(pool.queries.at(-1).sql).not.toContain("FROM lupon_cases");
   });
@@ -445,6 +524,117 @@ describe("authentication and role-based API access", () => {
     expect(JSON.stringify(response.body)).not.toContain("noteBody");
   });
 
+  it("writes a safe audit record when Lupon creates a case", async () => {
+    const confidentialSummary = "Do not store this confidential case summary in audit metadata.";
+    const pool = createPool([
+      [profileRows.lupon],
+      [profileRows.lupon],
+      [
+        {
+          id: "LC-2026-0003",
+          resident_id: "RBI-2024-0002",
+          case_number: "LPN-2026-0003",
+          case_type: "Address Verification",
+          status: "open",
+          priority: "high",
+          confidential_summary: confidentialSummary,
+          opened_at: "2026-05-21",
+          resolved_at: null,
+          assigned_lupon_profile_id: "lupon-1",
+          created_by_profile_id: "lupon-1",
+          created_at: "2026-05-21T00:00:00.000Z",
+          updated_at: "2026-05-21T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .post("/api/lupon/cases")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0002",
+        caseNumber: "LPN-2026-0003",
+        caseType: "Address Verification",
+        status: "open",
+        priority: "high",
+        confidentialSummary,
+        openedAt: "2026-05-21"
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.luponCase.confidentialSummary).toBe(confidentialSummary);
+
+    const [auditQuery] = findAuditQueries(pool);
+    const metadata = getAuditMetadata(auditQuery);
+
+    expect(auditQuery.params.slice(1, 5)).toEqual([
+      "lupon-1",
+      "lupon_case.created",
+      "lupon_case",
+      "LC-2026-0003"
+    ]);
+    expect(metadata).toMatchObject({
+      actorRole: "lupon",
+      residentId: "RBI-2024-0002",
+      caseNumber: "LPN-2026-0003",
+      caseType: "Address Verification",
+      status: "open",
+      priority: "high"
+    });
+    expect(JSON.stringify(metadata)).not.toContain(confidentialSummary);
+  });
+
+  it("writes a safe audit record when Lupon creates a confidential note", async () => {
+    const noteBody = "Do not store this confidential note body in audit metadata.";
+    const pool = createPool([
+      [profileRows.lupon],
+      [profileRows.lupon],
+      [
+        {
+          id: "LCN-2026-0003",
+          lupon_case_id: "LC-2026-0003",
+          note_type: "internal",
+          note_body: noteBody,
+          created_by_profile_id: "lupon-1",
+          created_at: "2026-05-21T01:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .post("/api/lupon/cases/LC-2026-0003/notes")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        noteType: "internal",
+        noteBody
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.luponCaseNote.noteBody).toBe(noteBody);
+
+    const [auditQuery] = findAuditQueries(pool);
+    const metadata = getAuditMetadata(auditQuery);
+
+    expect(auditQuery.params.slice(1, 5)).toEqual([
+      "lupon-1",
+      "lupon_case_note.created",
+      "lupon_case_note",
+      "LCN-2026-0003"
+    ]);
+    expect(metadata).toMatchObject({
+      actorRole: "lupon",
+      luponCaseId: "LC-2026-0003",
+      noteType: "internal"
+    });
+    expect(JSON.stringify(metadata)).not.toContain(noteBody);
+  });
+
   it("does not return Lupon confidential fields to Department resident routes", async () => {
     const pool = createPool([[profileRows.department], [profileRows.department], [residentRow]]);
     const app = createApp(pool);
@@ -520,6 +710,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .post("/api/document-requests")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({
         residentId: "RBI-2024-0001",
         barangayDocumentId: "BDOC-001",
@@ -530,6 +721,112 @@ describe("authentication and role-based API access", () => {
 
     expect(response.status).toBe(400);
     expect(response.body.error).toContain("Invalid document request status");
+    expect(pool.queries).toHaveLength(2);
+  });
+
+  it("allows trusted-origin protected mutating requests", async () => {
+    vi.stubEnv("CORS_ORIGINS", TRUSTED_ORIGIN);
+    const pool = createPool([
+      [profileRows.department],
+      [profileRows.department],
+      [
+        {
+          id: "DOC-2026-0009",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-001",
+          barangay_document_name: "Barangay Clearance",
+          purpose: "Local employment requirement",
+          status: "pending",
+          request_date: "2026-05-20",
+          release_date: null,
+          expiry_date: null,
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          created_at: "2026-05-20T00:00:00.000Z",
+          updated_at: "2026-05-20T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-20"
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.documentRequest).toMatchObject({
+      id: "DOC-2026-0009",
+      processedByProfileId: "dept-1"
+    });
+  });
+
+  it("blocks protected mutating requests with a missing origin or referer", async () => {
+    vi.stubEnv("CORS_ORIGINS", TRUSTED_ORIGIN);
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-20"
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toContain("trusted origin");
+    expect(pool.queries).toHaveLength(2);
+  });
+
+  it("blocks protected mutating requests from an untrusted origin", async () => {
+    vi.stubEnv("CORS_ORIGINS", TRUSTED_ORIGIN);
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("Origin", "https://attacker.example.test")
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-20"
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toContain("trusted origin");
+    expect(pool.queries).toHaveLength(2);
+  });
+
+  it("allows protected mutating requests with a trusted referer when Origin is missing", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("Referer", `${TRUSTED_ORIGIN}/department`)
+      .send({
+        residentId: "RBI-2024-0001",
+        purpose: "Local employment requirement"
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.fields).toEqual(["barangayDocumentId", "requestDate"]);
     expect(pool.queries).toHaveLength(2);
   });
 
@@ -610,6 +907,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .post("/api/document-requests")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .set("x-user-role", "lupon")
       .set("x-profile-id", "fake-profile")
       .send({
@@ -629,9 +927,13 @@ describe("authentication and role-based API access", () => {
       processedByProfileId: "dept-1",
       processedByName: "Elena Ledesma"
     });
-    expect(pool.queries.at(-1).sql).toContain("documents.name AS barangay_document_name");
-    expect(pool.queries.at(-1).sql).toContain("profiles.display_name AS processed_by_name");
-    expect(pool.queries.at(-1).params.slice(1)).toEqual([
+    const documentRequestInsert = pool.queries.find((query) =>
+      query.sql.includes("INSERT INTO document_requests")
+    );
+
+    expect(documentRequestInsert.sql).toContain("documents.name AS barangay_document_name");
+    expect(documentRequestInsert.sql).toContain("profiles.display_name AS processed_by_name");
+    expect(documentRequestInsert.params.slice(1)).toEqual([
       "RBI-2024-0001",
       "BDOC-001",
       "Local employment requirement",
@@ -641,6 +943,22 @@ describe("authentication and role-based API access", () => {
       null,
       "dept-1"
     ]);
+
+    const [auditQuery] = findAuditQueries(pool);
+    const metadata = getAuditMetadata(auditQuery);
+
+    expect(auditQuery.params.slice(1, 4)).toEqual([
+      "dept-1",
+      "document_request.created",
+      "document_request"
+    ]);
+    expect(auditQuery.params[4]).toBe("DOC-2026-0008");
+    expect(metadata).toMatchObject({
+      actorRole: "department",
+      residentId: "RBI-2024-0001",
+      barangayDocumentId: "BDOC-001",
+      status: "pending"
+    });
   });
 
   it("rejects missing document request fields before writing to the database", async () => {
@@ -651,6 +969,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .post("/api/document-requests")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({
         residentId: "RBI-2024-0001",
         purpose: "Local employment requirement"
@@ -669,6 +988,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .post("/api/document-requests")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({
         residentId: "RBI-2024-0001",
         barangayDocumentId: "BDOC-001",
@@ -688,6 +1008,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .patch("/api/residents/RBI-2024-0002")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({
         fullName: "Maria S. Santos",
         status: "green",
@@ -701,7 +1022,25 @@ describe("authentication and role-based API access", () => {
       fullName: "Maria S. Santos",
       statusColor: "green"
     });
-    expect(JSON.stringify(pool.queries.at(-1).params)).not.toContain("Confidential Lupon detail");
+    const residentUpdate = pool.queries.find((query) => query.sql.includes("UPDATE residents"));
+    expect(JSON.stringify(residentUpdate.params)).not.toContain("Confidential Lupon detail");
+
+    const [auditQuery] = findAuditQueries(pool);
+    const metadata = getAuditMetadata(auditQuery);
+
+    expect(auditQuery.params.slice(1, 5)).toEqual([
+      "lupon-1",
+      "resident.updated",
+      "resident",
+      "RBI-2024-0002"
+    ]);
+    expect(metadata).toMatchObject({
+      actorRole: "lupon",
+      previousStatusColor: "yellow",
+      newStatusColor: "green"
+    });
+    expect(metadata.changedFields).toEqual(expect.arrayContaining(["fullName", "status"]));
+    expect(JSON.stringify(metadata)).not.toContain("Confidential Lupon detail");
   });
 
   it("blocks Department users from updating resident status", async () => {
@@ -712,6 +1051,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .patch("/api/residents/RBI-2024-0002")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({ status: "green" });
 
     expect(response.status).toBe(403);
@@ -739,6 +1079,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .patch("/api/residents/RBI-2024-0002")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({ status: "blue" });
 
     expect(response.status).toBe(400);
@@ -754,6 +1095,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .patch("/api/residents/RBI-2024-0002")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({});
 
     expect(response.status).toBe(400);
@@ -769,6 +1111,7 @@ describe("authentication and role-based API access", () => {
     const updateResponse = await request(app)
       .patch("/api/residents/RBI-2024-0002")
       .set("Cookie", luponCookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({ status: "red" });
 
     expect(updateResponse.status).toBe(200);
@@ -801,6 +1144,7 @@ describe("authentication and role-based API access", () => {
     const updateResponse = await request(app)
       .patch("/api/residents/RBI-2024-0002")
       .set("Cookie", luponCookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({
         address: "Purok 9, Nazareth",
         contactNumber: "09998887777",

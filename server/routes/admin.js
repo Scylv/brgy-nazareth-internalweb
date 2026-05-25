@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { toProfile } from "../lib/rows.js";
+import { toAdminProfileResponse } from "../lib/responseMappers.js";
 import { requireRole } from "../middleware/roles.js";
 
 export function createAdminRouter(pool) {
@@ -19,7 +19,7 @@ export function createAdminRouter(pool) {
         ORDER BY created_at ASC, username ASC`
       );
 
-      return res.json({ profiles: result.rows.map(toProfile) });
+      return res.json({ profiles: result.rows.map(toAdminProfileResponse) });
     } catch (error) {
       return next(error);
     }

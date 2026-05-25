@@ -9,6 +9,9 @@ import {
 import { verifyPassword } from "../lib/passwords.js";
 import { createSessionToken } from "../lib/sessionTokens.js";
 
+const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 5;
+
 function normalizeUsername(username) {
   return typeof username === "string" ? username.trim().toLowerCase() : "";
 }
@@ -35,9 +38,51 @@ async function findProfileByUsername(pool, username) {
   return result.rows[0] ?? null;
 }
 
+function createLoginRateLimiter() {
+  const attempts = new Map();
+
+  function getKey(req, username) {
+    return `${req.ip ?? req.socket?.remoteAddress ?? "unknown"}:${username}`;
+  }
+
+  function getAttempt(key, now) {
+    const attempt = attempts.get(key);
+
+    if (!attempt || attempt.expiresAt <= now) {
+      return {
+        count: 0,
+        expiresAt: now + LOGIN_RATE_LIMIT_WINDOW_MS
+      };
+    }
+
+    return attempt;
+  }
+
+  return {
+    isLimited(req, username, now = Date.now()) {
+      const attempt = getAttempt(getKey(req, username), now);
+
+      return attempt.count >= LOGIN_RATE_LIMIT_MAX_ATTEMPTS;
+    },
+    recordFailure(req, username, now = Date.now()) {
+      const key = getKey(req, username);
+      const attempt = getAttempt(key, now);
+
+      attempts.set(key, {
+        count: attempt.count + 1,
+        expiresAt: attempt.expiresAt
+      });
+    },
+    clear(req, username) {
+      attempts.delete(getKey(req, username));
+    }
+  };
+}
+
 export function createAuthRouter(pool) {
   const router = Router();
   const requireAuth = createAuthMiddleware(pool);
+  const loginRateLimiter = createLoginRateLimiter();
 
   router.post("/login", async (req, res, next) => {
     const username = normalizeUsername(req.body?.username);
@@ -47,14 +92,23 @@ export function createAuthRouter(pool) {
       return res.status(400).json({ error: "Username and password are required." });
     }
 
+    if (loginRateLimiter.isLimited(req, username)) {
+      return res.status(429).json({
+        error: "Too many login attempts. Try again later."
+      });
+    }
+
     try {
       const profile = await findProfileByUsername(pool, username);
       const isAllowed =
         profile?.status === "active" && verifyPassword(password, profile.password_hash);
 
       if (!isAllowed) {
+        loginRateLimiter.recordFailure(req, username);
         return res.status(401).json({ error: "Invalid username or password." });
       }
+
+      loginRateLimiter.clear(req, username);
 
       const token = createSessionToken({
         profileId: profile.id

@@ -1,6 +1,7 @@
 import { Router } from "express";
+import { writeAuditLog } from "../lib/audit.js";
 import { createId } from "../lib/ids.js";
-import { toDocumentRequest } from "../lib/rows.js";
+import { toDocumentRequestResponse } from "../lib/responseMappers.js";
 import { requireFields, validateDocumentRequestStatus } from "../lib/validation.js";
 import { requireRole } from "../middleware/roles.js";
 
@@ -30,7 +31,7 @@ export function createDocumentRequestsRouter(pool) {
         ORDER BY requests.request_date DESC`
       );
 
-      res.json({ documentRequests: result.rows.map(toDocumentRequest) });
+      res.json({ documentRequests: result.rows.map(toDocumentRequestResponse) });
     } catch (error) {
       next(error);
     }
@@ -112,7 +113,23 @@ export function createDocumentRequestsRouter(pool) {
         ]
       );
 
-      return res.status(201).json({ documentRequest: toDocumentRequest(result.rows[0]) });
+      const documentRequest = result.rows[0];
+
+      await writeAuditLog(pool, {
+        actor: req.user,
+        action: "document_request.created",
+        targetType: "document_request",
+        targetId: documentRequest.id,
+        metadata: {
+          residentId: documentRequest.resident_id,
+          barangayDocumentId: documentRequest.barangay_document_id,
+          status: documentRequest.status
+        }
+      });
+
+      return res.status(201).json({
+        documentRequest: toDocumentRequestResponse(documentRequest)
+      });
     } catch (error) {
       return next(error);
     }
