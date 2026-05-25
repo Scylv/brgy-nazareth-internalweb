@@ -128,6 +128,8 @@ const profileRows = {
   }
 };
 
+const TRUSTED_ORIGIN = "https://barangay-staff.example.test";
+
 async function loginAs(app, username, password) {
   const response = await request(app).post("/api/auth/login").send({ username, password });
 
@@ -139,6 +141,7 @@ async function loginAs(app, username, password) {
 
 beforeEach(() => {
   vi.stubEnv("AUTH_SESSION_SECRET", "test-auth-session-secret");
+  vi.stubEnv("CORS_ORIGINS", TRUSTED_ORIGIN);
 });
 
 afterEach(() => {
@@ -230,6 +233,29 @@ describe("authentication and role-based API access", () => {
     expect(response.headers["set-cookie"]).toBeUndefined();
   });
 
+  it("rate limits repeated invalid login attempts", async () => {
+    const pool = createPool(Array.from({ length: 5 }, () => [profileRows.department]));
+    const app = createApp(pool);
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const response = await request(app).post("/api/auth/login").send({
+        username: "department",
+        password: "wrong-password"
+      });
+
+      expect(response.status).toBe(401);
+    }
+
+    const response = await request(app).post("/api/auth/login").send({
+      username: "department",
+      password: "wrong-password"
+    });
+
+    expect(response.status).toBe(429);
+    expect(response.body.error).toContain("Too many login attempts");
+    expect(pool.queries).toHaveLength(5);
+  });
+
   it("rejects empty login input before querying the database", async () => {
     const pool = createPool();
     const app = createApp(pool);
@@ -276,6 +302,22 @@ describe("authentication and role-based API access", () => {
 
     expect(response.status).toBe(401);
     expect(response.body.error).toContain("Authentication is required");
+  });
+
+  it("does not require an origin header for protected GET requests", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department], [residentRow]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .get("/api/residents/RBI-2024-0002")
+      .set("Cookie", cookie);
+
+    expect(response.status).toBe(200);
+    expect(response.body.resident).toMatchObject({
+      id: "RBI-2024-0002",
+      statusColor: "yellow"
+    });
   });
 
   it("allows Vite frontend preflight requests with cookie credentials", async () => {
@@ -534,6 +576,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .post("/api/document-requests")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({
         residentId: "RBI-2024-0001",
         barangayDocumentId: "BDOC-001",
@@ -544,6 +587,112 @@ describe("authentication and role-based API access", () => {
 
     expect(response.status).toBe(400);
     expect(response.body.error).toContain("Invalid document request status");
+    expect(pool.queries).toHaveLength(2);
+  });
+
+  it("allows trusted-origin protected mutating requests", async () => {
+    vi.stubEnv("CORS_ORIGINS", TRUSTED_ORIGIN);
+    const pool = createPool([
+      [profileRows.department],
+      [profileRows.department],
+      [
+        {
+          id: "DOC-2026-0009",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-001",
+          barangay_document_name: "Barangay Clearance",
+          purpose: "Local employment requirement",
+          status: "pending",
+          request_date: "2026-05-20",
+          release_date: null,
+          expiry_date: null,
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          created_at: "2026-05-20T00:00:00.000Z",
+          updated_at: "2026-05-20T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-20"
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.documentRequest).toMatchObject({
+      id: "DOC-2026-0009",
+      processedByProfileId: "dept-1"
+    });
+  });
+
+  it("blocks protected mutating requests with a missing origin or referer", async () => {
+    vi.stubEnv("CORS_ORIGINS", TRUSTED_ORIGIN);
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-20"
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toContain("trusted origin");
+    expect(pool.queries).toHaveLength(2);
+  });
+
+  it("blocks protected mutating requests from an untrusted origin", async () => {
+    vi.stubEnv("CORS_ORIGINS", TRUSTED_ORIGIN);
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("Origin", "https://attacker.example.test")
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-20"
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toContain("trusted origin");
+    expect(pool.queries).toHaveLength(2);
+  });
+
+  it("allows protected mutating requests with a trusted referer when Origin is missing", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("Referer", `${TRUSTED_ORIGIN}/department`)
+      .send({
+        residentId: "RBI-2024-0001",
+        purpose: "Local employment requirement"
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.fields).toEqual(["barangayDocumentId", "requestDate"]);
     expect(pool.queries).toHaveLength(2);
   });
 
@@ -624,6 +773,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .post("/api/document-requests")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .set("x-user-role", "lupon")
       .set("x-profile-id", "fake-profile")
       .send({
@@ -665,6 +815,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .post("/api/document-requests")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({
         residentId: "RBI-2024-0001",
         purpose: "Local employment requirement"
@@ -683,6 +834,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .post("/api/document-requests")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({
         residentId: "RBI-2024-0001",
         barangayDocumentId: "BDOC-001",
@@ -702,6 +854,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .patch("/api/residents/RBI-2024-0002")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({
         fullName: "Maria S. Santos",
         status: "green",
@@ -726,6 +879,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .patch("/api/residents/RBI-2024-0002")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({ status: "green" });
 
     expect(response.status).toBe(403);
@@ -753,6 +907,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .patch("/api/residents/RBI-2024-0002")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({ status: "blue" });
 
     expect(response.status).toBe(400);
@@ -768,6 +923,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app)
       .patch("/api/residents/RBI-2024-0002")
       .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({});
 
     expect(response.status).toBe(400);
@@ -783,6 +939,7 @@ describe("authentication and role-based API access", () => {
     const updateResponse = await request(app)
       .patch("/api/residents/RBI-2024-0002")
       .set("Cookie", luponCookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({ status: "red" });
 
     expect(updateResponse.status).toBe(200);
@@ -815,6 +972,7 @@ describe("authentication and role-based API access", () => {
     const updateResponse = await request(app)
       .patch("/api/residents/RBI-2024-0002")
       .set("Cookie", luponCookie)
+      .set("Origin", TRUSTED_ORIGIN)
       .send({
         address: "Purok 9, Nazareth",
         contactNumber: "09998887777",

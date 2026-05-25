@@ -1,6 +1,7 @@
 import express from "express";
 import { getAuthCookieConfig, getAuthSessionSecret, getCorsOrigins } from "./config/env.js";
 import { createAuthMiddleware } from "./middleware/auth.js";
+import { createOriginProtectionMiddleware } from "./middleware/originProtection.js";
 import { createAdminRouter } from "./routes/admin.js";
 import { createAuthRouter } from "./routes/auth.js";
 import { createDocumentRequestsRouter } from "./routes/documentRequests.js";
@@ -23,7 +24,7 @@ export function createApp(pool) {
       res.setHeader("Vary", "Origin");
     }
 
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,PUT,DELETE,OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
     if (req.method === "OPTIONS") {
@@ -40,12 +41,18 @@ export function createApp(pool) {
   });
 
   const requireAuth = createAuthMiddleware(pool);
+  const requireTrustedOrigin = createOriginProtectionMiddleware(allowedOrigins);
 
   app.use("/api/auth", createAuthRouter(pool));
-  app.use("/api/admin", requireAuth, createAdminRouter(pool));
-  app.use("/api/residents", requireAuth, createResidentsRouter(pool));
-  app.use("/api/document-requests", requireAuth, createDocumentRequestsRouter(pool));
-  app.use("/api/lupon", requireAuth, createLuponCasesRouter(pool));
+  app.use("/api/admin", requireAuth, requireTrustedOrigin, createAdminRouter(pool));
+  app.use("/api/residents", requireAuth, requireTrustedOrigin, createResidentsRouter(pool));
+  app.use(
+    "/api/document-requests",
+    requireAuth,
+    requireTrustedOrigin,
+    createDocumentRequestsRouter(pool)
+  );
+  app.use("/api/lupon", requireAuth, requireTrustedOrigin, createLuponCasesRouter(pool));
 
   app.use((error, _req, res, _next) => {
     console.error(error);
