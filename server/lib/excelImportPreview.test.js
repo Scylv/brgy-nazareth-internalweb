@@ -16,6 +16,13 @@ function createPhase1Workbook(dataRows, sheetName = MAIN_RESIDENT_SHEET_NAME) {
   });
 }
 
+function excelDateSerial(year, month, day) {
+  const excelEpoch = Date.UTC(1899, 11, 30);
+  const date = Date.UTC(year, month - 1, day);
+
+  return Math.floor((date - excelEpoch) / (24 * 60 * 60 * 1000));
+}
+
 describe("parseExcelImportPreview", () => {
   it("maps the Phase 1 resident columns and repeated assistance/date pairs", () => {
     const workbook = createPhase1Workbook([
@@ -271,5 +278,342 @@ describe("parseExcelImportPreview", () => {
     expect(() => parseExcelImportPreview(Buffer.alloc(0))).toThrow(
       "An .xlsx file buffer is required."
     );
+  });
+
+  it("preserves Phase 1 fixed column values for numeric/text contact and birthday formats", () => {
+    const workbook = createXlsxWorkbook({
+      styles: [
+        { numFmtCode: "00000000000" },
+        { numFmtCode: "0000" }
+      ],
+      sheets: [
+        {
+          name: MAIN_RESIDENT_SHEET_NAME,
+          rows: buildPhase1Rows([
+            [
+              "Test Resident Format One",
+              "Zone 7",
+              { type: "number", value: 12, styleId: 2 },
+              null,
+              null,
+              null,
+              "August 20, 2005",
+              "Single",
+              "Student",
+              "House 7, Zone 7",
+              { type: "number", value: "9.170000001E+9", styleId: 1 },
+              "format one social",
+              "Sitio Seven",
+              "TAG-1",
+              "Synthetic format note"
+            ],
+            [
+              "Test Resident Format Two",
+              "Zone 8",
+              "0013B",
+              null,
+              null,
+              null,
+              { type: "number", value: excelDateSerial(2005, 8, 21) },
+              "Married",
+              "Vendor",
+              "House 8, Zone 8",
+              "09170000002",
+              "format two social",
+              "Sitio Eight",
+              "TAG-2",
+              "Synthetic format note two"
+            ]
+          ])
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook);
+
+    expect(preview.errors).toEqual([]);
+    expect(preview.previewRows).toEqual([
+      expect.objectContaining({
+        rowNumber: 2,
+        fullName: "Test Resident Format One",
+        precinctNo: "0012",
+        birthDate: "2005-08-20",
+        birthDateDisplay: "August 20, 2005",
+        civilStatus: "Single",
+        employment: "Student",
+        exactAddress: "House 7, Zone 7",
+        contactNumber: "09170000001",
+        ignoredNeedsClarification: ["D", "E", "F"]
+      }),
+      expect.objectContaining({
+        rowNumber: 3,
+        fullName: "Test Resident Format Two",
+        precinctNo: "0013B",
+        birthDate: "2005-08-21",
+        birthDateDisplay: "2005-08-21",
+        civilStatus: "Married",
+        employment: "Vendor",
+        exactAddress: "House 8, Zone 8",
+        contactNumber: "09170000002",
+        ignoredNeedsClarification: ["D", "E", "F"]
+      })
+    ]);
+    expect(JSON.stringify(preview.previewRows)).not.toMatch(/\d+\.\d+E\+\d+/i);
+  });
+
+  it("does not return a blank birthday for an Excel date cell formatted as Month Day, Year", () => {
+    const workbook = createXlsxWorkbook({
+      styles: [{ numFmtCode: "mmmm d, yyyy" }],
+      sheets: [
+        {
+          name: MAIN_RESIDENT_SHEET_NAME,
+          rows: buildPhase1Rows([
+            [
+              "Test Resident Date Cell",
+              "Zone 9",
+              "0014C",
+              null,
+              null,
+              null,
+              { type: "date", value: "2005-08-20 00:00:00", styleId: 1 },
+              "Single",
+              "Student",
+              "House 9, Zone 9",
+              "09170000003"
+            ],
+            [
+              "Test Resident Iso Date Cell",
+              "Zone 10",
+              "0015C",
+              null,
+              null,
+              null,
+              { type: "date", value: "2005-08-20T00:00:00.000Z", styleId: 1 },
+              "Single",
+              "Student",
+              "House 10, Zone 10",
+              "09170000004"
+            ],
+            [
+              "Test Resident Js Date Text",
+              "Zone 11",
+              "0016C",
+              null,
+              null,
+              null,
+              {
+                type: "date",
+                value: "Sat Aug 20 2005 00:00:00 GMT+0800 (Philippine Standard Time)",
+                styleId: 1
+              },
+              "Single",
+              "Student",
+              "House 11, Zone 11",
+              "09170000005"
+            ]
+          ])
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook);
+
+    expect(preview.errors).toEqual([]);
+    expect(preview.previewRows[0]).toEqual(
+      expect.objectContaining({
+        rowNumber: 2,
+        birthDate: "2005-08-20",
+        birthDateDisplay: "August 20, 2005",
+        civilStatus: "Single",
+        employment: "Student",
+        contactNumber: "09170000003",
+        ignoredNeedsClarification: ["D", "E", "F"]
+      })
+    );
+    expect(preview.previewRows[0].birthDate).not.toBe("");
+    expect(preview.previewRows[1].birthDate).toBe("2005-08-20");
+    expect(preview.previewRows[1].birthDateDisplay).toBe("August 20, 2005");
+    expect(preview.previewRows[2].birthDate).toBe("2005-08-20");
+    expect(preview.previewRows[2].birthDateDisplay).toBe("August 20, 2005");
+  });
+
+  it("reads birthday from direct G-row cell metadata when the workbook stores an Excel serial date", () => {
+    const workbook = createXlsxWorkbook({
+      styles: [
+        { numFmtCode: "0" },
+        { numFmtCode: "mmmm\\ d\\,\\ yyyy" }
+      ],
+      sheets: [
+        {
+          name: MAIN_RESIDENT_SHEET_NAME,
+          rows: buildPhase1Rows([
+            [
+              "Test Resident Direct Date",
+              "Zone 14",
+              "0019C",
+              null,
+              null,
+              { type: "number", value: 38584, styleId: 1 },
+              { type: "number", value: 38584, styleId: 2 },
+              "Single",
+              "Student",
+              "House 14, Zone 14",
+              "09170000008"
+            ]
+          ])
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook, {
+      includeDateDebug: true
+    });
+
+    expect(preview.errors).toEqual([]);
+    expect(preview.previewRows[0]).toEqual(
+      expect.objectContaining({
+        birthDate: "2005-08-20",
+        birthDateDisplay: "August 20, 2005",
+        ignoredNeedsClarification: ["D", "E", "F"]
+      })
+    );
+    expect(preview.dateDebug[0]).toEqual({
+      rowNumber: 2,
+      cellAddress: "G2",
+      directCellExists: true,
+      directCellVType: "string",
+      directCellW: "August 20, 2005",
+      directCellT: "",
+      directCellZ: "mmmm\\ d\\,\\ yyyy",
+      parsedBirthDate: "2005-08-20",
+      parsedBirthDateDisplay: "August 20, 2005"
+    });
+  });
+
+  it("does not let a self-closing blank F cell swallow the G birthday cell", () => {
+    const workbook = createXlsxWorkbook({
+      styles: [
+        { numFmtCode: "@" },
+        { numFmtCode: "mmmm\\ d\\,\\ yyyy" }
+      ],
+      sheets: [
+        {
+          name: MAIN_RESIDENT_SHEET_NAME,
+          rows: buildPhase1Rows([
+            [
+              "Test Resident Self Closing",
+              "Zone 15",
+              "0020C",
+              null,
+              null,
+              { type: "blank", styleId: 1 },
+              { type: "number", value: 38584, styleId: 2 },
+              "Single",
+              "Student",
+              "House 15, Zone 15",
+              "09170000009"
+            ]
+          ])
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook, {
+      includeDateDebug: true
+    });
+
+    expect(preview.errors).toEqual([]);
+    expect(preview.previewRows[0]).toEqual(
+      expect.objectContaining({
+        birthDate: "2005-08-20",
+        birthDateDisplay: "August 20, 2005"
+      })
+    );
+    expect(preview.dateDebug[0]).toMatchObject({
+      cellAddress: "G2",
+      directCellExists: true,
+      directCellW: "August 20, 2005",
+      parsedBirthDate: "2005-08-20"
+    });
+  });
+
+  it("parses birthday text from inline date-like cells even when the cell type is not inlineStr", () => {
+    const workbook = createXlsxWorkbook({
+      sheets: [
+        {
+          name: MAIN_RESIDENT_SHEET_NAME,
+          rows: buildPhase1Rows([
+            [
+              "Test Resident Inline Date",
+              "Zone 12",
+              "0017C",
+              null,
+              null,
+              null,
+              { type: "strInline", value: "August 20, 2005" },
+              "Single",
+              "Student",
+              "House 12, Zone 12",
+              "09170000006"
+            ]
+          ])
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook);
+
+    expect(preview.errors).toEqual([]);
+    expect(preview.previewRows[0]).toEqual(
+      expect.objectContaining({
+        birthDate: "2005-08-20",
+        birthDateDisplay: "August 20, 2005"
+      })
+    );
+  });
+
+  it("can include safe date debug metadata without resident identity fields", () => {
+    const workbook = createXlsxWorkbook({
+      styles: [{ numFmtCode: "mmmm d, yyyy" }],
+      sheets: [
+        {
+          name: MAIN_RESIDENT_SHEET_NAME,
+          rows: buildPhase1Rows([
+            [
+              "Test Resident Debug Date",
+              "Zone 13",
+              "0018C",
+              null,
+              null,
+              null,
+              { type: "date", value: "2005-08-20 00:00:00", styleId: 1 },
+              "Single",
+              "Student",
+              "House 13, Zone 13",
+              "09170000007"
+            ]
+          ])
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook, { includeDateDebug: true });
+
+    expect(preview.dateDebug).toEqual([
+      {
+        rowNumber: 2,
+        cellAddress: "G2",
+        directCellExists: true,
+        directCellVType: "string",
+        directCellW: "August 20, 2005",
+        directCellT: "d",
+        directCellZ: "mmmm d, yyyy",
+        parsedBirthDate: "2005-08-20",
+        parsedBirthDateDisplay: "August 20, 2005"
+      }
+    ]);
+    expect(JSON.stringify(preview.dateDebug)).not.toContain("Test Resident Debug Date");
+    expect(JSON.stringify(preview.dateDebug)).not.toContain("09170000007");
+    expect(JSON.stringify(preview.dateDebug)).not.toContain("House 13");
   });
 });

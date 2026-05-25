@@ -66,6 +66,10 @@ function isSupportedXlsxUpload(req) {
   return XLSX_CONTENT_TYPES.has(contentType);
 }
 
+function shouldIncludeExcelDateDebug() {
+  return process.env.NODE_ENV !== "production" && process.env.EXCEL_IMPORT_DEBUG_DATES === "true";
+}
+
 async function loadExistingResidentsForImportPreview(pool) {
   const result = await pool.query(
     `SELECT
@@ -124,7 +128,10 @@ export function createAdminRouter(pool) {
 
       try {
         const existingResidents = await loadExistingResidentsForImportPreview(pool);
-        const preview = parseExcelImportPreview(req.body, { existingResidents });
+        const preview = parseExcelImportPreview(req.body, {
+          existingResidents,
+          includeDateDebug: shouldIncludeExcelDateDebug()
+        });
         const sourceFilename = getUploadFilename(req);
 
         await writeAuditLog(pool, {

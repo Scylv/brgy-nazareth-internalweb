@@ -7,6 +7,55 @@ const PREVIEW_ROW_LIMIT = 25;
 const FIRST_ASSISTANCE_COLUMN_INDEX = 16;
 const EXCEL_EPOCH_OFFSET = Date.UTC(1899, 11, 30);
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+const BUILT_IN_NUMBER_FORMATS = new Map([
+  [14, "m/d/yy"],
+  [15, "d-mmm-yy"],
+  [16, "d-mmm"],
+  [17, "mmm-yy"],
+  [22, "m/d/yy h:mm"]
+]);
+const MONTH_INDEXES = new Map(
+  [
+    ["january", 1],
+    ["jan", 1],
+    ["february", 2],
+    ["feb", 2],
+    ["march", 3],
+    ["mar", 3],
+    ["april", 4],
+    ["apr", 4],
+    ["may", 5],
+    ["june", 6],
+    ["jun", 6],
+    ["july", 7],
+    ["jul", 7],
+    ["august", 8],
+    ["aug", 8],
+    ["september", 9],
+    ["sep", 9],
+    ["sept", 9],
+    ["october", 10],
+    ["oct", 10],
+    ["november", 11],
+    ["nov", 11],
+    ["december", 12],
+    ["dec", 12]
+  ]
+);
+const LONG_MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December"
+];
 
 const FIELD_COLUMNS = [
   { column: "A", header: "", field: "fullName" },
@@ -24,8 +73,35 @@ const FIELD_COLUMNS = [
 ];
 
 const IGNORED_NEEDS_CLARIFICATION_COLUMNS = ["D", "E", "F"];
+const CELL_PATTERN = /<c\b([^>]*?)(?:\s*\/>|>([\s\S]*?)<\/c>)/g;
 
 const decoder = new TextDecoder("utf-8");
+
+function isCellValue(value) {
+  return (
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    !(value instanceof Date) &&
+    Object.hasOwn(value, "value")
+  );
+}
+
+function makeCellValue({
+  value,
+  rawValue = value,
+  displayValue = value,
+  type = "",
+  formatCode = ""
+}) {
+  return {
+    value: value ?? "",
+    rawValue: rawValue ?? value ?? "",
+    displayValue: displayValue ?? value ?? "",
+    type,
+    formatCode
+  };
+}
 
 function xmlDecode(value) {
   return String(value ?? "")
@@ -189,6 +265,53 @@ function readSharedStrings(entries) {
   return sharedStrings;
 }
 
+function readStyles(entries) {
+  const stylesXml = entries.get("xl/styles.xml");
+
+  if (!stylesXml) {
+    return {
+      cellFormats: []
+    };
+  }
+
+  const xml = readTextEntry(stylesXml);
+  const numberFormats = new Map(BUILT_IN_NUMBER_FORMATS);
+  const numFmtPattern = /<numFmt\b([^>]*)\/?>/g;
+  let numFmtMatch = numFmtPattern.exec(xml);
+
+  while (numFmtMatch) {
+    const attributes = getAttributes(numFmtMatch[1]);
+    const id = Number(attributes.numFmtId);
+
+    if (Number.isFinite(id) && attributes.formatCode) {
+      numberFormats.set(id, attributes.formatCode);
+    }
+
+    numFmtMatch = numFmtPattern.exec(xml);
+  }
+
+  const cellFormats = [];
+  const cellXfsMatch = xml.match(/<cellXfs\b[^>]*>([\s\S]*?)<\/cellXfs>/);
+  const xfPattern = /<xf\b([^>]*)\/?>/g;
+  let xfMatch = cellXfsMatch ? xfPattern.exec(cellXfsMatch[1]) : null;
+
+  while (xfMatch) {
+    const attributes = getAttributes(xfMatch[1]);
+    const numFmtId = Number(attributes.numFmtId ?? 0);
+
+    cellFormats.push({
+      numFmtId,
+      formatCode: numberFormats.get(numFmtId) ?? ""
+    });
+
+    xfMatch = xfPattern.exec(cellXfsMatch[1]);
+  }
+
+  return {
+    cellFormats
+  };
+}
+
 function readTextRuns(xml) {
   const values = [];
   const textPattern = /<t\b[^>]*>([\s\S]*?)<\/t>/g;
@@ -202,19 +325,143 @@ function readTextRuns(xml) {
   return values.join("");
 }
 
-function readCellValue(attributes, body, sharedStrings) {
+function expandScientificNotation(value) {
+  const match = /^([+-]?)(\d+)(?:\.(\d+))?[eE]([+-]?\d+)$/.exec(value);
+
+  if (!match) {
+    return value;
+  }
+
+  const [, sign, integerPart, fractionalPart = "", exponentText] = match;
+  const exponent = Number(exponentText);
+  const digits = `${integerPart}${fractionalPart}`;
+  const decimalPosition = integerPart.length + exponent;
+
+  if (decimalPosition <= 0) {
+    return `${sign}0.${"0".repeat(Math.abs(decimalPosition))}${digits}`;
+  }
+
+  if (decimalPosition >= digits.length) {
+    return `${sign}${digits}${"0".repeat(decimalPosition - digits.length)}`;
+  }
+
+  const left = digits.slice(0, decimalPosition);
+  const right = digits.slice(decimalPosition).replace(/0+$/, "");
+
+  return right ? `${sign}${left}.${right}` : `${sign}${left}`;
+}
+
+function expandNumericText(value) {
+  const raw = text(value);
+
+  if (!/^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?$/i.test(raw)) {
+    return raw;
+  }
+
+  const expanded = /e/i.test(raw) ? expandScientificNotation(raw) : raw;
+
+  return expanded.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+}
+
+function applyZeroNumberFormat(value, formatCode) {
+  const normalizedFormatCode = text(formatCode);
+
+  if (!/^0+$/.test(normalizedFormatCode)) {
+    return value;
+  }
+
+  const sign = value.startsWith("-") ? "-" : "";
+  const unsignedValue = value.replace(/^[-+]/, "");
+
+  if (!/^\d+$/.test(unsignedValue)) {
+    return value;
+  }
+
+  return `${sign}${unsignedValue.padStart(normalizedFormatCode.length, "0")}`;
+}
+
+function getCellNumberFormat(attributes, styles) {
+  const styleId = Number(attributes.s);
+
+  if (!Number.isFinite(styleId)) {
+    return "";
+  }
+
+  return styles.cellFormats[styleId]?.formatCode ?? "";
+}
+
+function readCellValue(attributes, body, sharedStrings, styles) {
+  const formatCode = getCellNumberFormat(attributes, styles);
+  const cellType = attributes.t ?? "";
+
   if (attributes.t === "inlineStr") {
-    return readTextRuns(body);
+    const value = readTextRuns(body);
+
+    return makeCellValue({
+      value,
+      type: cellType,
+      formatCode
+    });
   }
 
   const valueMatch = body.match(/<v\b[^>]*>([\s\S]*?)<\/v>/);
   const rawValue = valueMatch ? xmlDecode(valueMatch[1]) : "";
 
   if (attributes.t === "s") {
-    return sharedStrings[Number(rawValue)] ?? "";
+    return makeCellValue({
+      value: sharedStrings[Number(rawValue)] ?? "",
+      rawValue,
+      type: cellType,
+      formatCode
+    });
   }
 
-  return rawValue;
+  if (!valueMatch) {
+    const inlineValue = readTextRuns(body);
+
+    return makeCellValue({
+      value: inlineValue,
+      rawValue: inlineValue,
+      type: cellType,
+      formatCode
+    });
+  }
+
+  const expandedValue = expandNumericText(rawValue);
+  const formattedValue = applyZeroNumberFormat(expandedValue, formatCode);
+  const dateDisplay = isDateNumberFormat(formatCode)
+    ? getFormattedDateDisplay(expandedValue, formatCode)
+    : "";
+
+  return makeCellValue({
+    value: formattedValue,
+    rawValue,
+    displayValue: dateDisplay || formattedValue,
+    type: cellType,
+    formatCode
+  });
+}
+
+function readWorksheetCells(worksheetXml, sharedStrings, styles) {
+  const cells = new Map();
+  const cellPattern = new RegExp(CELL_PATTERN);
+  let cellMatch = cellPattern.exec(worksheetXml);
+
+  while (cellMatch) {
+    const cellAttributes = getAttributes(cellMatch[1]);
+    const reference = parseCellReference(cellAttributes.r);
+
+    if (reference) {
+      cells.set(
+        `${reference.column}${reference.rowNumber}`,
+        readCellValue(cellAttributes, cellMatch[2] ?? "", sharedStrings, styles)
+      );
+    }
+
+    cellMatch = cellPattern.exec(worksheetXml);
+  }
+
+  return cells;
 }
 
 function parseCellReference(reference) {
@@ -230,7 +477,7 @@ function parseCellReference(reference) {
   };
 }
 
-function readWorksheetRows(worksheetXml, sharedStrings) {
+function readWorksheetRows(worksheetXml, sharedStrings, styles) {
   const rows = new Map();
   const rowPattern = /<row\b([^>]*)>([\s\S]*?)<\/row>/g;
   let rowMatch = rowPattern.exec(worksheetXml);
@@ -239,7 +486,7 @@ function readWorksheetRows(worksheetXml, sharedStrings) {
     const rowAttributes = getAttributes(rowMatch[1]);
     const explicitRowNumber = Number(rowAttributes.r);
     const row = {};
-    const cellPattern = /<c\b([^>]*)(?:\/>|>([\s\S]*?)<\/c>)/g;
+    const cellPattern = new RegExp(CELL_PATTERN);
     let cellMatch = cellPattern.exec(rowMatch[2]);
 
     while (cellMatch) {
@@ -247,7 +494,12 @@ function readWorksheetRows(worksheetXml, sharedStrings) {
       const reference = parseCellReference(cellAttributes.r);
 
       if (reference) {
-        row[reference.column] = readCellValue(cellAttributes, cellMatch[2] ?? "", sharedStrings);
+        row[reference.column] = readCellValue(
+          cellAttributes,
+          cellMatch[2] ?? "",
+          sharedStrings,
+          styles
+        );
       }
 
       cellMatch = cellPattern.exec(rowMatch[2]);
@@ -297,6 +549,10 @@ function getHighestColumnIndex(rows) {
 }
 
 function text(value) {
+  if (isCellValue(value)) {
+    return text(value.value);
+  }
+
   return String(value ?? "").trim();
 }
 
@@ -304,75 +560,251 @@ function rowHasValue(row) {
   return Object.values(row).some((value) => text(value) !== "");
 }
 
+function formatDateDisplay(date, formatCode, fallbackDisplayValue) {
+  const normalizedFormatCode = normalizeNumberFormatCode(formatCode);
+
+  if (normalizedFormatCode.includes("mmmm")) {
+    return `${LONG_MONTH_NAMES[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+  }
+
+  return fallbackDisplayValue || date.toISOString().slice(0, 10);
+}
+
+function normalizeNumberFormatCode(formatCode) {
+  return text(formatCode).toLowerCase().replace(/\\/g, "");
+}
+
+function isDateNumberFormat(formatCode) {
+  const normalizedFormatCode = normalizeNumberFormatCode(formatCode);
+
+  return /[dy]/.test(normalizedFormatCode) && /[my]/.test(normalizedFormatCode);
+}
+
+function dateResult(date, displayValue, formatCode = "") {
+  return {
+    value: date.toISOString().slice(0, 10),
+    displayValue: formatDateDisplay(date, formatCode, displayValue),
+    valid: true
+  };
+}
+
+function parseDateParts({ year, month, day, displayValue, formatCode = "" }) {
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  ) {
+    return dateResult(date, displayValue, formatCode);
+  }
+
+  return null;
+}
+
+function getDateInput(value) {
+  if (isCellValue(value)) {
+    return value;
+  }
+
+  return makeCellValue({
+    value,
+    rawValue: value
+  });
+}
+
+function uniqueDateCandidates(...values) {
+  return [...new Set(values.map((value) => text(value)).filter(Boolean))];
+}
+
+function parseIsoLikeDateTime(raw, formatCode = "") {
+  const match =
+    /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ t](\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?)?(?:z|[+-]\d{2}:?\d{2})?$/i.exec(
+      raw
+    );
+
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day] = match;
+
+  return parseDateParts({
+    year: Number(year),
+    month: Number(month),
+    day: Number(day),
+    displayValue: raw,
+    formatCode
+  });
+}
+
+function parseMonthNameDateTime(raw, formatCode = "") {
+  const match =
+    /^(?:[a-z]{3}\s+)?([a-z]+)\s+(\d{1,2})\s+(\d{4})(?:\s+\d{1,2}:\d{2}(?::\d{2})?(?:\s+gmt[+-]\d{4}.*)?)?$/i.exec(
+      raw
+    );
+
+  if (!match) {
+    return null;
+  }
+
+  const month = MONTH_INDEXES.get(match[1].toLowerCase());
+
+  if (!month) {
+    return null;
+  }
+
+  return parseDateParts({
+    year: Number(match[3]),
+    month,
+    day: Number(match[2]),
+    displayValue: raw,
+    formatCode
+  });
+}
+
+function parseExcelSerialDate(raw, formatCode = "") {
+  if (!/^\d+(\.\d+)?$/.test(raw)) {
+    return null;
+  }
+
+  const serial = Number(raw);
+
+  if (!Number.isFinite(serial) || serial <= 0) {
+    return null;
+  }
+
+  const date = new Date(EXCEL_EPOCH_OFFSET + Math.floor(serial) * DAY_IN_MILLISECONDS);
+
+  return dateResult(date, date.toISOString().slice(0, 10), formatCode);
+}
+
+function getFormattedDateDisplay(raw, formatCode = "") {
+  return (
+    parseExcelSerialDate(raw, formatCode)?.displayValue ??
+    parseIsoLikeDateTime(raw, formatCode)?.displayValue ??
+    parseMonthNameDateTime(raw, formatCode)?.displayValue ??
+    ""
+  );
+}
+
 function parseDateValue(value) {
   if (value instanceof Date && Number.isFinite(value.getTime())) {
-    return {
-      value: value.toISOString().slice(0, 10),
-      valid: true
-    };
+    return dateResult(value, value.toISOString().slice(0, 10));
   }
 
-  const raw = text(value);
+  const input = getDateInput(value);
 
-  if (!raw) {
+  if (input.value instanceof Date && Number.isFinite(input.value.getTime())) {
+    return dateResult(input.value, input.value.toISOString().slice(0, 10), input.formatCode);
+  }
+
+  if (input.rawValue instanceof Date && Number.isFinite(input.rawValue.getTime())) {
+    return dateResult(
+      input.rawValue,
+      input.rawValue.toISOString().slice(0, 10),
+      input.formatCode
+    );
+  }
+
+  const raw = text(input.rawValue);
+  const formattedValue = text(input.value);
+  const displayValue = text(input.displayValue);
+  const candidates = uniqueDateCandidates(input.rawValue, input.value, input.displayValue);
+
+  if (candidates.length === 0) {
     return {
       value: "",
+      displayValue: "",
       valid: true
     };
   }
 
-  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(raw)) {
-    const [year, month, day] = raw.split("-").map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day));
+  if (input.type === "d") {
+    for (const candidate of candidates) {
+      const parsedDate = parseIsoLikeDateTime(candidate, input.formatCode);
 
-    if (
-      date.getUTCFullYear() === year &&
-      date.getUTCMonth() === month - 1 &&
-      date.getUTCDate() === day
-    ) {
-      return {
-        value: date.toISOString().slice(0, 10),
-        valid: true
-      };
+      if (parsedDate) {
+        return parsedDate;
+      }
     }
   }
 
-  const slashDateMatch = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/.exec(raw);
+  for (const candidate of candidates) {
+    const parsedDate = parseExcelSerialDate(candidate, input.formatCode);
 
-  if (slashDateMatch) {
-    const month = Number(slashDateMatch[1]);
-    const day = Number(slashDateMatch[2]);
-    const parsedYear = Number(slashDateMatch[3]);
-    const year = parsedYear < 100 ? 2000 + parsedYear : parsedYear;
-    const date = new Date(Date.UTC(year, month - 1, day));
-
-    if (
-      date.getUTCFullYear() === year &&
-      date.getUTCMonth() === month - 1 &&
-      date.getUTCDate() === day
-    ) {
-      return {
-        value: date.toISOString().slice(0, 10),
-        valid: true
-      };
+    if (parsedDate) {
+      return parsedDate;
     }
   }
 
-  if (/^\d+(\.\d+)?$/.test(raw)) {
-    const serial = Number(raw);
+  for (const candidate of candidates) {
+    const parsedDate = parseIsoLikeDateTime(candidate, input.formatCode);
 
-    if (serial > 0) {
-      const date = new Date(EXCEL_EPOCH_OFFSET + Math.floor(serial) * DAY_IN_MILLISECONDS);
+    if (parsedDate) {
+      return parsedDate;
+    }
+  }
 
-      return {
-        value: date.toISOString().slice(0, 10),
-        valid: true
-      };
+  const textCandidates = uniqueDateCandidates(displayValue, formattedValue, raw);
+
+  for (const candidate of textCandidates) {
+    const slashDateMatch = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/.exec(candidate);
+
+    if (slashDateMatch) {
+      const month = Number(slashDateMatch[1]);
+      const day = Number(slashDateMatch[2]);
+      const parsedYear = Number(slashDateMatch[3]);
+      const year = parsedYear < 100 ? 2000 + parsedYear : parsedYear;
+      const parsedDate = parseDateParts({
+        year,
+        month,
+        day,
+        displayValue: candidate,
+        formatCode: input.formatCode
+      });
+
+      if (parsedDate) {
+        return parsedDate;
+      }
+    }
+  }
+
+  for (const candidate of textCandidates) {
+    const monthDateMatch =
+      /^([a-z]+)\.?\s+(\d{1,2})(?:,)?\s+(\d{4})$/i.exec(candidate);
+
+    if (monthDateMatch) {
+      const month = MONTH_INDEXES.get(monthDateMatch[1].toLowerCase());
+      const day = Number(monthDateMatch[2]);
+      const year = Number(monthDateMatch[3]);
+      const parsedDate = month
+        ? parseDateParts({
+            year,
+            month,
+            day,
+            displayValue: candidate,
+            formatCode: input.formatCode
+          })
+        : null;
+
+      if (parsedDate) {
+        return parsedDate;
+      }
+    }
+  }
+
+  for (const candidate of textCandidates) {
+    const parsedDate = parseMonthNameDateTime(candidate, input.formatCode);
+
+    if (parsedDate) {
+      return parsedDate;
     }
   }
 
   return {
-    value: raw,
+    value: formattedValue || raw,
+    displayValue: formattedValue || raw,
     valid: false
   };
 }
@@ -397,6 +829,10 @@ function normalizeHeader(value) {
 
 function getCell(row, column) {
   return text(row[column]);
+}
+
+function getRawCell(row, column) {
+  return row[column] ?? "";
 }
 
 function buildDetectedColumns(headerRow) {
@@ -462,14 +898,69 @@ function makeDuplicateWarning(rowNumber, field, code, matchSource) {
   };
 }
 
-function buildPreviewRow(rowNumber, row, documentRequestPairs) {
-  const birthDate = parseDateValue(getCell(row, "G"));
+function getValueType(value) {
+  if (value instanceof Date) {
+    return "date";
+  }
+
+  if (isCellValue(value)) {
+    return "cell";
+  }
+
+  if (value === null) {
+    return "null";
+  }
+
+  return typeof value;
+}
+
+function safeDebugValue(value) {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (value === undefined || value === null) {
+    return "";
+  }
+
+  return String(value).slice(0, 120);
+}
+
+function buildDateDebug(rowNumber, cell, birthDate, directCellExists) {
+  const cellValue = isCellValue(cell) ? cell : makeCellValue({ value: cell, rawValue: cell });
+
+  return {
+    rowNumber,
+    cellAddress: `G${rowNumber}`,
+    directCellExists,
+    directCellVType: getValueType(cellValue.rawValue),
+    directCellW: safeDebugValue(cellValue.displayValue),
+    directCellT: safeDebugValue(cellValue.type),
+    directCellZ: safeDebugValue(cellValue.formatCode),
+    parsedBirthDate: birthDate.value,
+    parsedBirthDateDisplay: birthDate.displayValue
+  };
+}
+
+function buildPreviewRow(
+  rowNumber,
+  row,
+  documentRequestPairs,
+  {
+    directCells,
+    includeDateDebug = false
+  } = {}
+) {
+  const directBirthDateCell = directCells?.get(`G${rowNumber}`);
+  const birthDateCell = directBirthDateCell ?? getRawCell(row, "G");
+  const birthDate = parseDateValue(birthDateCell);
   const previewRow = {
     rowNumber,
     fullName: getCell(row, "A"),
     address: getCell(row, "B"),
     precinctNo: getCell(row, "C"),
     birthDate: birthDate.value,
+    birthDateDisplay: birthDate.displayValue,
     civilStatus: getCell(row, "H"),
     employment: getCell(row, "I"),
     exactAddress: getCell(row, "J"),
@@ -519,7 +1010,7 @@ function buildPreviewRow(rowNumber, row, documentRequestPairs) {
       continue;
     }
 
-    const parsedDate = parseDateValue(rawDate);
+    const parsedDate = parseDateValue(getRawCell(row, pair.dateColumn));
 
     previewRow.documentRequestHistoryPreview.push({
       assistanceRequested,
@@ -566,7 +1057,10 @@ function buildPreviewRow(rowNumber, row, documentRequestPairs) {
 
   return {
     previewRow,
-    errors
+    errors,
+    dateDebug: includeDateDebug
+      ? buildDateDebug(rowNumber, birthDateCell, birthDate, Boolean(directBirthDateCell))
+      : null
   };
 }
 
@@ -683,33 +1177,45 @@ function getMainWorksheet(entries) {
 
 export function parseExcelImportPreview(
   workbookBuffer,
-  { existingResidents = [], previewRowLimit = PREVIEW_ROW_LIMIT } = {}
+  {
+    existingResidents = [],
+    previewRowLimit = PREVIEW_ROW_LIMIT,
+    includeDateDebug = false
+  } = {}
 ) {
   const entries = readZipEntries(workbookBuffer);
   const worksheetXml = getMainWorksheet(entries);
   const sharedStrings = readSharedStrings(entries);
-  const rows = readWorksheetRows(worksheetXml, sharedStrings);
+  const styles = readStyles(entries);
+  const directCells = readWorksheetCells(worksheetXml, sharedStrings, styles);
+  const rows = readWorksheetRows(worksheetXml, sharedStrings, styles);
   const headerRow = rows.get(1) ?? {};
   const highestColumnIndex = getHighestColumnIndex(rows);
   const documentRequestPairsDetected = detectDocumentRequestPairs(headerRow, highestColumnIndex);
   const allPreviewRows = [];
   const errors = [];
+  const dateDebug = [];
   const dataRowNumbers = [...rows.keys()]
     .filter((rowNumber) => rowNumber > 1 && rowHasValue(rows.get(rowNumber)))
     .sort((left, right) => left - right);
 
   for (const rowNumber of dataRowNumbers) {
-    const { previewRow, errors: rowErrors } = buildPreviewRow(
+    const { previewRow, errors: rowErrors, dateDebug: rowDateDebug } = buildPreviewRow(
       rowNumber,
       rows.get(rowNumber),
-      documentRequestPairsDetected
+      documentRequestPairsDetected,
+      { directCells, includeDateDebug }
     );
 
     allPreviewRows.push(previewRow);
     errors.push(...rowErrors);
+
+    if (rowDateDebug) {
+      dateDebug.push(rowDateDebug);
+    }
   }
 
-  return {
+  const preview = {
     sheetName: MAIN_RESIDENT_SHEET_NAME,
     totalRowsDetected: dataRowNumbers.length,
     previewRows: allPreviewRows.slice(0, previewRowLimit),
@@ -719,4 +1225,10 @@ export function parseExcelImportPreview(
     ignoredColumns: buildIgnoredColumns(),
     documentRequestPairsDetected
   };
+
+  if (includeDateDebug) {
+    preview.dateDebug = dateDebug.slice(0, previewRowLimit);
+  }
+
+  return preview;
 }

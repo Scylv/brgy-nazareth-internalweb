@@ -8,6 +8,59 @@ function escapeXml(value) {
     .replace(/"/g, "&quot;");
 }
 
+function getCellDescriptor(value) {
+  if (
+    value &&
+    typeof value === "object" &&
+    !Buffer.isBuffer(value) &&
+    Object.hasOwn(value, "value")
+  ) {
+    return value;
+  }
+
+  return {
+    value
+  };
+}
+
+function buildCellXml(value, reference) {
+  const cell = getCellDescriptor(value);
+
+  if (cell.value === undefined || cell.value === null) {
+    return "";
+  }
+
+  const styleAttribute =
+    cell.styleId === undefined || cell.styleId === null ? "" : ` s="${cell.styleId}"`;
+  const cellType = cell.type ?? (typeof cell.value === "number" ? "number" : "inlineStr");
+
+  if (cellType === "blank") {
+    return `<c r="${reference}"${styleAttribute}/>`;
+  }
+
+  if (cellType === "number") {
+    return `<c r="${reference}"${styleAttribute}><v>${escapeXml(cell.value)}</v></c>`;
+  }
+
+  if (cellType === "date") {
+    return `<c r="${reference}"${styleAttribute} t="d"><v>${escapeXml(cell.value)}</v></c>`;
+  }
+
+  if (cellType === "inlineNoType") {
+    return `<c r="${reference}"${styleAttribute}><is><t>${escapeXml(cell.value)}</t></is></c>`;
+  }
+
+  if (cellType === "strInline") {
+    return `<c r="${reference}"${styleAttribute} t="str"><is><t>${escapeXml(
+      cell.value
+    )}</t></is></c>`;
+  }
+
+  return `<c r="${reference}"${styleAttribute} t="inlineStr"><is><t>${escapeXml(
+    cell.value
+  )}</t></is></c>`;
+}
+
 function columnName(index) {
   let current = index + 1;
   let name = "";
@@ -26,13 +79,8 @@ function buildSheetXml(rows) {
     .map((row, rowIndex) => {
       const cells = row
         .map((value, columnIndex) => {
-          if (value === undefined || value === null) {
-            return "";
-          }
-
           const reference = `${columnName(columnIndex)}${rowIndex + 1}`;
-
-          return `<c r="${reference}" t="inlineStr"><is><t>${escapeXml(value)}</t></is></c>`;
+          return buildCellXml(value, reference);
         })
         .join("");
 
@@ -44,6 +92,38 @@ function buildSheetXml(rows) {
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
   <sheetData>${rowXml}</sheetData>
 </worksheet>`;
+}
+
+function buildStylesXml(styles) {
+  const customNumberFormats = styles.map((style, index) => ({
+    id: 164 + index,
+    code: style.numFmtCode
+  }));
+  const numberFormatXml = customNumberFormats
+    .map(
+      (format) =>
+        `<numFmt numFmtId="${format.id}" formatCode="${escapeXml(format.code)}"/>`
+    )
+    .join("");
+  const cellFormatXml = customNumberFormats
+    .map(
+      (format) =>
+        `<xf numFmtId="${format.id}" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"/>`
+    )
+    .join("");
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <numFmts count="${customNumberFormats.length}">${numberFormatXml}</numFmts>
+  <fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>
+  <fills count="1"><fill><patternFill patternType="none"/></fill></fills>
+  <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="${customNumberFormats.length + 1}">
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
+    ${cellFormatXml}
+  </cellXfs>
+</styleSheet>`;
 }
 
 function buildWorkbookXml(sheets) {
@@ -74,7 +154,7 @@ function buildWorkbookRelsXml(sheets) {
 </Relationships>`;
 }
 
-function buildContentTypesXml(sheets) {
+function buildContentTypesXml(sheets, styles) {
   const sheetOverrides = sheets
     .map(
       (_sheet, index) =>
@@ -87,6 +167,11 @@ function buildContentTypesXml(sheets) {
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  ${
+    styles.length > 0
+      ? '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+      : ""
+  }
   ${sheetOverrides}
 </Types>`;
 }
@@ -192,11 +277,11 @@ function createZip(entries) {
   return Buffer.concat([...localParts, centralDirectory, endDirectory]);
 }
 
-export function createXlsxWorkbook({ sheets }) {
+export function createXlsxWorkbook({ sheets, styles = [] }) {
   const entries = [
     {
       name: "[Content_Types].xml",
-      data: buildContentTypesXml(sheets)
+      data: buildContentTypesXml(sheets, styles)
     },
     {
       name: "_rels/.rels",
@@ -213,6 +298,14 @@ export function createXlsxWorkbook({ sheets }) {
       name: "xl/_rels/workbook.xml.rels",
       data: buildWorkbookRelsXml(sheets)
     },
+    ...(styles.length > 0
+      ? [
+          {
+            name: "xl/styles.xml",
+            data: buildStylesXml(styles)
+          }
+        ]
+      : []),
     ...sheets.map((sheet, index) => ({
       name: `xl/worksheets/sheet${index + 1}.xml`,
       data: buildSheetXml(sheet.rows)

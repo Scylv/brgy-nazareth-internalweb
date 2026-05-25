@@ -176,6 +176,7 @@ describe("Excel import preview route", () => {
         })
       ])
     );
+    expect(response.body).not.toHaveProperty("dateDebug");
     expect(pool.queries.some((query) => query.sql.includes("INSERT INTO residents"))).toBe(false);
     expect(pool.queries.some((query) => query.sql.includes("INSERT INTO document_requests"))).toBe(
       false
@@ -194,6 +195,34 @@ describe("Excel import preview route", () => {
     ]);
     expect(JSON.stringify(pool.audits)).not.toContain("Test Resident Foxtrot");
     expect(JSON.stringify(pool.audits)).not.toContain("09170000006");
+  });
+
+  it("can include safe date debug metadata in non-production when explicitly enabled", async () => {
+    vi.stubEnv("EXCEL_IMPORT_DEBUG_DATES", "true");
+    const pool = createImportPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+
+    const response = await request(app)
+      .post("/api/admin/excel-import/preview")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", XLSX_CONTENT_TYPE)
+      .set("X-File-Name", "phase1-fake.xlsx")
+      .send(createPreviewWorkbook());
+
+    expect(response.status, JSON.stringify(response.body)).toBe(200);
+    expect(response.body.dateDebug).toEqual([
+      expect.objectContaining({
+        rowNumber: 2,
+        cellAddress: "G2",
+        directCellExists: true,
+        parsedBirthDate: "1999-09-09"
+      })
+    ]);
+    expect(JSON.stringify(response.body.dateDebug)).not.toContain("Test Resident Foxtrot");
+    expect(JSON.stringify(response.body.dateDebug)).not.toContain("09170000006");
+    expect(JSON.stringify(response.body.dateDebug)).not.toContain("House 6");
   });
 
   it("blocks Department and Lupon users before workbook parsing or resident lookup", async () => {
