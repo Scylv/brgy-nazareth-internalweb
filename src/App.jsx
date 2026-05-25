@@ -6,6 +6,7 @@ import {
   resetAdminProfilePassword,
   updateAdminProfileStatus
 } from "./features/admin/api/adminProfilesApi";
+import { previewExcelImport } from "./features/admin/api/excelImportApi";
 import AdminPanel from "./features/admin/components/AdminPanel";
 import {
   changePassword,
@@ -65,6 +66,9 @@ export default function App() {
   const [adminProfilesError, setAdminProfilesError] = useState("");
   const [adminProfileActionError, setAdminProfileActionError] = useState("");
   const [adminProfileActionMessage, setAdminProfileActionMessage] = useState("");
+  const [excelImportPreview, setExcelImportPreview] = useState(null);
+  const [excelImportError, setExcelImportError] = useState("");
+  const [isExcelImportPreviewLoading, setIsExcelImportPreviewLoading] = useState(false);
   const [isDocumentRequestsLoading, setIsDocumentRequestsLoading] = useState(false);
   const [documentRequestsError, setDocumentRequestsError] = useState("");
   const [luponCaseList, setLuponCaseList] = useState([]);
@@ -164,6 +168,9 @@ export default function App() {
       setAdminProfilesError("");
       setAdminProfileActionError("");
       setAdminProfileActionMessage("");
+      setExcelImportPreview(null);
+      setExcelImportError("");
+      setIsExcelImportPreviewLoading(false);
       return () => {
         isActive = false;
       };
@@ -401,10 +408,13 @@ export default function App() {
     setLuponStatusFilter("all");
     setDocumentRequestList([]);
     setDocumentRequestsError("");
-      setAdminProfileList([]);
-      setAdminProfilesError("");
-      setAdminProfileActionError("");
-      setAdminProfileActionMessage("");
+    setAdminProfileList([]);
+    setAdminProfilesError("");
+    setAdminProfileActionError("");
+    setAdminProfileActionMessage("");
+    setExcelImportPreview(null);
+    setExcelImportError("");
+    setIsExcelImportPreviewLoading(false);
     setLuponCaseList([]);
     setLuponCasesError("");
     setFormErrors({});
@@ -618,6 +628,24 @@ export default function App() {
     }
   }
 
+  async function handlePreviewExcelImport(file) {
+    setIsExcelImportPreviewLoading(true);
+    setExcelImportError("");
+
+    try {
+      const preview = await previewExcelImport(file);
+
+      setExcelImportPreview(preview);
+      return preview;
+    } catch (error) {
+      setExcelImportPreview(null);
+      setExcelImportError(error?.message ?? "Excel import preview failed.");
+      return null;
+    } finally {
+      setIsExcelImportPreviewLoading(false);
+    }
+  }
+
   if (!currentUser) {
     return <LoginScreen error={loginError} onLogin={handleLogin} />;
   }
@@ -718,10 +746,14 @@ export default function App() {
           actionError={adminProfileActionError}
           actionMessage={adminProfileActionMessage}
           documentRequests={documentRequestList}
+          excelImportError={excelImportError}
+          excelImportPreview={excelImportPreview}
           error={adminProfilesError}
+          isExcelImportPreviewLoading={isExcelImportPreviewLoading}
           isLoading={isAdminProfilesLoading}
           isMutating={isAdminProfileMutating}
           onCreateAccount={handleCreateAdminProfile}
+          onPreviewExcelImport={handlePreviewExcelImport}
           onResetPassword={handleResetAdminProfilePassword}
           onToggleAccountStatus={handleToggleAdminProfileStatus}
           residents={residentList}
