@@ -6,7 +6,7 @@ import {
   resetAdminProfilePassword,
   updateAdminProfileStatus
 } from "./features/admin/api/adminProfilesApi";
-import { previewExcelImport } from "./features/admin/api/excelImportApi";
+import { commitExcelImport, previewExcelImport } from "./features/admin/api/excelImportApi";
 import AdminPanel from "./features/admin/components/AdminPanel";
 import {
   changePassword,
@@ -67,8 +67,10 @@ export default function App() {
   const [adminProfileActionError, setAdminProfileActionError] = useState("");
   const [adminProfileActionMessage, setAdminProfileActionMessage] = useState("");
   const [excelImportPreview, setExcelImportPreview] = useState(null);
+  const [excelImportCommitSummary, setExcelImportCommitSummary] = useState(null);
   const [excelImportError, setExcelImportError] = useState("");
   const [isExcelImportPreviewLoading, setIsExcelImportPreviewLoading] = useState(false);
+  const [isExcelImportCommitLoading, setIsExcelImportCommitLoading] = useState(false);
   const [isDocumentRequestsLoading, setIsDocumentRequestsLoading] = useState(false);
   const [documentRequestsError, setDocumentRequestsError] = useState("");
   const [luponCaseList, setLuponCaseList] = useState([]);
@@ -169,8 +171,10 @@ export default function App() {
       setAdminProfileActionError("");
       setAdminProfileActionMessage("");
       setExcelImportPreview(null);
+      setExcelImportCommitSummary(null);
       setExcelImportError("");
       setIsExcelImportPreviewLoading(false);
+      setIsExcelImportCommitLoading(false);
       return () => {
         isActive = false;
       };
@@ -413,8 +417,10 @@ export default function App() {
     setAdminProfileActionError("");
     setAdminProfileActionMessage("");
     setExcelImportPreview(null);
+    setExcelImportCommitSummary(null);
     setExcelImportError("");
     setIsExcelImportPreviewLoading(false);
+    setIsExcelImportCommitLoading(false);
     setLuponCaseList([]);
     setLuponCasesError("");
     setFormErrors({});
@@ -631,6 +637,7 @@ export default function App() {
   async function handlePreviewExcelImport(file) {
     setIsExcelImportPreviewLoading(true);
     setExcelImportError("");
+    setExcelImportCommitSummary(null);
 
     try {
       const preview = await previewExcelImport(file);
@@ -643,6 +650,24 @@ export default function App() {
       return null;
     } finally {
       setIsExcelImportPreviewLoading(false);
+    }
+  }
+
+  async function handleCommitExcelImport(file, confirmations) {
+    setIsExcelImportCommitLoading(true);
+    setExcelImportError("");
+
+    try {
+      const result = await commitExcelImport(file, confirmations);
+
+      setExcelImportCommitSummary(result.summary);
+      return result.summary;
+    } catch (error) {
+      setExcelImportCommitSummary(null);
+      setExcelImportError(error?.message ?? "Excel import commit failed.");
+      return null;
+    } finally {
+      setIsExcelImportCommitLoading(false);
     }
   }
 
@@ -746,12 +771,15 @@ export default function App() {
           actionError={adminProfileActionError}
           actionMessage={adminProfileActionMessage}
           documentRequests={documentRequestList}
+          excelImportCommitSummary={excelImportCommitSummary}
           excelImportError={excelImportError}
           excelImportPreview={excelImportPreview}
           error={adminProfilesError}
+          isExcelImportCommitLoading={isExcelImportCommitLoading}
           isExcelImportPreviewLoading={isExcelImportPreviewLoading}
           isLoading={isAdminProfilesLoading}
           isMutating={isAdminProfileMutating}
+          onCommitExcelImport={handleCommitExcelImport}
           onCreateAccount={handleCreateAdminProfile}
           onPreviewExcelImport={handlePreviewExcelImport}
           onResetPassword={handleResetAdminProfilePassword}

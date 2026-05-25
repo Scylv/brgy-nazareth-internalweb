@@ -70,6 +70,35 @@ function createPreviewWorkbook() {
   });
 }
 
+function createCommitWorkbook(rows) {
+  return createXlsxWorkbook({
+    sheets: [
+      {
+        name: MAIN_RESIDENT_SHEET_NAME,
+        rows: buildPhase1Rows(rows)
+      },
+      {
+        name: "Non-Voters",
+        rows: buildPhase1Rows([
+          [
+            "Should Not Import Non Voter",
+            "Excluded Zone",
+            "",
+            "",
+            "",
+            "",
+            "2000-01-01",
+            "Single",
+            "Excluded",
+            "Excluded Address",
+            "09999999999"
+          ]
+        ])
+      }
+    ]
+  });
+}
+
 function createImportPool() {
   const queries = [];
   const audits = [];
@@ -118,6 +147,128 @@ function createImportPool() {
           ],
           rowCount: 1
         };
+      }
+
+      return { rows: [], rowCount: 0 };
+    }
+  };
+}
+
+function createCommitPool() {
+  const queries = [];
+  const audits = [];
+  const insertedResidents = [];
+  const importBatches = [];
+  const residentRows = [
+    {
+      id: "RBI-FAKE-0002",
+      full_name: "Existing Synthetic Resident",
+      birth_date: "1980-01-01",
+      address: "Existing Address"
+    }
+  ];
+
+  return {
+    audits,
+    importBatches,
+    insertedResidents,
+    queries,
+    async query(sql, params = []) {
+      queries.push({ sql, params });
+
+      if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") {
+        return { rows: [], rowCount: 0 };
+      }
+
+      if (sql.includes("INSERT INTO audit_logs")) {
+        audits.push({
+          actorProfileId: params[1],
+          action: params[2],
+          entityType: params[3],
+          entityId: params[4],
+          metadata: params[5]
+        });
+
+        return { rows: [], rowCount: 1 };
+      }
+
+      if (sql.includes("FROM profiles") && sql.includes("lower(username) = $1")) {
+        const profile = Object.values(profileRows).find(
+          (row) => row.username === String(params[0]).toLowerCase()
+        );
+
+        return { rows: profile ? [profile] : [], rowCount: profile ? 1 : 0 };
+      }
+
+      if (sql.includes("FROM profiles") && sql.includes("WHERE id = $1")) {
+        const profile = Object.values(profileRows).find((row) => row.id === params[0]);
+
+        return { rows: profile ? [profile] : [], rowCount: profile ? 1 : 0 };
+      }
+
+      if (sql.includes("FROM residents")) {
+        return {
+          rows: residentRows,
+          rowCount: residentRows.length
+        };
+      }
+
+      if (sql.includes("INSERT INTO import_batches")) {
+        importBatches.push({
+          id: params[0],
+          importType: params[1],
+          sourceFilename: params[2],
+          totalRows: params[3],
+          createdByProfileId: params[4]
+        });
+
+        return { rows: [], rowCount: 1 };
+      }
+
+      if (sql.includes("UPDATE import_batches")) {
+        const batch = importBatches.find((item) => item.id === params[2]);
+
+        if (batch) {
+          batch.status = "completed";
+          batch.successfulRows = params[0];
+          batch.failedRows = params[1];
+        }
+
+        return { rows: [], rowCount: 1 };
+      }
+
+      if (sql.includes("INSERT INTO residents")) {
+        const resident = {
+          id: params[0],
+          householdId: params[1],
+          fullName: params[2],
+          birthDate: params[3],
+          gender: params[4],
+          civilStatus: params[5],
+          occupation: params[6],
+          address: params[7],
+          contactNumber: params[8],
+          email: params[9],
+          additionalInformation: params[10],
+          sectors: params[11],
+          registeredVoter: params[12],
+          precinctNumber: params[13],
+          statusColor: params[14]
+        };
+
+        insertedResidents.push(resident);
+        residentRows.push({
+          id: resident.id,
+          full_name: resident.fullName,
+          birth_date: resident.birthDate,
+          address: resident.address
+        });
+
+        return { rows: [resident], rowCount: 1 };
+      }
+
+      if (sql.includes("INSERT INTO resident_status_history")) {
+        return { rows: [], rowCount: 1 };
       }
 
       return { rows: [], rowCount: 0 };
@@ -264,6 +415,309 @@ describe("Excel import preview route", () => {
     expect(response.status).toBe(415);
     expect(response.body.error).toContain(".xlsx");
     expect(pool.queries.some((query) => query.sql.includes("FROM residents"))).toBe(false);
+    expect(pool.audits).toEqual([]);
+  });
+});
+
+describe("Excel import commit route", () => {
+  it("requires explicit Admin and backup confirmation before parsing the workbook", async () => {
+    const pool = createCommitPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+
+    const response = await request(app)
+      .post("/api/admin/excel-import/commit")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", XLSX_CONTENT_TYPE)
+      .set("X-File-Name", "phase1-fake.xlsx")
+      .send(createCommitWorkbook([]));
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("confirmation");
+    expect(pool.queries.some((query) => query.sql.includes("FROM residents"))).toBe(false);
+    expect(pool.insertedResidents).toEqual([]);
+    expect(pool.audits).toEqual([]);
+  });
+
+  it("requires backup acknowledgement before commit", async () => {
+    const pool = createCommitPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+
+    const response = await request(app)
+      .post("/api/admin/excel-import/commit")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", XLSX_CONTENT_TYPE)
+      .set("X-File-Name", "phase1-fake.xlsx")
+      .set("X-Import-Confirmed", "true")
+      .send(createCommitWorkbook([]));
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toContain("backup");
+    expect(pool.queries.some((query) => query.sql.includes("FROM residents"))).toBe(false);
+    expect(pool.insertedResidents).toEqual([]);
+    expect(pool.audits).toEqual([]);
+  });
+
+  it("blocks Department and Lupon users before workbook parsing or resident lookup", async () => {
+    for (const [username, password] of [
+      ["department", "dept123"],
+      ["lupon", "lupon123"]
+    ]) {
+      const pool = createCommitPool();
+      const app = createApp(pool);
+      const cookie = await loginAs(app, username, password);
+
+      const response = await request(app)
+        .post("/api/admin/excel-import/commit")
+        .set("Cookie", cookie)
+        .set("Origin", TRUSTED_ORIGIN)
+        .set("Content-Type", XLSX_CONTENT_TYPE)
+        .set("X-File-Name", "phase1-fake.xlsx")
+        .set("X-Import-Confirmed", "true")
+        .set("X-Backup-Confirmed", "true")
+        .send(createCommitWorkbook([]));
+
+      expect(response.status).toBe(403);
+      expect(pool.queries.some((query) => query.sql.includes("FROM residents"))).toBe(false);
+      expect(pool.insertedResidents).toEqual([]);
+      expect(pool.audits).toEqual([]);
+    }
+  });
+
+  it("re-parses the uploaded workbook, saves only valid non-duplicate rows, and returns a summary", async () => {
+    const pool = createCommitPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+    const workbook = createCommitWorkbook([
+      [
+        "New Synthetic Resident",
+        "Zone 6",
+        "0007A",
+        "do not import d",
+        "do not import e",
+        "do not import f",
+        "1999-09-09",
+        "Single",
+        "Driver",
+        "House 6, Zone 6",
+        "09170000006",
+        "skip social",
+        "Sitio Six",
+        "TAG-A",
+        "Synthetic note",
+        "",
+        "Barangay Clearance",
+        "2026-03-01"
+      ],
+      [
+        "Existing Synthetic Resident",
+        "Other Zone",
+        "0008B",
+        "",
+        "",
+        "",
+        "1980-01-01",
+        "Married",
+        "Vendor",
+        "Existing Address",
+        "09170000008"
+      ],
+      ["", "Missing Name Zone", "", "", "", "", "", "Single"]
+    ]);
+
+    const response = await request(app)
+      .post("/api/admin/excel-import/commit")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", XLSX_CONTENT_TYPE)
+      .set("X-File-Name", "phase1-fake.xlsx")
+      .set("X-Import-Confirmed", "true")
+      .set("X-Backup-Confirmed", "true")
+      .set("X-Client-Preview-Rows", JSON.stringify([{ rowNumber: 2, fullName: "Tampered" }]))
+      .send(workbook);
+
+    expect(response.status, JSON.stringify(response.body)).toBe(200);
+    expect(response.body.summary).toEqual(
+      expect.objectContaining({
+        rowsDetected: 3,
+        created: 1,
+        skippedDuplicates: 1,
+        failedValidation: 1,
+        documentHistoryCreated: 0,
+        documentHistoryDeferred: 1,
+        sourceFilename: "phase1-fake.xlsx",
+        sheetName: MAIN_RESIDENT_SHEET_NAME
+      })
+    );
+    expect(response.body.summary.importBatchId).toMatch(/^IMP-/);
+
+    expect(pool.insertedResidents).toEqual([
+      expect.objectContaining({
+        fullName: "New Synthetic Resident",
+        birthDate: "1999-09-09",
+        civilStatus: "Single",
+        occupation: "Driver",
+        address: "House 6, Zone 6",
+        contactNumber: "09170000006",
+        precinctNumber: "0007A",
+        registeredVoter: true,
+        statusColor: "green"
+      })
+    ]);
+    expect(pool.insertedResidents[0].householdId).toMatch(/^HH-IMPORT-/);
+    expect(pool.insertedResidents[0].gender).toBe("");
+    expect(pool.insertedResidents[0].additionalInformation).toBeNull();
+    expect(JSON.stringify(pool.insertedResidents)).not.toContain("skip social");
+    expect(JSON.stringify(pool.insertedResidents)).not.toContain("do not import d");
+    expect(JSON.stringify(pool.insertedResidents)).not.toContain("do not import e");
+    expect(JSON.stringify(pool.insertedResidents)).not.toContain("do not import f");
+    expect(JSON.stringify(pool.insertedResidents)).not.toContain("Should Not Import Non Voter");
+    expect(pool.queries.some((query) => query.sql.includes("INSERT INTO document_requests"))).toBe(
+      false
+    );
+    expect(pool.importBatches[0]).toEqual(
+      expect.objectContaining({
+        importType: "residents_phase1_excel",
+        sourceFilename: "phase1-fake.xlsx",
+        totalRows: 3,
+        successfulRows: 1,
+        failedRows: 2,
+        createdByProfileId: "admin-1"
+      })
+    );
+    expect(pool.audits).toEqual([
+      expect.objectContaining({
+        actorProfileId: "admin-1",
+        action: "excel_import.committed",
+        entityType: "import_batch",
+        entityId: response.body.summary.importBatchId,
+        metadata: expect.objectContaining({
+          actorRole: "admin",
+          rowsDetected: 3,
+          created: 1,
+          skippedDuplicates: 1,
+          failedValidation: 1,
+          documentHistoryCreated: 0,
+          documentHistoryDeferred: 1,
+          backupConfirmed: true
+        })
+      })
+    ]);
+    expect(JSON.stringify(pool.audits)).not.toContain("New Synthetic Resident");
+    expect(JSON.stringify(pool.audits)).not.toContain("09170000006");
+    expect(JSON.stringify(pool.audits)).not.toContain("House 6");
+    expect(JSON.stringify(pool.audits)).not.toContain("skip social");
+  });
+
+  it("does not trust client-edited preview rows when the committed workbook fails validation", async () => {
+    const pool = createCommitPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+
+    const response = await request(app)
+      .post("/api/admin/excel-import/commit")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", XLSX_CONTENT_TYPE)
+      .set("X-File-Name", "phase1-fake.xlsx")
+      .set("X-Import-Confirmed", "true")
+      .set("X-Backup-Confirmed", "true")
+      .set("X-Client-Preview-Rows", JSON.stringify([{ rowNumber: 2, fullName: "Fixed Name" }]))
+      .send(createCommitWorkbook([["", "Zone 9", "", "", "", "", "", "Single"]]));
+
+    expect(response.status, JSON.stringify(response.body)).toBe(200);
+    expect(response.body.summary).toEqual(
+      expect.objectContaining({
+        rowsDetected: 1,
+        created: 0,
+        skippedDuplicates: 0,
+        failedValidation: 1
+      })
+    );
+    expect(pool.insertedResidents).toEqual([]);
+  });
+
+  it("does not let an invalid row cause a later valid source duplicate to be skipped", async () => {
+    const pool = createCommitPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+
+    const response = await request(app)
+      .post("/api/admin/excel-import/commit")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", XLSX_CONTENT_TYPE)
+      .set("X-File-Name", "phase1-fake.xlsx")
+      .set("X-Import-Confirmed", "true")
+      .set("X-Backup-Confirmed", "true")
+      .send(
+        createCommitWorkbook([
+          [
+            "Later Valid Resident",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "1991-01-01",
+            "Single",
+            "Vendor"
+          ],
+          [
+            "Later Valid Resident",
+            "Zone 10",
+            "",
+            "",
+            "",
+            "",
+            "1991-01-01",
+            "Single",
+            "Vendor",
+            "House 10, Zone 10",
+            "09170000010"
+          ]
+        ])
+      );
+
+    expect(response.status, JSON.stringify(response.body)).toBe(200);
+    expect(response.body.summary).toEqual(
+      expect.objectContaining({
+        rowsDetected: 2,
+        created: 1,
+        skippedDuplicates: 0,
+        failedValidation: 1
+      })
+    );
+    expect(pool.insertedResidents).toEqual([
+      expect.objectContaining({
+        fullName: "Later Valid Resident",
+        address: "House 10, Zone 10"
+      })
+    ]);
+  });
+
+  it("rejects CSV uploads for commit", async () => {
+    const pool = createCommitPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+
+    const response = await request(app)
+      .post("/api/admin/excel-import/commit")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", "text/csv")
+      .set("X-File-Name", "phase1-fake.csv")
+      .set("X-Import-Confirmed", "true")
+      .set("X-Backup-Confirmed", "true")
+      .send("fullName,address\nSynthetic Person,Synthetic Address");
+
+    expect(response.status).toBe(415);
+    expect(response.body.error).toContain(".xlsx");
+    expect(pool.queries.some((query) => query.sql.includes("FROM residents"))).toBe(false);
+    expect(pool.insertedResidents).toEqual([]);
     expect(pool.audits).toEqual([]);
   });
 });
