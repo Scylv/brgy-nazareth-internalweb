@@ -1,12 +1,10 @@
+import { useState } from "react";
 import Button from "../../../shared/components/Button";
 import MetricCard from "../../../shared/components/MetricCard";
-import Notice from "../../../shared/components/Notice";
 import SectionCard from "../../../shared/components/SectionCard";
 import SectionHeader from "../../../shared/components/SectionHeader";
 import StateMessage from "../../../shared/components/StateMessage";
 import { getAccountGroups, getAdminCounters } from "../lib/accountManagement";
-
-const actionLabels = ["Change role", "Disable account", "Reset password"];
 
 const counterCards = [
   {
@@ -32,36 +30,83 @@ const counterCards = [
 ];
 
 export default function AdminPanel({
+  actionError = "",
+  actionMessage = "",
   documentRequests,
   error = "",
   isLoading = false,
+  isMutating = false,
+  onCreateAccount,
+  onResetPassword,
+  onToggleAccountStatus,
   residents,
   users
 }) {
+  const [accountForm, setAccountForm] = useState({
+    username: "",
+    displayName: "",
+    role: "department",
+    temporaryPassword: ""
+  });
+  const [resetForm, setResetForm] = useState({
+    profileId: "",
+    temporaryPassword: ""
+  });
   const accountGroups = getAccountGroups(users);
   const counters = getAdminCounters({ users, residents, documentRequests });
+
+  function handleAccountFormChange(event) {
+    const { name, value } = event.target;
+
+    setAccountForm((current) => ({
+      ...current,
+      [name]: value
+    }));
+  }
+
+  async function handleCreateAccount(event) {
+    event.preventDefault();
+
+    const created = await onCreateAccount?.(accountForm);
+
+    if (created) {
+      setAccountForm({
+        username: "",
+        displayName: "",
+        role: "department",
+        temporaryPassword: ""
+      });
+    }
+  }
+
+  function openResetForm(profileId) {
+    setResetForm({
+      profileId,
+      temporaryPassword: ""
+    });
+  }
+
+  async function handleResetPassword(event) {
+    event.preventDefault();
+
+    const reset = await onResetPassword?.(resetForm.profileId, resetForm.temporaryPassword);
+
+    if (reset) {
+      setResetForm({
+        profileId: "",
+        temporaryPassword: ""
+      });
+    }
+  }
 
   return (
     <div className="space-y-6">
       <SectionCard variant="hero">
         <SectionHeader
-          actions={
-            <Button disabled size="lg" variant="planned">
-              Add account
-              <span className="rounded-full bg-white px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-slate-500">
-                Planned
-              </span>
-            </Button>
-          }
           description="View database-backed staff profiles by role while keeping document processing and Lupon case details outside the Admin workspace."
           eyebrow="Account Management"
           title="System Access"
         />
-
-        <Notice className="mt-4">
-          Profile listing is loaded from the database API. Account creation, role updates,
-          deactivation, and password reset are visible as planned controls only.
-        </Notice>
 
         {isLoading ? (
           <StateMessage className="mt-3" tone="info">
@@ -72,6 +117,18 @@ export default function AdminPanel({
         {error ? (
           <StateMessage className="mt-3" tone="danger">
             {error}
+          </StateMessage>
+        ) : null}
+
+        {actionMessage ? (
+          <StateMessage className="mt-3" tone="success">
+            {actionMessage}
+          </StateMessage>
+        ) : null}
+
+        {actionError ? (
+          <StateMessage className="mt-3" tone="danger">
+            {actionError}
           </StateMessage>
         ) : null}
       </SectionCard>
@@ -86,6 +143,67 @@ export default function AdminPanel({
           />
         ))}
       </section>
+
+      <SectionCard>
+        <SectionHeader eyebrow="Provision Account" title="Create Staff Access" />
+
+        <form className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr_12rem_1fr_auto]" onSubmit={handleCreateAccount}>
+          <label className="space-y-2 text-sm font-semibold text-slate-700">
+            Display name
+            <input
+              className="w-full rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+              name="displayName"
+              onChange={handleAccountFormChange}
+              required
+              value={accountForm.displayName}
+            />
+          </label>
+
+          <label className="space-y-2 text-sm font-semibold text-slate-700">
+            Username
+            <input
+              className="w-full rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+              name="username"
+              onChange={handleAccountFormChange}
+              required
+              value={accountForm.username}
+            />
+          </label>
+
+          <label className="space-y-2 text-sm font-semibold text-slate-700">
+            Role
+            <select
+              className="w-full rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+              name="role"
+              onChange={handleAccountFormChange}
+              value={accountForm.role}
+            >
+              <option value="department">Department</option>
+              <option value="lupon">Lupon</option>
+              <option value="admin">Admin</option>
+            </select>
+          </label>
+
+          <label className="space-y-2 text-sm font-semibold text-slate-700">
+            Temporary password
+            <input
+              className="w-full rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+              minLength={8}
+              name="temporaryPassword"
+              onChange={handleAccountFormChange}
+              required
+              type="password"
+              value={accountForm.temporaryPassword}
+            />
+          </label>
+
+          <div className="flex items-end">
+            <Button className="w-full lg:w-auto" disabled={isMutating} size="lg" type="submit">
+              Create
+            </Button>
+          </div>
+        </form>
+      </SectionCard>
 
       <section className="grid gap-5 xl:grid-cols-3">
         {accountGroups.map((group) => (
@@ -109,8 +227,12 @@ export default function AdminPanel({
                     <div>
                       <p className="font-semibold text-slate-900">{account.name}</p>
                       <p className="mt-1 text-sm text-slate-600">@{account.username}</p>
-                      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">
-                        Database profile
+                      <p
+                        className={`mt-2 text-xs font-semibold uppercase tracking-[0.16em] ${
+                          account.status === "disabled" ? "text-rose-700" : "text-emerald-700"
+                        }`}
+                      >
+                        {account.status === "disabled" ? "Disabled" : "Active"}
                       </p>
                       {account.createdAt ? (
                         <p className="mt-2 text-xs text-slate-500">
@@ -121,15 +243,57 @@ export default function AdminPanel({
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {actionLabels.map((action) => (
-                      <Button disabled key={`${account.id}-${action}`} size="sm" variant="planned">
-                        {action}
-                        <span className="rounded-full bg-white px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-slate-500">
-                          Planned
-                        </span>
-                      </Button>
-                    ))}
+                    <Button
+                      disabled={isMutating}
+                      onClick={() =>
+                        onToggleAccountStatus?.(
+                          account.id,
+                          account.status === "disabled" ? "active" : "disabled"
+                        )
+                      }
+                      size="sm"
+                      variant={account.status === "disabled" ? "secondary" : "quiet"}
+                    >
+                      {account.status === "disabled" ? "Reactivate" : "Deactivate"}
+                    </Button>
+                    <Button
+                      disabled={isMutating}
+                      onClick={() => openResetForm(account.id)}
+                      size="sm"
+                      variant="quiet"
+                    >
+                      Reset password
+                    </Button>
                   </div>
+
+                  {resetForm.profileId === account.id ? (
+                    <form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={handleResetPassword}>
+                      <input
+                        className="min-w-0 flex-1 rounded-2xl border border-orange-100 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                        minLength={8}
+                        onChange={(event) =>
+                          setResetForm((current) => ({
+                            ...current,
+                            temporaryPassword: event.target.value
+                          }))
+                        }
+                        required
+                        type="password"
+                        value={resetForm.temporaryPassword}
+                      />
+                      <Button disabled={isMutating} size="sm" type="submit">
+                        Save
+                      </Button>
+                      <Button
+                        disabled={isMutating}
+                        onClick={() => setResetForm({ profileId: "", temporaryPassword: "" })}
+                        size="sm"
+                        variant="quiet"
+                      >
+                        Cancel
+                      </Button>
+                    </form>
+                  ) : null}
                 </article>
               ))}
 

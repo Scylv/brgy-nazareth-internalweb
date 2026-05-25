@@ -438,6 +438,7 @@ describe("authentication and role-based API access", () => {
         username: "admin",
         displayName: "Ricardo Morales",
         role: "admin",
+        status: "active",
         createdAt: "2026-05-01T00:00:00.000Z",
         updatedAt: "2026-05-02T00:00:00.000Z"
       },
@@ -446,6 +447,7 @@ describe("authentication and role-based API access", () => {
         username: "department",
         displayName: "Elena Ledesma",
         role: "department",
+        status: "active",
         createdAt: "2026-05-03T00:00:00.000Z",
         updatedAt: "2026-05-04T00:00:00.000Z"
       }

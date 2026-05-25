@@ -8,6 +8,7 @@ describe("adminProfilesApi", () => {
       username: "department",
       displayName: "Elena Ledesma",
       role: "department",
+      status: "active",
       createdAt: "2026-05-03T00:00:00.000Z",
       updatedAt: "2026-05-04T00:00:00.000Z",
       password_hash: "scrypt$should-not-leak"
@@ -19,6 +20,7 @@ describe("adminProfilesApi", () => {
       name: "Elena Ledesma",
       displayName: "Elena Ledesma",
       role: "department",
+      status: "active",
       createdAt: "2026-05-03T00:00:00.000Z",
       updatedAt: "2026-05-04T00:00:00.000Z"
     });

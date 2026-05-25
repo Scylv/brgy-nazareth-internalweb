@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { residents as initialResidents } from "./data/residents";
-import { fetchAdminProfiles } from "./features/admin/api/adminProfilesApi";
+import {
+  createAdminProfile,
+  fetchAdminProfiles,
+  resetAdminProfilePassword,
+  updateAdminProfileStatus
+} from "./features/admin/api/adminProfilesApi";
 import AdminPanel from "./features/admin/components/AdminPanel";
-import { fetchCurrentUser, loginUser, logoutUser } from "./features/auth/api/authApi";
+import {
+  changePassword,
+  fetchCurrentUser,
+  loginUser,
+  logoutUser
+} from "./features/auth/api/authApi";
 import LoginScreen from "./features/auth/components/LoginScreen";
 import {
   createDocumentRequest,
@@ -40,6 +50,10 @@ function toDepartmentResident(resident) {
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loginError, setLoginError] = useState("");
+  const [passwordChangeStatus, setPasswordChangeStatus] = useState({
+    error: "",
+    message: ""
+  });
   const [residentList] = useState(initialResidents);
   const [databaseResidentList, setDatabaseResidentList] = useState([]);
   const [isDepartmentResidentsLoading, setIsDepartmentResidentsLoading] = useState(true);
@@ -47,7 +61,10 @@ export default function App() {
   const [documentRequestList, setDocumentRequestList] = useState([]);
   const [adminProfileList, setAdminProfileList] = useState([]);
   const [isAdminProfilesLoading, setIsAdminProfilesLoading] = useState(false);
+  const [isAdminProfileMutating, setIsAdminProfileMutating] = useState(false);
   const [adminProfilesError, setAdminProfilesError] = useState("");
+  const [adminProfileActionError, setAdminProfileActionError] = useState("");
+  const [adminProfileActionMessage, setAdminProfileActionMessage] = useState("");
   const [isDocumentRequestsLoading, setIsDocumentRequestsLoading] = useState(false);
   const [documentRequestsError, setDocumentRequestsError] = useState("");
   const [luponCaseList, setLuponCaseList] = useState([]);
@@ -143,7 +160,10 @@ export default function App() {
     if (currentUser?.role !== "admin") {
       setAdminProfileList([]);
       setIsAdminProfilesLoading(false);
+      setIsAdminProfileMutating(false);
       setAdminProfilesError("");
+      setAdminProfileActionError("");
+      setAdminProfileActionMessage("");
       return () => {
         isActive = false;
       };
@@ -372,6 +392,7 @@ export default function App() {
     }
 
     setCurrentUser(null);
+    setPasswordChangeStatus({ error: "", message: "" });
     setCurrentPage("login");
     setLoginError("");
     setDepartmentSearchQuery("");
@@ -380,8 +401,10 @@ export default function App() {
     setLuponStatusFilter("all");
     setDocumentRequestList([]);
     setDocumentRequestsError("");
-    setAdminProfileList([]);
-    setAdminProfilesError("");
+      setAdminProfileList([]);
+      setAdminProfilesError("");
+      setAdminProfileActionError("");
+      setAdminProfileActionMessage("");
     setLuponCaseList([]);
     setLuponCasesError("");
     setFormErrors({});
@@ -513,6 +536,88 @@ export default function App() {
     }
   }
 
+  async function handlePasswordChange({ currentPassword, newPassword }) {
+    setPasswordChangeStatus({ error: "", message: "" });
+
+    try {
+      await changePassword({ currentPassword, newPassword });
+      setPasswordChangeStatus({
+        error: "",
+        message: "Password changed."
+      });
+      return true;
+    } catch (error) {
+      setPasswordChangeStatus({
+        error: error?.status === 401 ? "Current password is incorrect." : "Password change failed.",
+        message: ""
+      });
+      return false;
+    }
+  }
+
+  async function handleCreateAdminProfile(profile) {
+    setIsAdminProfileMutating(true);
+    setAdminProfileActionError("");
+    setAdminProfileActionMessage("");
+
+    try {
+      const createdProfile = await createAdminProfile(profile);
+
+      setAdminProfileList((current) => [...current, createdProfile]);
+      setAdminProfileActionMessage("Account created.");
+      return createdProfile;
+    } catch (error) {
+      setAdminProfileActionError(error?.message ?? "Account creation failed.");
+      return null;
+    } finally {
+      setIsAdminProfileMutating(false);
+    }
+  }
+
+  async function handleToggleAdminProfileStatus(profileId, status) {
+    setIsAdminProfileMutating(true);
+    setAdminProfileActionError("");
+    setAdminProfileActionMessage("");
+
+    try {
+      const updatedProfile = await updateAdminProfileStatus(profileId, status);
+
+      setAdminProfileList((current) =>
+        current.map((profile) => (profile.id === profileId ? updatedProfile : profile))
+      );
+      setAdminProfileActionMessage(
+        status === "disabled" ? "Account deactivated." : "Account reactivated."
+      );
+      return updatedProfile;
+    } catch (error) {
+      setAdminProfileActionError(error?.message ?? "Account status update failed.");
+      return null;
+    } finally {
+      setIsAdminProfileMutating(false);
+    }
+  }
+
+  async function handleResetAdminProfilePassword(profileId, temporaryPassword) {
+    setIsAdminProfileMutating(true);
+    setAdminProfileActionError("");
+    setAdminProfileActionMessage("");
+
+    try {
+      const updatedProfile = await resetAdminProfilePassword(profileId, temporaryPassword);
+
+      setAdminProfileList((current) =>
+        current.map((profile) => (profile.id === profileId ? updatedProfile : profile))
+      );
+      setAdminProfileActionMessage("Temporary password reset.");
+      return updatedProfile;
+    } catch (error) {
+      setAdminProfileActionError(error?.message ?? "Password reset failed.");
+      return null;
+    } finally {
+      setIsAdminProfileMutating(false);
+    }
+  }
+
   if (!currentUser) {
     return <LoginScreen error={loginError} onLogin={handleLogin} />;
   }
@@ -535,7 +640,9 @@ export default function App() {
   return (
     <AppShell
       actions={actions}
+      onChangePassword={handlePasswordChange}
       onLogout={handleLogout}
+      passwordChangeStatus={passwordChangeStatus}
       subtitle={pageCopy[currentPage].subtitle}
       title={pageCopy[currentPage].title}
       user={currentUser}
@@ -608,9 +715,15 @@ export default function App() {
 
       {currentPage === "admin" ? (
         <AdminPanel
+          actionError={adminProfileActionError}
+          actionMessage={adminProfileActionMessage}
           documentRequests={documentRequestList}
           error={adminProfilesError}
           isLoading={isAdminProfilesLoading}
+          isMutating={isAdminProfileMutating}
+          onCreateAccount={handleCreateAdminProfile}
+          onResetPassword={handleResetAdminProfilePassword}
+          onToggleAccountStatus={handleToggleAdminProfileStatus}
           residents={residentList}
           users={adminProfileList}
         />

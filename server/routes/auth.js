@@ -6,7 +6,8 @@ import {
   setSessionCookie,
   toPublicUser
 } from "../middleware/auth.js";
-import { verifyPassword } from "../lib/passwords.js";
+import { writeAuditLog } from "../lib/audit.js";
+import { hashPassword, verifyPassword } from "../lib/passwords.js";
 import { createSessionToken } from "../lib/sessionTokens.js";
 
 const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -18,6 +19,10 @@ function normalizeUsername(username) {
 
 function hasPassword(password) {
   return typeof password === "string" && password.length > 0;
+}
+
+function isValidNewPassword(password) {
+  return typeof password === "string" && password.length >= 8;
 }
 
 async function findProfileByUsername(pool, username) {
@@ -79,7 +84,7 @@ function createLoginRateLimiter() {
   };
 }
 
-export function createAuthRouter(pool) {
+export function createAuthRouter(pool, { requireTrustedOrigin } = {}) {
   const router = Router();
   const requireAuth = createAuthMiddleware(pool);
   const loginRateLimiter = createLoginRateLimiter();
@@ -126,6 +131,61 @@ export function createAuthRouter(pool) {
 
   router.get("/me", requireAuth, (req, res) => {
     res.json({ user: toPublicUser(req.user) });
+  });
+
+  const protectedPasswordMiddleware = requireTrustedOrigin
+    ? [requireAuth, requireTrustedOrigin]
+    : [requireAuth];
+
+  router.post("/password", protectedPasswordMiddleware, async (req, res, next) => {
+    const currentPassword = req.body?.currentPassword;
+    const newPassword = req.body?.newPassword;
+
+    if (!hasPassword(currentPassword) || !isValidNewPassword(newPassword)) {
+      return res.status(400).json({
+        error: "Current password and a new password of at least 8 characters are required."
+      });
+    }
+
+    try {
+      const profileResult = await pool.query(
+        `SELECT
+          password_hash
+        FROM profiles
+        WHERE id = $1
+          AND status = 'active'
+        LIMIT 1`,
+        [req.user.profileId]
+      );
+      const profile = profileResult.rows[0];
+
+      if (!profile || !verifyPassword(currentPassword, profile.password_hash)) {
+        return res.status(401).json({ error: "Current password is incorrect." });
+      }
+
+      await pool.query(
+        `UPDATE profiles
+        SET password_hash = $1,
+          updated_at = now()
+        WHERE id = $2`,
+        [hashPassword(newPassword), req.user.profileId]
+      );
+
+      await writeAuditLog(pool, {
+        actor: req.user,
+        action: "profile.password_changed",
+        targetType: "profile",
+        targetId: req.user.profileId,
+        metadata: {
+          targetUsername: req.user.username,
+          targetRole: req.user.role
+        }
+      });
+
+      return res.json({ ok: true });
+    } catch (error) {
+      return next(error);
+    }
   });
 
   router.post("/logout", (_req, res) => {
