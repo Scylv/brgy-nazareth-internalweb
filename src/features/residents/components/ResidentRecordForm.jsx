@@ -1,3 +1,7 @@
+import Button from "../../../shared/components/Button";
+import SectionCard from "../../../shared/components/SectionCard";
+import StateMessage from "../../../shared/components/StateMessage";
+
 const statusOptions = [
   { value: "green", label: "Green" },
   { value: "yellow", label: "Yellow" },
@@ -6,10 +10,10 @@ const statusOptions = [
 
 function Section({ title, children }) {
   return (
-    <section className="rounded-[1.75rem] border border-orange-100 bg-white p-6">
-      <h3 className="text-xl font-black text-slate-900">{title}</h3>
+    <SectionCard>
+      <h3 className="text-lg font-black text-slate-900">{title}</h3>
       <div className="mt-5 grid gap-4 md:grid-cols-2">{children}</div>
-    </section>
+    </SectionCard>
   );
 }
 
@@ -41,25 +45,18 @@ export default function ResidentRecordForm({
   return (
     <form className="space-y-6" onSubmit={onSave}>
       <div className="flex flex-wrap gap-3">
-        <button
-          className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300"
-          onClick={onCancel}
-          type="button"
-        >
+        <Button onClick={onCancel} size="lg" variant="quiet">
           Back to Lupon dashboard
-        </button>
-        <button
-          className="rounded-2xl bg-gov-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gov-800"
-          type="submit"
-        >
+        </Button>
+        <Button size="lg" type="submit">
           {mode === "add" ? "Add resident record" : "Save resident record"}
-        </button>
+        </Button>
       </div>
 
       {errors.form ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <StateMessage tone="danger">
           {errors.form}
-        </div>
+        </StateMessage>
       ) : null}
 
       <Section title="Personal Information">
@@ -76,6 +73,11 @@ export default function ResidentRecordForm({
             readOnly={isEditMode}
             value={formData.id}
           />
+          {isEditMode ? (
+            <span className="mt-2 block text-xs text-slate-500">
+              Resident ID is locked for existing staging records.
+            </span>
+          ) : null}
         </Field>
 
         <Field error={errors.householdId} label="Household ID">
@@ -207,6 +209,9 @@ export default function ResidentRecordForm({
               </option>
             ))}
           </select>
+          <span className="mt-2 block text-xs leading-5 text-slate-500">
+            Green: Cleared - proceed. Yellow: Needs Lupon review. Red: Hold - Lupon required.
+          </span>
         </Field>
 
         <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">

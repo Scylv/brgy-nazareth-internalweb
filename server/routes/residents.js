@@ -1,6 +1,11 @@
 import { Router } from "express";
+import { writeAuditLog } from "../lib/audit.js";
 import { requireRole } from "../middleware/roles.js";
-import { toLuponCase, toLuponCaseNote, toResident } from "../lib/rows.js";
+import {
+  toDepartmentResidentResponse,
+  toLuponCaseNoteResponse,
+  toLuponCaseResponse
+} from "../lib/responseMappers.js";
 import { validateResidentStatus } from "../lib/validation.js";
 
 const allowedResidentUpdateFields = [
@@ -46,6 +51,10 @@ function hasAllowedResidentUpdate(body) {
   return allowedResidentUpdateFields.some((field) => hasOwn(body, field));
 }
 
+function getResidentChangedFields(body) {
+  return allowedResidentUpdateFields.filter((field) => hasOwn(body ?? {}, field));
+}
+
 export function createResidentsRouter(pool) {
   const router = Router();
 
@@ -74,7 +83,7 @@ export function createResidentsRouter(pool) {
         ORDER BY full_name ASC`
       );
 
-      res.json({ residents: result.rows.map(toResident) });
+      res.json({ residents: result.rows.map(toDepartmentResidentResponse) });
     } catch (error) {
       next(error);
     }
@@ -110,7 +119,7 @@ export function createResidentsRouter(pool) {
         return res.status(404).json({ error: "Resident not found." });
       }
 
-      const resident = toResident(residentResult.rows[0]);
+      const resident = toDepartmentResidentResponse(residentResult.rows[0]);
 
       if (req.user.role !== "lupon") {
         return res.json({ resident });
@@ -154,8 +163,8 @@ export function createResidentsRouter(pool) {
 
       return res.json({
         resident,
-        luponCases: casesResult.rows.map(toLuponCase),
-        luponCaseNotes: notesResult.rows.map(toLuponCaseNote)
+        luponCases: casesResult.rows.map(toLuponCaseResponse),
+        luponCaseNotes: notesResult.rows.map(toLuponCaseNoteResponse)
       });
     } catch (error) {
       return next(error);
@@ -269,7 +278,19 @@ export function createResidentsRouter(pool) {
         ]
       );
 
-      return res.json({ resident: toResident(updateResult.rows[0]) });
+      await writeAuditLog(pool, {
+        actor: req.user,
+        action: "resident.updated",
+        targetType: "resident",
+        targetId: req.params.id,
+        metadata: {
+          changedFields: getResidentChangedFields(req.body),
+          previousStatusColor: currentResident.status_color,
+          newStatusColor: statusColor
+        }
+      });
+
+      return res.json({ resident: toDepartmentResidentResponse(updateResult.rows[0]) });
     } catch (error) {
       return next(error);
     }

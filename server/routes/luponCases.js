@@ -1,6 +1,10 @@
 import { Router } from "express";
+import { writeAuditLog } from "../lib/audit.js";
 import { createId } from "../lib/ids.js";
-import { toLuponCase, toLuponCaseNote } from "../lib/rows.js";
+import {
+  toLuponCaseNoteResponse,
+  toLuponCaseResponse
+} from "../lib/responseMappers.js";
 import {
   requireFields,
   validateLuponCasePriority,
@@ -33,7 +37,7 @@ export function createLuponCasesRouter(pool) {
         ORDER BY opened_at DESC`
       );
 
-      res.json({ luponCases: result.rows.map(toLuponCase) });
+      res.json({ luponCases: result.rows.map(toLuponCaseResponse) });
     } catch (error) {
       next(error);
     }
@@ -108,7 +112,24 @@ export function createLuponCasesRouter(pool) {
         ]
       );
 
-      return res.status(201).json({ luponCase: toLuponCase(result.rows[0]) });
+      const luponCase = result.rows[0];
+
+      await writeAuditLog(pool, {
+        actor: req.user,
+        action: "lupon_case.created",
+        targetType: "lupon_case",
+        targetId: luponCase.id,
+        metadata: {
+          residentId: luponCase.resident_id,
+          caseNumber: luponCase.case_number,
+          caseType: luponCase.case_type,
+          status: luponCase.status,
+          priority: luponCase.priority,
+          assignedLuponProfileId: luponCase.assigned_lupon_profile_id
+        }
+      });
+
+      return res.status(201).json({ luponCase: toLuponCaseResponse(luponCase) });
     } catch (error) {
       return next(error);
     }
@@ -153,7 +174,22 @@ export function createLuponCasesRouter(pool) {
         ]
       );
 
-      return res.status(201).json({ luponCaseNote: toLuponCaseNote(result.rows[0]) });
+      const luponCaseNote = result.rows[0];
+
+      await writeAuditLog(pool, {
+        actor: req.user,
+        action: "lupon_case_note.created",
+        targetType: "lupon_case_note",
+        targetId: luponCaseNote.id,
+        metadata: {
+          luponCaseId: luponCaseNote.lupon_case_id,
+          noteType: luponCaseNote.note_type
+        }
+      });
+
+      return res.status(201).json({
+        luponCaseNote: toLuponCaseNoteResponse(luponCaseNote)
+      });
     } catch (error) {
       return next(error);
     }
