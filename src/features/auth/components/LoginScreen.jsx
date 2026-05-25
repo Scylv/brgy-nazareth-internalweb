@@ -1,27 +1,7 @@
 import Button from "../../../shared/components/Button";
 import StateMessage from "../../../shared/components/StateMessage";
 
-function AccountList({ users }) {
-  return (
-    <ul className="mt-3 space-y-2 text-sm">
-      {users.map((user) => (
-        <li
-          className="grid grid-cols-[0.75fr_1fr_1fr] gap-3 rounded-xl border border-orange-100 bg-white px-3 py-2 text-slate-700"
-          key={user.id}
-        >
-          <span className="font-semibold capitalize text-gov-800">{user.role}</span>
-          <span>{user.username}</span>
-          <span>{user.password}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-export default function LoginScreen({ users, onLogin, error }) {
-  const showStagingAccounts =
-    import.meta.env.DEV || import.meta.env.VITE_SHOW_STAGING_ACCOUNTS === "true";
-
+export default function LoginScreen({ onLogin, error }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl items-center px-4 py-4 sm:px-6 lg:py-5">
       <div className="grid w-full overflow-hidden rounded-[1.5rem] border border-orange-100 bg-orange-50 shadow-panel lg:grid-cols-[1.05fr_0.95fr]">
@@ -104,17 +84,8 @@ export default function LoginScreen({ users, onLogin, error }) {
                 </Button>
 
                 <p className="text-center text-xs leading-5 text-slate-500">
-                  Access is role-based after sign-in.
+                  Use your assigned Barangay Nazareth account.
                 </p>
-
-                {showStagingAccounts ? (
-                  <details className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3">
-                    <summary className="cursor-pointer text-sm font-semibold text-gov-800">
-                      Staging test accounts
-                    </summary>
-                    <AccountList users={users} />
-                  </details>
-                ) : null}
               </form>
             </div>
           </div>

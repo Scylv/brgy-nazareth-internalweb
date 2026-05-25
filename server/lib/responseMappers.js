@@ -1,4 +1,12 @@
-export function toResident(row) {
+function isRow(row) {
+  return row !== null && typeof row === "object" && !Array.isArray(row);
+}
+
+export function toDepartmentResidentResponse(row) {
+  if (!isRow(row)) {
+    return null;
+  }
+
   return {
     id: row.id,
     householdId: row.household_id,
@@ -20,7 +28,11 @@ export function toResident(row) {
   };
 }
 
-export function toDocumentRequest(row) {
+export function toDocumentRequestResponse(row) {
+  if (!isRow(row)) {
+    return null;
+  }
+
   return {
     id: row.id,
     residentId: row.resident_id,
@@ -38,7 +50,11 @@ export function toDocumentRequest(row) {
   };
 }
 
-export function toLuponCase(row) {
+export function toLuponCaseResponse(row) {
+  if (!isRow(row)) {
+    return null;
+  }
+
   return {
     id: row.id,
     residentId: row.resident_id,
@@ -56,7 +72,11 @@ export function toLuponCase(row) {
   };
 }
 
-export function toLuponCaseNote(row) {
+export function toLuponCaseNoteResponse(row) {
+  if (!isRow(row)) {
+    return null;
+  }
+
   return {
     id: row.id,
     luponCaseId: row.lupon_case_id,
@@ -67,7 +87,11 @@ export function toLuponCaseNote(row) {
   };
 }
 
-export function toProfile(row) {
+export function toAdminProfileResponse(row) {
+  if (!isRow(row)) {
+    return null;
+  }
+
   return {
     id: row.id,
     username: row.username,

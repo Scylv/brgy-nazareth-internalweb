@@ -1,6 +1,10 @@
 import { Router } from "express";
 import { requireRole } from "../middleware/roles.js";
-import { toLuponCase, toLuponCaseNote, toResident } from "../lib/rows.js";
+import {
+  toDepartmentResidentResponse,
+  toLuponCaseNoteResponse,
+  toLuponCaseResponse
+} from "../lib/responseMappers.js";
 import { validateResidentStatus } from "../lib/validation.js";
 
 const allowedResidentUpdateFields = [
@@ -74,7 +78,7 @@ export function createResidentsRouter(pool) {
         ORDER BY full_name ASC`
       );
 
-      res.json({ residents: result.rows.map(toResident) });
+      res.json({ residents: result.rows.map(toDepartmentResidentResponse) });
     } catch (error) {
       next(error);
     }
@@ -110,7 +114,7 @@ export function createResidentsRouter(pool) {
         return res.status(404).json({ error: "Resident not found." });
       }
 
-      const resident = toResident(residentResult.rows[0]);
+      const resident = toDepartmentResidentResponse(residentResult.rows[0]);
 
       if (req.user.role !== "lupon") {
         return res.json({ resident });
@@ -154,8 +158,8 @@ export function createResidentsRouter(pool) {
 
       return res.json({
         resident,
-        luponCases: casesResult.rows.map(toLuponCase),
-        luponCaseNotes: notesResult.rows.map(toLuponCaseNote)
+        luponCases: casesResult.rows.map(toLuponCaseResponse),
+        luponCaseNotes: notesResult.rows.map(toLuponCaseNoteResponse)
       });
     } catch (error) {
       return next(error);
@@ -269,7 +273,7 @@ export function createResidentsRouter(pool) {
         ]
       );
 
-      return res.json({ resident: toResident(updateResult.rows[0]) });
+      return res.json({ resident: toDepartmentResidentResponse(updateResult.rows[0]) });
     } catch (error) {
       return next(error);
     }

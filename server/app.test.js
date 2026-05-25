@@ -330,6 +330,20 @@ describe("authentication and role-based API access", () => {
     expect(pool.queries.at(-1).sql).not.toContain("FROM lupon_cases");
   });
 
+  it("blocks Admin users from Lupon case routes", async () => {
+    const pool = createPool([[profileRows.admin], [profileRows.admin]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+
+    const response = await request(app).get("/api/lupon/cases").set("Cookie", cookie);
+
+    expect(response.status).toBe(403);
+    expect(JSON.stringify(response.body)).not.toContain("luponCases");
+    expect(JSON.stringify(response.body)).not.toContain("confidentialSummary");
+    expect(pool.queries).toHaveLength(2);
+    expect(pool.queries.at(-1).sql).not.toContain("FROM lupon_cases");
+  });
+
   it("allows Admin users to list database profiles with safe fields only", async () => {
     const pool = createPool([
       [profileRows.admin],

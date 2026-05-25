@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { createId } from "../lib/ids.js";
-import { toDocumentRequest } from "../lib/rows.js";
+import { toDocumentRequestResponse } from "../lib/responseMappers.js";
 import { requireFields, validateDocumentRequestStatus } from "../lib/validation.js";
 import { requireRole } from "../middleware/roles.js";
 
@@ -30,7 +30,7 @@ export function createDocumentRequestsRouter(pool) {
         ORDER BY requests.request_date DESC`
       );
 
-      res.json({ documentRequests: result.rows.map(toDocumentRequest) });
+      res.json({ documentRequests: result.rows.map(toDocumentRequestResponse) });
     } catch (error) {
       next(error);
     }
@@ -112,7 +112,9 @@ export function createDocumentRequestsRouter(pool) {
         ]
       );
 
-      return res.status(201).json({ documentRequest: toDocumentRequest(result.rows[0]) });
+      return res.status(201).json({
+        documentRequest: toDocumentRequestResponse(result.rows[0])
+      });
     } catch (error) {
       return next(error);
     }

@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { createId } from "../lib/ids.js";
-import { toLuponCase, toLuponCaseNote } from "../lib/rows.js";
+import {
+  toLuponCaseNoteResponse,
+  toLuponCaseResponse
+} from "../lib/responseMappers.js";
 import {
   requireFields,
   validateLuponCasePriority,
@@ -33,7 +36,7 @@ export function createLuponCasesRouter(pool) {
         ORDER BY opened_at DESC`
       );
 
-      res.json({ luponCases: result.rows.map(toLuponCase) });
+      res.json({ luponCases: result.rows.map(toLuponCaseResponse) });
     } catch (error) {
       next(error);
     }
@@ -108,7 +111,7 @@ export function createLuponCasesRouter(pool) {
         ]
       );
 
-      return res.status(201).json({ luponCase: toLuponCase(result.rows[0]) });
+      return res.status(201).json({ luponCase: toLuponCaseResponse(result.rows[0]) });
     } catch (error) {
       return next(error);
     }
@@ -153,7 +156,9 @@ export function createLuponCasesRouter(pool) {
         ]
       );
 
-      return res.status(201).json({ luponCaseNote: toLuponCaseNote(result.rows[0]) });
+      return res.status(201).json({
+        luponCaseNote: toLuponCaseNoteResponse(result.rows[0])
+      });
     } catch (error) {
       return next(error);
     }

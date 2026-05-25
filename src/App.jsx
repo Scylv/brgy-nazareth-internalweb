@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { residents as initialResidents } from "./data/residents";
-import { users } from "./data/users";
 import { fetchAdminProfiles } from "./features/admin/api/adminProfilesApi";
 import AdminPanel from "./features/admin/components/AdminPanel";
 import { fetchCurrentUser, loginUser, logoutUser } from "./features/auth/api/authApi";
@@ -354,7 +353,7 @@ export default function App() {
       setCurrentPage(getLandingPage(user.role));
     } catch (error) {
       if (error?.status === 401 || error?.status === 400) {
-        setLoginError("Invalid credentials. Use one of the local accounts");
+        setLoginError("Invalid credentials. Use your assigned Barangay Nazareth account.");
         return;
       }
 
@@ -515,7 +514,7 @@ export default function App() {
   }
 
   if (!currentUser) {
-    return <LoginScreen error={loginError} onLogin={handleLogin} users={users} />;
+    return <LoginScreen error={loginError} onLogin={handleLogin} />;
   }
 
   const actions = (
