@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { writeAuditLog } from "../lib/audit.js";
 import { createId } from "../lib/ids.js";
 import { toDocumentRequestResponse } from "../lib/responseMappers.js";
 import { requireFields, validateDocumentRequestStatus } from "../lib/validation.js";
@@ -112,8 +113,22 @@ export function createDocumentRequestsRouter(pool) {
         ]
       );
 
+      const documentRequest = result.rows[0];
+
+      await writeAuditLog(pool, {
+        actor: req.user,
+        action: "document_request.created",
+        targetType: "document_request",
+        targetId: documentRequest.id,
+        metadata: {
+          residentId: documentRequest.resident_id,
+          barangayDocumentId: documentRequest.barangay_document_id,
+          status: documentRequest.status
+        }
+      });
+
       return res.status(201).json({
-        documentRequest: toDocumentRequestResponse(result.rows[0])
+        documentRequest: toDocumentRequestResponse(documentRequest)
       });
     } catch (error) {
       return next(error);

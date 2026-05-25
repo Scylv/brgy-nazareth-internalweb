@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { writeAuditLog } from "../lib/audit.js";
 import { requireRole } from "../middleware/roles.js";
 import {
   toDepartmentResidentResponse,
@@ -48,6 +49,10 @@ function getRequestedStatus(body) {
 
 function hasAllowedResidentUpdate(body) {
   return allowedResidentUpdateFields.some((field) => hasOwn(body, field));
+}
+
+function getResidentChangedFields(body) {
+  return allowedResidentUpdateFields.filter((field) => hasOwn(body ?? {}, field));
 }
 
 export function createResidentsRouter(pool) {
@@ -272,6 +277,18 @@ export function createResidentsRouter(pool) {
           req.params.id
         ]
       );
+
+      await writeAuditLog(pool, {
+        actor: req.user,
+        action: "resident.updated",
+        targetType: "resident",
+        targetId: req.params.id,
+        metadata: {
+          changedFields: getResidentChangedFields(req.body),
+          previousStatusColor: currentResident.status_color,
+          newStatusColor: statusColor
+        }
+      });
 
       return res.json({ resident: toDepartmentResidentResponse(updateResult.rows[0]) });
     } catch (error) {

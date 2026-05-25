@@ -9,6 +9,14 @@ function createPool(rowsByQuery = []) {
     queries,
     async query(sql, params = []) {
       queries.push({ sql, params });
+
+      if (sql.includes("INSERT INTO audit_logs")) {
+        return {
+          rows: [],
+          rowCount: 1
+        };
+      }
+
       const rows = rowsByQuery[queries.length - 1] ?? [];
       return {
         rows,
@@ -16,6 +24,14 @@ function createPool(rowsByQuery = []) {
       };
     }
   };
+}
+
+function findAuditQueries(pool) {
+  return pool.queries.filter((query) => query.sql.includes("INSERT INTO audit_logs"));
+}
+
+function getAuditMetadata(auditQuery) {
+  return auditQuery?.params?.[5] ?? {};
 }
 
 function createResidentUpdatePool(initialResident = residentRow) {
@@ -59,6 +75,13 @@ function createResidentUpdatePool(initialResident = residentRow) {
 
         return {
           rows: [resident],
+          rowCount: 1
+        };
+      }
+
+      if (sql.includes("INSERT INTO audit_logs")) {
+        return {
+          rows: [],
           rowCount: 1
         };
       }
@@ -501,6 +524,117 @@ describe("authentication and role-based API access", () => {
     expect(JSON.stringify(response.body)).not.toContain("noteBody");
   });
 
+  it("writes a safe audit record when Lupon creates a case", async () => {
+    const confidentialSummary = "Do not store this confidential case summary in audit metadata.";
+    const pool = createPool([
+      [profileRows.lupon],
+      [profileRows.lupon],
+      [
+        {
+          id: "LC-2026-0003",
+          resident_id: "RBI-2024-0002",
+          case_number: "LPN-2026-0003",
+          case_type: "Address Verification",
+          status: "open",
+          priority: "high",
+          confidential_summary: confidentialSummary,
+          opened_at: "2026-05-21",
+          resolved_at: null,
+          assigned_lupon_profile_id: "lupon-1",
+          created_by_profile_id: "lupon-1",
+          created_at: "2026-05-21T00:00:00.000Z",
+          updated_at: "2026-05-21T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .post("/api/lupon/cases")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0002",
+        caseNumber: "LPN-2026-0003",
+        caseType: "Address Verification",
+        status: "open",
+        priority: "high",
+        confidentialSummary,
+        openedAt: "2026-05-21"
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.luponCase.confidentialSummary).toBe(confidentialSummary);
+
+    const [auditQuery] = findAuditQueries(pool);
+    const metadata = getAuditMetadata(auditQuery);
+
+    expect(auditQuery.params.slice(1, 5)).toEqual([
+      "lupon-1",
+      "lupon_case.created",
+      "lupon_case",
+      "LC-2026-0003"
+    ]);
+    expect(metadata).toMatchObject({
+      actorRole: "lupon",
+      residentId: "RBI-2024-0002",
+      caseNumber: "LPN-2026-0003",
+      caseType: "Address Verification",
+      status: "open",
+      priority: "high"
+    });
+    expect(JSON.stringify(metadata)).not.toContain(confidentialSummary);
+  });
+
+  it("writes a safe audit record when Lupon creates a confidential note", async () => {
+    const noteBody = "Do not store this confidential note body in audit metadata.";
+    const pool = createPool([
+      [profileRows.lupon],
+      [profileRows.lupon],
+      [
+        {
+          id: "LCN-2026-0003",
+          lupon_case_id: "LC-2026-0003",
+          note_type: "internal",
+          note_body: noteBody,
+          created_by_profile_id: "lupon-1",
+          created_at: "2026-05-21T01:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .post("/api/lupon/cases/LC-2026-0003/notes")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        noteType: "internal",
+        noteBody
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.luponCaseNote.noteBody).toBe(noteBody);
+
+    const [auditQuery] = findAuditQueries(pool);
+    const metadata = getAuditMetadata(auditQuery);
+
+    expect(auditQuery.params.slice(1, 5)).toEqual([
+      "lupon-1",
+      "lupon_case_note.created",
+      "lupon_case_note",
+      "LCN-2026-0003"
+    ]);
+    expect(metadata).toMatchObject({
+      actorRole: "lupon",
+      luponCaseId: "LC-2026-0003",
+      noteType: "internal"
+    });
+    expect(JSON.stringify(metadata)).not.toContain(noteBody);
+  });
+
   it("does not return Lupon confidential fields to Department resident routes", async () => {
     const pool = createPool([[profileRows.department], [profileRows.department], [residentRow]]);
     const app = createApp(pool);
@@ -793,9 +927,13 @@ describe("authentication and role-based API access", () => {
       processedByProfileId: "dept-1",
       processedByName: "Elena Ledesma"
     });
-    expect(pool.queries.at(-1).sql).toContain("documents.name AS barangay_document_name");
-    expect(pool.queries.at(-1).sql).toContain("profiles.display_name AS processed_by_name");
-    expect(pool.queries.at(-1).params.slice(1)).toEqual([
+    const documentRequestInsert = pool.queries.find((query) =>
+      query.sql.includes("INSERT INTO document_requests")
+    );
+
+    expect(documentRequestInsert.sql).toContain("documents.name AS barangay_document_name");
+    expect(documentRequestInsert.sql).toContain("profiles.display_name AS processed_by_name");
+    expect(documentRequestInsert.params.slice(1)).toEqual([
       "RBI-2024-0001",
       "BDOC-001",
       "Local employment requirement",
@@ -805,6 +943,22 @@ describe("authentication and role-based API access", () => {
       null,
       "dept-1"
     ]);
+
+    const [auditQuery] = findAuditQueries(pool);
+    const metadata = getAuditMetadata(auditQuery);
+
+    expect(auditQuery.params.slice(1, 4)).toEqual([
+      "dept-1",
+      "document_request.created",
+      "document_request"
+    ]);
+    expect(auditQuery.params[4]).toBe("DOC-2026-0008");
+    expect(metadata).toMatchObject({
+      actorRole: "department",
+      residentId: "RBI-2024-0001",
+      barangayDocumentId: "BDOC-001",
+      status: "pending"
+    });
   });
 
   it("rejects missing document request fields before writing to the database", async () => {
@@ -868,7 +1022,25 @@ describe("authentication and role-based API access", () => {
       fullName: "Maria S. Santos",
       statusColor: "green"
     });
-    expect(JSON.stringify(pool.queries.at(-1).params)).not.toContain("Confidential Lupon detail");
+    const residentUpdate = pool.queries.find((query) => query.sql.includes("UPDATE residents"));
+    expect(JSON.stringify(residentUpdate.params)).not.toContain("Confidential Lupon detail");
+
+    const [auditQuery] = findAuditQueries(pool);
+    const metadata = getAuditMetadata(auditQuery);
+
+    expect(auditQuery.params.slice(1, 5)).toEqual([
+      "lupon-1",
+      "resident.updated",
+      "resident",
+      "RBI-2024-0002"
+    ]);
+    expect(metadata).toMatchObject({
+      actorRole: "lupon",
+      previousStatusColor: "yellow",
+      newStatusColor: "green"
+    });
+    expect(metadata.changedFields).toEqual(expect.arrayContaining(["fullName", "status"]));
+    expect(JSON.stringify(metadata)).not.toContain("Confidential Lupon detail");
   });
 
   it("blocks Department users from updating resident status", async () => {
