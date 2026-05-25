@@ -7,6 +7,11 @@ Backups are required before storing real resident registry, document request, or
 Lupon case data. Lupon case summaries and notes are confidential and must be
 protected in backups.
 
+Backup files contain resident personal data and Lupon confidential data. Treat
+backup files as restricted records: store them only on approved encrypted
+storage, limit access to authorized operators, and never attach them to issue
+trackers, chats, reports, or emails unless formally approved.
+
 ## Credential Rules
 
 - Do not commit `.env`.
@@ -16,6 +21,9 @@ protected in backups.
 - Store backup credentials only in approved server configuration or a secured
   password manager.
 - Use placeholders in commands and documentation.
+- Do not store database backups inside this Git repository, including under
+  `docs/`, `backups/`, or any temporary project folder. Backup files must stay
+  outside source control.
 
 ## Backup Retention
 
@@ -28,37 +36,60 @@ Store backups outside the main server disk, such as an encrypted external drive
 or approved internal network storage. A backup on the same disk as PostgreSQL is
 not enough protection against disk failure.
 
+Recommended folder layout outside the repository:
+
+```text
+<approved_backup_root>/
+  daily/
+  weekly/
+  restore-tests/
+```
+
 ## Backup Command
 
-Use `pg_dump` from the office server or an approved admin workstation.
+Use `pg_dump` from the office server or an approved admin workstation. Replace
+every placeholder before running the command. Do not paste real passwords into
+documentation.
 
 Plain SQL backup:
 
 ```bash
-pg_dump "postgres://<db_user>:<db_password>@<db_host>:<db_port>/<db_name>" > backups/brgy_nazareth_YYYY-MM-DD.sql
+pg_dump --host "<db_host>" --port "<db_port>" --username "<db_user>" --dbname "<db_name>" --format=plain --file "<approved_backup_root>/daily/brgy_nazareth_YYYY-MM-DD.sql"
 ```
 
 Compressed custom-format backup:
 
 ```bash
-pg_dump -Fc "postgres://<db_user>:<db_password>@<db_host>:<db_port>/<db_name>" -f backups/brgy_nazareth_YYYY-MM-DD.dump
+pg_dump --host "<db_host>" --port "<db_port>" --username "<db_user>" --dbname "<db_name>" --format=custom --file "<approved_backup_root>/daily/brgy_nazareth_YYYY-MM-DD.dump"
 ```
 
 Use the custom format for regular backups if the team expects larger data,
 because it works well with `pg_restore`.
+
+Windows PowerShell example for a custom-format daily backup:
+
+```powershell
+$env:PGPASSWORD = "<db_password>"
+pg_dump --host "<db_host>" --port "<db_port>" --username "<db_user>" --dbname "<db_name>" --format=custom --file "<approved_backup_root>\daily\brgy_nazareth_YYYY-MM-DD.dump"
+Remove-Item Env:\PGPASSWORD
+```
+
+If the server uses a `.pgpass` or `pg_service.conf` file managed by the
+administrator, omit `$env:PGPASSWORD` and let PostgreSQL prompt or read the
+approved local configuration.
 
 ## Suggested Backup Schedule
 
 Run one daily backup after office hours:
 
 ```bash
-pg_dump -Fc "postgres://<db_user>:<db_password>@<db_host>:<db_port>/<db_name>" -f backups/daily/brgy_nazareth_YYYY-MM-DD.dump
+pg_dump --host "<db_host>" --port "<db_port>" --username "<db_user>" --dbname "<db_name>" --format=custom --file "<approved_backup_root>/daily/brgy_nazareth_YYYY-MM-DD.dump"
 ```
 
 Run one weekly backup at the end of the week:
 
 ```bash
-pg_dump -Fc "postgres://<db_user>:<db_password>@<db_host>:<db_port>/<db_name>" -f backups/weekly/brgy_nazareth_YYYY-MM-DD.dump
+pg_dump --host "<db_host>" --port "<db_port>" --username "<db_user>" --dbname "<db_name>" --format=custom --file "<approved_backup_root>/weekly/brgy_nazareth_YYYY-MM-DD.dump"
 ```
 
 After each backup:
@@ -75,22 +106,34 @@ After each backup:
 Test restores into a separate database. Do not overwrite the live office
 database during a restore test.
 
-Create a test restore database:
+Use a restore database name that cannot be confused with the live database, such
+as `<db_name>_restore_test_YYYYMMDD`.
+
+Create a separate test restore database:
 
 ```bash
-createdb "postgres://<admin_user>:<admin_password>@<db_host>:<db_port>/<restore_db_name>"
+createdb --host "<db_host>" --port "<db_port>" --username "<admin_user>" --owner "<db_user>" "<restore_db_name>"
 ```
 
 Restore from custom-format backup:
 
 ```bash
-pg_restore --clean --if-exists --dbname "postgres://<admin_user>:<admin_password>@<db_host>:<db_port>/<restore_db_name>" backups/brgy_nazareth_YYYY-MM-DD.dump
+pg_restore --host "<db_host>" --port "<db_port>" --username "<admin_user>" --dbname "<restore_db_name>" --clean --if-exists --no-owner --verbose "<approved_backup_root>/daily/brgy_nazareth_YYYY-MM-DD.dump"
 ```
 
 Restore from plain SQL backup:
 
 ```bash
-psql "postgres://<admin_user>:<admin_password>@<db_host>:<db_port>/<restore_db_name>" < backups/brgy_nazareth_YYYY-MM-DD.sql
+psql --host "<db_host>" --port "<db_port>" --username "<admin_user>" --dbname "<restore_db_name>" --file "<approved_backup_root>/daily/brgy_nazareth_YYYY-MM-DD.sql"
+```
+
+Windows PowerShell example for a custom-format restore test:
+
+```powershell
+$env:PGPASSWORD = "<admin_password>"
+createdb --host "<db_host>" --port "<db_port>" --username "<admin_user>" --owner "<db_user>" "<restore_db_name>"
+pg_restore --host "<db_host>" --port "<db_port>" --username "<admin_user>" --dbname "<restore_db_name>" --clean --if-exists --no-owner --verbose "<approved_backup_root>\daily\brgy_nazareth_YYYY-MM-DD.dump"
+Remove-Item Env:\PGPASSWORD
 ```
 
 After restoring:
@@ -106,6 +149,19 @@ After restoring:
 4. Verify resident search, document request records, and Lupon-only case access.
 5. Confirm Department users cannot see Lupon confidential summaries or notes.
 6. Document the restore date, backup file used, result, and tester name.
+7. Drop the restore test database only after the result has been recorded:
+
+   ```bash
+   dropdb --host "<db_host>" --port "<db_port>" --username "<admin_user>" "<restore_db_name>"
+   ```
+
+   PowerShell:
+
+   ```powershell
+   $env:PGPASSWORD = "<admin_password>"
+   dropdb --host "<db_host>" --port "<db_port>" --username "<admin_user>" "<restore_db_name>"
+   Remove-Item Env:\PGPASSWORD
+   ```
 
 ## Live Restore Procedure
 
@@ -137,3 +193,17 @@ office use:
 4. Run a quick app login and resident search check.
 5. If data appears missing or corrupted, stop use and restore from the latest
    verified backup.
+
+## Pilot Acceptance Checklist
+
+Before approving internal pilot use:
+
+- A backup has been created using the documented `pg_dump` command with only
+  approved storage locations.
+- A successful restore test has been completed into a separate test database.
+- The restored app has passed login, resident search, document request, and
+  Lupon access checks.
+- The restore test record includes the backup filename, restore database name,
+  date, tester, and pass/fail result without exposing credentials.
+- Backup files are confirmed to be outside the Git repository and protected as
+  confidential resident and Lupon records.
