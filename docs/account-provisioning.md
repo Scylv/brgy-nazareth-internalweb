@@ -5,9 +5,9 @@ The app is intended for Department Office, Lupon, and Admin users on the
 barangay office LAN.
 
 The current app has database-backed authentication for staging and pilot use.
-Admin account creation, role edits, deactivation, and password reset are still
-planned features, so provisioning may require controlled database administration
-until those screens are implemented.
+Admin users can create named Department, Lupon, and Admin accounts, deactivate
+or reactivate accounts, reset temporary passwords, and staff can change their
+own password after login.
 
 ## Required Rule Before Real Data
 
@@ -60,8 +60,9 @@ Use this role for system administration only.
 Admin users may:
 
 - Review staff profile listings.
-- Manage role and account records when the related features are implemented or
-  through approved database administration.
+- Create named Department, Lupon, and Admin accounts.
+- Deactivate or reactivate accounts.
+- Reset temporary passwords.
 
 Admin accounts should be limited. Keep at least two named Admin accounts for
 continuity, but do not use Admin accounts for ordinary Department or Lupon work.
@@ -73,8 +74,8 @@ For each new user:
 1. Confirm the staff member's name and office assignment.
 2. Assign exactly one role: `department`, `lupon`, or `admin`.
 3. Create a named username tied to that staff member.
-4. Set an initial password through an approved secure process.
-5. Require the password to be changed or rotated according to office policy.
+4. Set an initial temporary password through the Admin account screen.
+5. Have the staff member change the temporary password after first login.
 6. Confirm the account status is active.
 7. Log in once from a staff PC and verify the correct dashboard and access.
 8. Record the account owner, role, creation date, and approver without recording
@@ -109,17 +110,17 @@ Before approving a supervised internal pilot:
 1. Department account can log in and use resident search.
 2. Department account cannot access Lupon routes or confidential Lupon fields.
 3. Lupon account can access case-specific Lupon information.
-4. Admin account can view the profile listing.
+4. Admin account can create, deactivate/reactivate, and reset staff accounts.
 5. Demo/shared accounts have been replaced or disabled before real resident data
    is loaded.
 6. Audit logs identify named users for sensitive mutations.
+7. Password hashes are never exposed by API responses or documentation.
 
 Recent baseline:
 
-- `npm test` passed: 22 files / 127 tests.
+- `npm test` passed: 23 files / 137 tests.
 - `npm run build` passed.
 
 This is suitable for supervised internal pilot use after account replacement and
 staff access checks. It should not be treated as fully unattended production
-until account lifecycle, backup/restore, restart, and credential handling
-procedures are tested.
+until backup/restore, restart, and credential handling procedures are tested.

@@ -43,7 +43,7 @@ export function createApp(pool) {
   const requireAuth = createAuthMiddleware(pool);
   const requireTrustedOrigin = createOriginProtectionMiddleware(allowedOrigins);
 
-  app.use("/api/auth", createAuthRouter(pool));
+  app.use("/api/auth", createAuthRouter(pool, { requireTrustedOrigin }));
   app.use("/api/admin", requireAuth, requireTrustedOrigin, createAdminRouter(pool));
   app.use("/api/residents", requireAuth, requireTrustedOrigin, createResidentsRouter(pool));
   app.use(

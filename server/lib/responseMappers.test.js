@@ -33,6 +33,7 @@ const profileRow = {
   username: "admin",
   display_name: "Ricardo Morales",
   role: "admin",
+  status: "active",
   password_hash: "scrypt$should-not-leak",
   confidential_summary: "Do not expose this summary.",
   note_body: "Do not expose this note.",
@@ -65,6 +66,7 @@ describe("safe API response mappers", () => {
       username: "admin",
       displayName: "Ricardo Morales",
       role: "admin",
+      status: "active",
       createdAt: "2026-05-01T00:00:00.000Z",
       updatedAt: "2026-05-02T00:00:00.000Z"
     });

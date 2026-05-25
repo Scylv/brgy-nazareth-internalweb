@@ -97,6 +97,7 @@ export function toAdminProfileResponse(row) {
     username: row.username,
     displayName: row.display_name,
     role: row.role,
+    status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };

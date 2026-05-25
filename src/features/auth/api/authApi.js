@@ -23,3 +23,13 @@ export async function logoutUser() {
     method: "POST"
   });
 }
+
+export async function changePassword({ currentPassword, newPassword }) {
+  await apiFetch("/api/auth/password", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ currentPassword, newPassword })
+  });
+}
