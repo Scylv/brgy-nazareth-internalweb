@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Button from "../../../shared/components/Button";
+import ResidentDocumentPanel from "../../documents/components/ResidentDocumentPanel";
 import MetricCard from "../../../shared/components/MetricCard";
 import SectionCard from "../../../shared/components/SectionCard";
 import SectionHeader from "../../../shared/components/SectionHeader";
@@ -536,6 +537,23 @@ export default function AdminPanel({
                   Save resident
                 </Button>
               </form>
+
+              <div className="mt-5">
+                <ResidentDocumentPanel
+                  allowedScopes={[
+                    "department_visible",
+                    "general_internal",
+                    "lupon_confidential",
+                    "admin_only"
+                  ]}
+                  defaultVisibilityScope="admin_only"
+                  metadataOnly
+                  residentId={residentForm.id}
+                  residentName={residentForm.fullName}
+                  showUpload={false}
+                  title="Document Metadata"
+                />
+              </div>
             </aside>
           ) : null}
         </div>
