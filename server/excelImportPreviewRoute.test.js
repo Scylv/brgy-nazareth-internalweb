@@ -248,13 +248,15 @@ function createCommitPool() {
           civilStatus: params[5],
           occupation: params[6],
           address: params[7],
-          contactNumber: params[8],
-          email: params[9],
-          additionalInformation: params[10],
-          sectors: params[11],
-          registeredVoter: params[12],
-          precinctNumber: params[13],
-          statusColor: params[14]
+          exactAddress: params[8],
+          contactNumber: params[9],
+          email: params[10],
+          additionalInformation: params[11],
+          sectors: params[12],
+          registeredVoter: params[13],
+          precinctNumber: params[14],
+          sitio: params[15],
+          statusColor: params[16]
         };
 
         insertedResidents.push(resident);
@@ -263,6 +265,7 @@ function createCommitPool() {
           full_name: resident.fullName,
           birth_date: resident.birthDate,
           address: resident.address,
+          exact_address: resident.exactAddress,
           contact_number: resident.contactNumber
         });
 

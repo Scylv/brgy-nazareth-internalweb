@@ -32,12 +32,14 @@ CREATE TABLE residents (
   civil_status text,
   occupation text,
   address text NOT NULL,
+  exact_address text,
   contact_number text,
   email text,
   additional_information text,
   sectors text[] NOT NULL DEFAULT ARRAY[]::text[],
   registered_voter boolean NOT NULL DEFAULT false,
   precinct_number text,
+  sitio text,
   status_color text NOT NULL CHECK (
     status_color IN (
       'green',
@@ -45,6 +47,8 @@ CREATE TABLE residents (
       'red'
     )
   ),
+  archived_at timestamptz,
+  archived_by_profile_id text REFERENCES profiles(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CHECK (
@@ -274,6 +278,7 @@ CREATE INDEX idx_residents_household_id ON residents(household_id);
 CREATE INDEX idx_residents_status_color ON residents(status_color);
 CREATE INDEX idx_residents_full_name_lower ON residents(lower(full_name));
 CREATE INDEX idx_residents_address ON residents(address);
+CREATE INDEX idx_residents_archived_at ON residents(archived_at);
 
 CREATE INDEX idx_resident_status_history_resident_id
   ON resident_status_history(resident_id);

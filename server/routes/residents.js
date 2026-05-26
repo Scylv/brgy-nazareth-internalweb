@@ -80,6 +80,7 @@ export function createResidentsRouter(pool) {
           created_at,
           updated_at
         FROM residents
+        WHERE archived_at IS NULL
         ORDER BY full_name ASC`
       );
 
@@ -111,7 +112,8 @@ export function createResidentsRouter(pool) {
           created_at,
           updated_at
         FROM residents
-        WHERE id = $1`,
+        WHERE id = $1
+          AND archived_at IS NULL`,
         [req.params.id]
       );
 
@@ -203,7 +205,8 @@ export function createResidentsRouter(pool) {
           created_at,
           updated_at
         FROM residents
-        WHERE id = $1`,
+        WHERE id = $1
+          AND archived_at IS NULL`,
         [req.params.id]
       );
 

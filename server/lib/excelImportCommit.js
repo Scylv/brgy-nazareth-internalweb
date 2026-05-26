@@ -159,12 +159,14 @@ function toResidentInsert(row) {
     civilStatus: nullableText(row.civilStatus),
     occupation: nullableText(row.employment),
     address: collapseText(row.exactAddress || row.address),
+    exactAddress: nullableText(row.exactAddress),
     contactNumber: nullableText(row.contactNumber),
     email: null,
     additionalInformation: null,
     sectors: precinctNumber ? ["Registered Voter"] : [],
     registeredVoter: Boolean(precinctNumber),
     precinctNumber,
+    sitio: nullableText(row.sitio),
     statusColor: DEFAULT_STATUS_COLOR
   };
 }
@@ -210,15 +212,17 @@ async function insertResident(pool, resident) {
       civil_status,
       occupation,
       address,
+      exact_address,
       contact_number,
       email,
       additional_information,
       sectors,
       registered_voter,
       precinct_number,
+      sitio,
       status_color
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
     [
       resident.id,
       resident.householdId,
@@ -228,12 +232,14 @@ async function insertResident(pool, resident) {
       resident.civilStatus,
       resident.occupation,
       resident.address,
+      resident.exactAddress,
       resident.contactNumber,
       resident.email,
       resident.additionalInformation,
       resident.sectors,
       resident.registeredVoter,
       resident.precinctNumber,
+      resident.sitio,
       resident.statusColor
     ]
   );

@@ -4,7 +4,7 @@ import { commitPhase1ExcelImport } from "../lib/excelImportCommit.js";
 import { parseExcelImportPreview } from "../lib/excelImportPreview.js";
 import { createId } from "../lib/ids.js";
 import { hashPassword } from "../lib/passwords.js";
-import { toAdminProfileResponse } from "../lib/responseMappers.js";
+import { toAdminProfileResponse, toAdminResidentResponse } from "../lib/responseMappers.js";
 import { requireRole } from "../middleware/roles.js";
 
 const ALLOWED_ACCOUNT_ROLES = new Set(["admin", "department", "lupon"]);
@@ -14,6 +14,18 @@ const XLSX_CONTENT_TYPES = new Set([
   "application/octet-stream"
 ]);
 const EXCEL_PREVIEW_UPLOAD_LIMIT = "15mb";
+const ALLOWED_ADMIN_RESIDENT_UPDATE_FIELDS = [
+  "fullName",
+  "address",
+  "exactAddress",
+  "precinctNumber",
+  "birthDate",
+  "civilStatus",
+  "occupation",
+  "contactNumber",
+  "sitio",
+  "additionalInformation"
+];
 
 function normalizeUsername(username) {
   return typeof username === "string" ? username.trim().toLowerCase() : "";
@@ -75,6 +87,36 @@ function isHeaderConfirmation(value) {
   return String(value ?? "").trim().toLowerCase() === "true";
 }
 
+function hasOwn(body, field) {
+  return Object.prototype.hasOwnProperty.call(body ?? {}, field);
+}
+
+function hasAdminResidentUpdate(body) {
+  return ALLOWED_ADMIN_RESIDENT_UPDATE_FIELDS.some((field) => hasOwn(body, field));
+}
+
+function pickAdminResidentValue(body, currentResident, bodyField, rowField) {
+  return hasOwn(body, bodyField) ? body[bodyField] : currentResident[rowField];
+}
+
+function normalizeNullableText(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const text = String(value).trim();
+
+  return text || null;
+}
+
+function normalizeRequiredText(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ");
+}
+
+function getAdminResidentChangedFields(body) {
+  return ALLOWED_ADMIN_RESIDENT_UPDATE_FIELDS.filter((field) => hasOwn(body, field));
+}
+
 async function loadExistingResidentsForImportPreview(pool) {
   const result = await pool.query(
     `SELECT
@@ -92,6 +134,333 @@ async function loadExistingResidentsForImportPreview(pool) {
 
 export function createAdminRouter(pool) {
   const router = Router();
+
+  router.get("/residents", requireRole("admin"), async (req, res, next) => {
+    const query = normalizeText(req.query?.q);
+    const includeArchived = String(req.query?.includeArchived ?? "").toLowerCase() === "true";
+    const searchTerm = `%${query.toLowerCase()}%`;
+
+    try {
+      const result = await pool.query(
+        `SELECT
+          id,
+          household_id,
+          full_name,
+          birth_date,
+          civil_status,
+          occupation,
+          address,
+          exact_address,
+          contact_number,
+          additional_information,
+          sectors,
+          registered_voter,
+          precinct_number,
+          sitio,
+          status_color,
+          archived_at,
+          archived_by_profile_id,
+          created_at,
+          updated_at
+        FROM residents
+        WHERE
+          ($2 = true OR archived_at IS NULL)
+          AND (
+            $1 = '%%'
+            OR lower(full_name) LIKE $1
+            OR lower(id) LIKE $1
+            OR lower(address) LIKE $1
+            OR lower(coalesce(exact_address, '')) LIKE $1
+            OR lower(coalesce(sitio, '')) LIKE $1
+            OR lower(coalesce(precinct_number, '')) LIKE $1
+          )
+        ORDER BY archived_at NULLS FIRST, full_name ASC
+        LIMIT 100`,
+        [searchTerm, includeArchived]
+      );
+
+      return res.json({ residents: result.rows.map(toAdminResidentResponse) });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  router.get("/residents/:id", requireRole("admin"), async (req, res, next) => {
+    try {
+      const result = await pool.query(
+        `SELECT
+          id,
+          household_id,
+          full_name,
+          birth_date,
+          civil_status,
+          occupation,
+          address,
+          exact_address,
+          contact_number,
+          additional_information,
+          sectors,
+          registered_voter,
+          precinct_number,
+          sitio,
+          status_color,
+          archived_at,
+          archived_by_profile_id,
+          created_at,
+          updated_at
+        FROM residents
+        WHERE id = $1`,
+        [req.params.id]
+      );
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: "Resident not found." });
+      }
+
+      return res.json({ resident: toAdminResidentResponse(result.rows[0]) });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  router.patch("/residents/:id", requireRole("admin"), async (req, res, next) => {
+    const body = req.body ?? {};
+
+    if (!hasAdminResidentUpdate(body)) {
+      return res.status(400).json({ error: "At least one allowed resident field is required." });
+    }
+
+    try {
+      const currentResult = await pool.query(
+        `SELECT
+          id,
+          household_id,
+          full_name,
+          birth_date,
+          civil_status,
+          occupation,
+          address,
+          exact_address,
+          contact_number,
+          additional_information,
+          sectors,
+          registered_voter,
+          precinct_number,
+          sitio,
+          status_color,
+          archived_at,
+          archived_by_profile_id,
+          created_at,
+          updated_at
+        FROM residents
+        WHERE id = $1`,
+        [req.params.id]
+      );
+
+      if (currentResult.rowCount === 0) {
+        return res.status(404).json({ error: "Resident not found." });
+      }
+
+      const currentResident = currentResult.rows[0];
+      const fullName = normalizeRequiredText(
+        pickAdminResidentValue(body, currentResident, "fullName", "full_name")
+      );
+      const address = normalizeRequiredText(
+        pickAdminResidentValue(body, currentResident, "address", "address")
+      );
+      const precinctNumber = normalizeNullableText(
+        pickAdminResidentValue(body, currentResident, "precinctNumber", "precinct_number")
+      );
+
+      if (!fullName || !address) {
+        return res.status(400).json({ error: "Full name and address are required." });
+      }
+
+      const updateResult = await pool.query(
+        `UPDATE residents
+        SET
+          full_name = $1,
+          address = $2,
+          exact_address = $3,
+          precinct_number = $4,
+          registered_voter = $4 IS NOT NULL AND $4 <> '',
+          birth_date = $5,
+          civil_status = $6,
+          occupation = $7,
+          contact_number = $8,
+          sitio = $9,
+          additional_information = $10,
+          updated_at = now()
+        WHERE id = $11
+        RETURNING
+          id,
+          household_id,
+          full_name,
+          birth_date,
+          civil_status,
+          occupation,
+          address,
+          exact_address,
+          contact_number,
+          additional_information,
+          sectors,
+          registered_voter,
+          precinct_number,
+          sitio,
+          status_color,
+          archived_at,
+          archived_by_profile_id,
+          created_at,
+          updated_at`,
+        [
+          fullName,
+          address,
+          normalizeNullableText(
+            pickAdminResidentValue(body, currentResident, "exactAddress", "exact_address")
+          ),
+          precinctNumber,
+          normalizeNullableText(pickAdminResidentValue(body, currentResident, "birthDate", "birth_date")),
+          normalizeNullableText(
+            pickAdminResidentValue(body, currentResident, "civilStatus", "civil_status")
+          ),
+          normalizeNullableText(
+            pickAdminResidentValue(body, currentResident, "occupation", "occupation")
+          ),
+          normalizeNullableText(
+            pickAdminResidentValue(body, currentResident, "contactNumber", "contact_number")
+          ),
+          normalizeNullableText(pickAdminResidentValue(body, currentResident, "sitio", "sitio")),
+          normalizeNullableText(
+            pickAdminResidentValue(
+              body,
+              currentResident,
+              "additionalInformation",
+              "additional_information"
+            )
+          ),
+          req.params.id
+        ]
+      );
+
+      await writeAuditLog(pool, {
+        actor: req.user,
+        action: "resident.admin_updated",
+        targetType: "resident",
+        targetId: req.params.id,
+        metadata: {
+          changedFields: getAdminResidentChangedFields(body)
+        }
+      });
+
+      return res.json({ resident: toAdminResidentResponse(updateResult.rows[0]) });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  router.post("/residents/:id/archive", requireRole("admin"), async (req, res, next) => {
+    try {
+      const result = await pool.query(
+        `UPDATE residents
+        SET
+          archived_at = now(),
+          archived_by_profile_id = $2,
+          updated_at = now()
+        WHERE id = $1
+        RETURNING
+          id,
+          household_id,
+          full_name,
+          birth_date,
+          civil_status,
+          occupation,
+          address,
+          exact_address,
+          contact_number,
+          additional_information,
+          sectors,
+          registered_voter,
+          precinct_number,
+          sitio,
+          status_color,
+          archived_at,
+          archived_by_profile_id,
+          created_at,
+          updated_at`,
+        [req.params.id, req.user.profileId]
+      );
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: "Resident not found." });
+      }
+
+      await writeAuditLog(pool, {
+        actor: req.user,
+        action: "resident.admin_archived",
+        targetType: "resident",
+        targetId: req.params.id,
+        metadata: {
+          archived: true
+        }
+      });
+
+      return res.json({ resident: toAdminResidentResponse(result.rows[0]) });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  router.post("/residents/:id/restore", requireRole("admin"), async (req, res, next) => {
+    try {
+      const result = await pool.query(
+        `UPDATE residents
+        SET
+          archived_at = NULL,
+          archived_by_profile_id = NULL,
+          updated_at = now()
+        WHERE id = $1
+        RETURNING
+          id,
+          household_id,
+          full_name,
+          birth_date,
+          civil_status,
+          occupation,
+          address,
+          exact_address,
+          contact_number,
+          additional_information,
+          sectors,
+          registered_voter,
+          precinct_number,
+          sitio,
+          status_color,
+          archived_at,
+          archived_by_profile_id,
+          created_at,
+          updated_at`,
+        [req.params.id]
+      );
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: "Resident not found." });
+      }
+
+      await writeAuditLog(pool, {
+        actor: req.user,
+        action: "resident.admin_restored",
+        targetType: "resident",
+        targetId: req.params.id,
+        metadata: {
+          archived: false
+        }
+      });
+
+      return res.json({ resident: toAdminResidentResponse(result.rows[0]) });
+    } catch (error) {
+      return next(error);
+    }
+  });
 
   router.get("/profiles", requireRole("admin"), async (_req, res, next) => {
     try {

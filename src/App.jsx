@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { residents as initialResidents } from "./data/residents";
 import {
+  archiveAdminResident,
+  fetchAdminResidents,
+  restoreAdminResident,
+  updateAdminResident
+} from "./features/admin/api/adminResidentsApi";
+import {
   createAdminProfile,
   fetchAdminProfiles,
   resetAdminProfilePassword,
@@ -67,6 +73,11 @@ export default function App() {
   const [adminProfilesError, setAdminProfilesError] = useState("");
   const [adminProfileActionError, setAdminProfileActionError] = useState("");
   const [adminProfileActionMessage, setAdminProfileActionMessage] = useState("");
+  const [adminResidentList, setAdminResidentList] = useState([]);
+  const [adminResidentQuery, setAdminResidentQuery] = useState("");
+  const [adminIncludeArchivedResidents, setAdminIncludeArchivedResidents] = useState(false);
+  const [isAdminResidentsLoading, setIsAdminResidentsLoading] = useState(false);
+  const [isAdminResidentMutating, setIsAdminResidentMutating] = useState(false);
   const [excelImportPreview, setExcelImportPreview] = useState(null);
   const [excelImportCommitSummary, setExcelImportCommitSummary] = useState(null);
   const [excelImportError, setExcelImportError] = useState("");
@@ -171,6 +182,11 @@ export default function App() {
       setAdminProfilesError("");
       setAdminProfileActionError("");
       setAdminProfileActionMessage("");
+      setAdminResidentList([]);
+      setAdminResidentQuery("");
+      setAdminIncludeArchivedResidents(false);
+      setIsAdminResidentsLoading(false);
+      setIsAdminResidentMutating(false);
       setExcelImportPreview(null);
       setExcelImportCommitSummary(null);
       setExcelImportError("");
@@ -181,42 +197,52 @@ export default function App() {
       };
     }
 
-    async function loadAdminProfiles() {
+    async function loadAdminData() {
       setIsAdminProfilesLoading(true);
+      setIsAdminResidentsLoading(true);
       setAdminProfilesError("");
 
       try {
-        const profiles = await fetchAdminProfiles();
+        const [profiles, adminResidents] = await Promise.all([
+          fetchAdminProfiles(),
+          fetchAdminResidents({
+            query: adminResidentQuery,
+            includeArchived: adminIncludeArchivedResidents
+          })
+        ]);
 
         if (!isActive) {
           return;
         }
 
         setAdminProfileList(profiles);
+        setAdminResidentList(adminResidents);
       } catch (error) {
         if (!isActive) {
           return;
         }
 
         setAdminProfileList([]);
+        setAdminResidentList([]);
         setAdminProfilesError(
           error?.status === 403
             ? "Only Admin accounts can load database profiles."
-            : "Admin profile database API is unavailable. Start the backend with npm run dev:server, then refresh."
+            : "Admin database API is unavailable. Start the backend with npm run dev:server, then refresh."
         );
       } finally {
         if (isActive) {
           setIsAdminProfilesLoading(false);
+          setIsAdminResidentsLoading(false);
         }
       }
     }
 
-    loadAdminProfiles();
+    loadAdminData();
 
     return () => {
       isActive = false;
     };
-  }, [currentUser]);
+  }, [adminIncludeArchivedResidents, adminResidentQuery, currentUser]);
 
   useEffect(() => {
     let isActive = true;
@@ -417,6 +443,11 @@ export default function App() {
     setAdminProfilesError("");
     setAdminProfileActionError("");
     setAdminProfileActionMessage("");
+    setAdminResidentList([]);
+    setAdminResidentQuery("");
+    setAdminIncludeArchivedResidents(false);
+    setIsAdminResidentsLoading(false);
+    setIsAdminResidentMutating(false);
     setExcelImportPreview(null);
     setExcelImportCommitSummary(null);
     setExcelImportError("");
@@ -635,6 +666,94 @@ export default function App() {
     }
   }
 
+  async function handleUpdateAdminResident(residentId, resident) {
+    setIsAdminResidentMutating(true);
+    setAdminProfileActionError("");
+    setAdminProfileActionMessage("");
+
+    try {
+      const updatedResident = await updateAdminResident(residentId, resident);
+
+      setAdminResidentList((current) =>
+        current.map((item) => (item.id === residentId ? updatedResident : item))
+      );
+      setDatabaseResidentList((current) =>
+        current.map((item) =>
+          item.id === residentId
+            ? {
+                ...item,
+                fullName: updatedResident.fullName,
+                name: updatedResident.fullName,
+                birthDate: updatedResident.birthDate,
+                civilStatus: updatedResident.civilStatus,
+                occupation: updatedResident.occupation,
+                address: updatedResident.address,
+                contactNumber: updatedResident.contactNumber,
+                additionalInformation: updatedResident.additionalInformation,
+                precinctNumber: updatedResident.precinctNumber,
+                registeredVoter: Boolean(updatedResident.precinctNumber)
+              }
+            : item
+        )
+      );
+      setAdminProfileActionMessage("Resident profile updated.");
+      return updatedResident;
+    } catch (error) {
+      setAdminProfileActionError(error?.message ?? "Resident update failed.");
+      return null;
+    } finally {
+      setIsAdminResidentMutating(false);
+    }
+  }
+
+  async function handleArchiveAdminResident(residentId) {
+    setIsAdminResidentMutating(true);
+    setAdminProfileActionError("");
+    setAdminProfileActionMessage("");
+
+    try {
+      const archivedResident = await archiveAdminResident(residentId);
+
+      setAdminResidentList((current) =>
+        adminIncludeArchivedResidents
+          ? current.map((item) => (item.id === residentId ? archivedResident : item))
+          : current.filter((item) => item.id !== residentId)
+      );
+      setDatabaseResidentList((current) => current.filter((item) => item.id !== residentId));
+      setAdminProfileActionMessage("Resident archived.");
+      return archivedResident;
+    } catch (error) {
+      setAdminProfileActionError(error?.message ?? "Resident archive failed.");
+      return null;
+    } finally {
+      setIsAdminResidentMutating(false);
+    }
+  }
+
+  async function handleRestoreAdminResident(residentId) {
+    setIsAdminResidentMutating(true);
+    setAdminProfileActionError("");
+    setAdminProfileActionMessage("");
+
+    try {
+      const restoredResident = await restoreAdminResident(residentId);
+
+      setAdminResidentList((current) =>
+        current.map((item) => (item.id === residentId ? restoredResident : item))
+      );
+      setDatabaseResidentList((current) =>
+        current.some((item) => item.id === residentId) ? current : [...current, restoredResident]
+      );
+      setAdminProfileActionMessage("Resident restored.");
+      return restoredResident;
+    } catch (error) {
+      setAdminProfileActionError(error?.message ?? "Resident restore failed.");
+      return null;
+    } finally {
+      setIsAdminResidentMutating(false);
+    }
+  }
+
   async function handlePreviewExcelImport(file) {
     setIsExcelImportPreviewLoading(true);
     setExcelImportError("");
@@ -671,6 +790,19 @@ export default function App() {
       if (residentRefreshError) {
         setExcelImportError(
           "Import committed, but resident metrics could not refresh. Reload Admin to verify the latest count."
+        );
+      }
+
+      try {
+        const adminResidents = await fetchAdminResidents({
+          query: adminResidentQuery,
+          includeArchived: adminIncludeArchivedResidents
+        });
+
+        setAdminResidentList(adminResidents);
+      } catch (_error) {
+        setExcelImportError(
+          "Import committed, but Admin resident search could not refresh. Reload Admin to verify the latest records."
         );
       }
 
@@ -791,12 +923,21 @@ export default function App() {
           isExcelImportCommitLoading={isExcelImportCommitLoading}
           isExcelImportPreviewLoading={isExcelImportPreviewLoading}
           isLoading={isAdminProfilesLoading}
-          isMutating={isAdminProfileMutating}
+          isMutating={isAdminProfileMutating || isAdminResidentMutating}
+          adminResidentQuery={adminResidentQuery}
+          adminResidents={adminResidentList}
+          includeArchivedResidents={adminIncludeArchivedResidents}
+          isAdminResidentsLoading={isAdminResidentsLoading}
+          onAdminResidentQueryChange={setAdminResidentQuery}
+          onArchiveResident={handleArchiveAdminResident}
           onCommitExcelImport={handleCommitExcelImport}
           onCreateAccount={handleCreateAdminProfile}
           onPreviewExcelImport={handlePreviewExcelImport}
+          onRestoreResident={handleRestoreAdminResident}
           onResetPassword={handleResetAdminProfilePassword}
           onToggleAccountStatus={handleToggleAdminProfileStatus}
+          onToggleIncludeArchivedResidents={setAdminIncludeArchivedResidents}
+          onUpdateResident={handleUpdateAdminResident}
           residents={databaseResidentList}
           users={adminProfileList}
         />

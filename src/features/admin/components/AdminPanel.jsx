@@ -32,20 +32,29 @@ const counterCards = [
 export default function AdminPanel({
   actionError = "",
   actionMessage = "",
+  adminResidentQuery = "",
+  adminResidents = [],
   documentRequests,
   excelImportCommitSummary = null,
   excelImportError = "",
   excelImportPreview = null,
+  includeArchivedResidents = false,
   error = "",
+  isAdminResidentsLoading = false,
   isExcelImportCommitLoading = false,
   isExcelImportPreviewLoading = false,
   isLoading = false,
   isMutating = false,
+  onAdminResidentQueryChange,
+  onArchiveResident,
   onCommitExcelImport,
   onCreateAccount,
   onPreviewExcelImport,
+  onRestoreResident,
   onResetPassword,
   onToggleAccountStatus,
+  onToggleIncludeArchivedResidents,
+  onUpdateResident,
   residents,
   users
 }) {
@@ -61,6 +70,7 @@ export default function AdminPanel({
   });
   const [selectedImportFile, setSelectedImportFile] = useState(null);
   const [previewedImportFile, setPreviewedImportFile] = useState(null);
+  const [residentForm, setResidentForm] = useState(null);
   const [excelImportConfirmations, setExcelImportConfirmations] = useState({
     importConfirmed: false,
     backupConfirmed: false
@@ -151,6 +161,41 @@ export default function AdminPanel({
     }
   }
 
+  function openResidentForm(resident) {
+    setResidentForm({
+      id: resident.id,
+      fullName: resident.fullName ?? "",
+      address: resident.address ?? "",
+      exactAddress: resident.exactAddress ?? "",
+      precinctNumber: resident.precinctNumber ?? "",
+      birthDate: resident.birthDate ?? "",
+      civilStatus: resident.civilStatus ?? "",
+      occupation: resident.occupation ?? "",
+      contactNumber: resident.contactNumber ?? "",
+      sitio: resident.sitio ?? "",
+      additionalInformation: resident.additionalInformation ?? ""
+    });
+  }
+
+  function handleResidentFormChange(event) {
+    const { name, value } = event.target;
+
+    setResidentForm((current) => ({
+      ...current,
+      [name]: value
+    }));
+  }
+
+  async function handleResidentFormSubmit(event) {
+    event.preventDefault();
+
+    const updated = await onUpdateResident?.(residentForm.id, residentForm);
+
+    if (updated) {
+      setResidentForm(null);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <SectionCard variant="hero">
@@ -195,6 +240,192 @@ export default function AdminPanel({
           />
         ))}
       </section>
+
+      <SectionCard>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <SectionHeader eyebrow="Resident Management" title="Imported Residents" />
+
+          <div className="flex flex-col gap-3 md:flex-row md:items-end">
+            <label className="space-y-2 text-sm font-semibold text-slate-700">
+              Search
+              <input
+                className="w-full min-w-[18rem] rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                onChange={(event) => onAdminResidentQueryChange?.(event.target.value)}
+                placeholder="Name, RBI ID, address, sitio, precinct"
+                value={adminResidentQuery}
+              />
+            </label>
+
+            <label className="flex items-center gap-3 rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-semibold text-slate-700">
+              <input
+                checked={includeArchivedResidents}
+                className="h-4 w-4 rounded border-orange-200 text-gov-700 focus:ring-gov-500"
+                onChange={(event) => onToggleIncludeArchivedResidents?.(event.target.checked)}
+                type="checkbox"
+              />
+              Show archived
+            </label>
+          </div>
+        </div>
+
+        {isAdminResidentsLoading ? (
+          <StateMessage className="mt-4" tone="info">
+            Loading residents from the database API...
+          </StateMessage>
+        ) : null}
+
+        <div
+          className={`mt-5 grid gap-5 ${
+            residentForm ? "xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.85fr)] xl:items-start" : ""
+          }`}
+        >
+          <div className="overflow-x-auto rounded-2xl border border-orange-100">
+            <table className="min-w-[64rem] divide-y divide-orange-100 text-left text-sm">
+              <thead className="bg-orange-50 text-xs font-semibold uppercase tracking-[0.12em] text-gov-800">
+                <tr>
+                  <th className="px-4 py-3">Resident</th>
+                  <th className="px-4 py-3">Address</th>
+                  <th className="px-4 py-3">Precinct</th>
+                  <th className="px-4 py-3">Contact</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-orange-100 bg-white">
+                {!isAdminResidentsLoading
+                  ? adminResidents.map((resident) => (
+                      <tr key={resident.id}>
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-slate-900">{resident.fullName}</p>
+                          <p className="text-xs text-slate-500">{resident.id}</p>
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          <p>{resident.address || "-"}</p>
+                          <p className="text-xs text-slate-500">{resident.exactAddress || "-"}</p>
+                          <p className="text-xs text-slate-500">{resident.sitio || "-"}</p>
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {resident.precinctNumber || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {resident.contactNumber || "-"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${
+                              resident.archived
+                                ? "bg-slate-100 text-slate-600"
+                                : "bg-emerald-50 text-emerald-700"
+                            }`}
+                          >
+                            {resident.archived ? "Archived" : "Active"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              disabled={isMutating}
+                              onClick={() => openResidentForm(resident)}
+                              size="sm"
+                              variant="quiet"
+                            >
+                              Edit
+                            </Button>
+                            {resident.archived ? (
+                              <Button
+                                disabled={isMutating}
+                                onClick={() => onRestoreResident?.(resident.id)}
+                                size="sm"
+                                variant="secondary"
+                              >
+                                Restore
+                              </Button>
+                            ) : (
+                              <Button
+                                disabled={isMutating}
+                                onClick={() => onArchiveResident?.(resident.id)}
+                                size="sm"
+                                variant="quiet"
+                              >
+                                Archive
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  : null}
+              </tbody>
+            </table>
+            {!isAdminResidentsLoading && adminResidents.length === 0 ? (
+              <StateMessage className="rounded-none border-0 bg-white px-5 py-8 text-center" tone="neutral">
+                No residents match the current search.
+              </StateMessage>
+            ) : null}
+          </div>
+
+          {residentForm ? (
+            <aside className="rounded-2xl border border-orange-100 bg-orange-50 p-5 xl:sticky xl:top-4">
+              <form onSubmit={handleResidentFormSubmit}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900">Edit Resident</h3>
+                    <p className="mt-1 text-sm text-slate-600">{residentForm.id}</p>
+                  </div>
+                  <Button
+                    disabled={isMutating}
+                    onClick={() => setResidentForm(null)}
+                    size="sm"
+                    variant="secondary"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-1">
+                  {[
+                    ["fullName", "Full name"],
+                    ["address", "Address"],
+                    ["exactAddress", "Exact address"],
+                    ["precinctNumber", "Precinct number"],
+                    ["birthDate", "Birth date"],
+                    ["civilStatus", "Civil status"],
+                    ["occupation", "Occupation / employment"],
+                    ["contactNumber", "Contact number"],
+                    ["sitio", "Sitio"]
+                  ].map(([name, label]) => (
+                    <label className="space-y-2 text-sm font-semibold text-slate-700" key={name}>
+                      {label}
+                      <input
+                        className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                        name={name}
+                        onChange={handleResidentFormChange}
+                        required={name === "fullName" || name === "address"}
+                        type={name === "birthDate" ? "date" : "text"}
+                        value={residentForm[name]}
+                      />
+                    </label>
+                  ))}
+
+                  <label className="space-y-2 text-sm font-semibold text-slate-700 md:col-span-2 xl:col-span-1">
+                    Safe tag / remarks
+                    <textarea
+                      className="min-h-24 w-full rounded-2xl border border-orange-100 bg-white px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                      name="additionalInformation"
+                      onChange={handleResidentFormChange}
+                      value={residentForm.additionalInformation}
+                    />
+                  </label>
+                </div>
+
+                <Button className="mt-4" disabled={isMutating} type="submit">
+                  Save resident
+                </Button>
+              </form>
+            </aside>
+          ) : null}
+        </div>
+      </SectionCard>
 
       <SectionCard>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
