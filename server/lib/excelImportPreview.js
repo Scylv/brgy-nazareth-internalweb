@@ -1,12 +1,14 @@
 import path from "node:path";
 import { inflateRawSync } from "node:zlib";
 
-export const MAIN_RESIDENT_SHEET_NAME = "Brgy Nazareth Inhabitatns";
+export const MAIN_RESIDENT_SHEET_NAME = "Brgy Nazareth Inhabitants";
 
 const PREVIEW_ROW_LIMIT = 25;
 const FIRST_ASSISTANCE_COLUMN_INDEX = 16;
 const EXCEL_EPOCH_OFFSET = Date.UTC(1899, 11, 30);
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+const IMPORT_MODES = new Set(["createOnly", "skipDuplicates", "updateMatches"]);
+const DEFAULT_IMPORT_MODE = "skipDuplicates";
 const BUILT_IN_NUMBER_FORMATS = new Map([
   [14, "m/d/yy"],
   [15, "d-mmm-yy"],
@@ -71,6 +73,47 @@ const FIELD_COLUMNS = [
   { column: "N", header: "TAG", field: "tag" },
   { column: "O", header: "REMARKS", field: "remarks" }
 ];
+const DEFAULT_COLUMN_MAPPING = Object.freeze({
+  fullName: "A",
+  address: "B",
+  precinctNo: "C",
+  birthdate: "G",
+  civilStatus: "H",
+  occupation: "I",
+  exactAddress: "J",
+  contactNumber: "K",
+  facebookName: "L",
+  sitio: "M",
+  tag: "N",
+  remarks: "O"
+});
+const SUPPORTED_MAPPING_FIELDS = new Set([
+  "firstName",
+  "middleName",
+  "lastName",
+  "fullName",
+  "birthdate",
+  "birthDate",
+  "sex",
+  "gender",
+  "civilStatus",
+  "exactAddress",
+  "sitio",
+  "contactNumber",
+  "voterStatus",
+  "remarks",
+  "address",
+  "precinctNo",
+  "occupation",
+  "employment",
+  "facebookName",
+  "tag"
+]);
+const FIELD_ALIASES = new Map([
+  ["birthDate", "birthdate"],
+  ["gender", "sex"],
+  ["employment", "occupation"]
+]);
 
 const IGNORED_NEEDS_CLARIFICATION_COLUMNS = ["D", "E", "F"];
 const CELL_PATTERN = /<c\b([^>]*?)(?:\s*\/>|>([\s\S]*?)<\/c>)/g;
@@ -930,12 +973,12 @@ function safeDebugValue(value) {
   return String(value).slice(0, 120);
 }
 
-function buildDateDebug(rowNumber, cell, birthDate, directCellExists) {
+function buildDateDebug(rowNumber, column, cell, birthDate, directCellExists) {
   const cellValue = isCellValue(cell) ? cell : makeCellValue({ value: cell, rawValue: cell });
 
   return {
     rowNumber,
-    cellAddress: `G${rowNumber}`,
+    cellAddress: `${column}${rowNumber}`,
     directCellExists,
     directCellVType: getValueType(cellValue.rawValue),
     directCellW: safeDebugValue(cellValue.displayValue),
@@ -952,27 +995,38 @@ function buildPreviewRow(
   documentRequestPairs,
   {
     directCells,
-    includeDateDebug = false
+    includeDateDebug = false,
+    columnMapping,
+    sheetDefaults = {}
   } = {}
 ) {
-  const directBirthDateCell = directCells?.get(`G${rowNumber}`);
-  const birthDateCell = directBirthDateCell ?? getRawCell(row, "G");
+  const mapping = normalizeColumnMapping(columnMapping);
+  const birthDateColumn = mapping.birthdate ?? "G";
+  const directBirthDateCell = directCells?.get(`${birthDateColumn}${rowNumber}`);
+  const birthDateCell = directBirthDateCell ?? getMappedRawCell(row, mapping, "birthdate");
   const birthDate = parseDateValue(birthDateCell);
+  const nameFields = buildNameFields(row, mapping);
+  const voterStatus = getVoterStatus(row, mapping, sheetDefaults);
   const previewRow = {
     rowNumber,
-    fullName: getCell(row, "A"),
-    address: getCell(row, "B"),
-    precinctNo: getCell(row, "C"),
+    firstName: nameFields.firstName,
+    middleName: nameFields.middleName,
+    lastName: nameFields.lastName,
+    fullName: nameFields.fullName,
+    address: getMappedCell(row, mapping, "address"),
+    precinctNo: getMappedCell(row, mapping, "precinctNo"),
     birthDate: birthDate.value,
     birthDateDisplay: birthDate.displayValue,
-    civilStatus: getCell(row, "H"),
-    employment: getCell(row, "I"),
-    exactAddress: getCell(row, "J"),
-    contactNumber: getCell(row, "K"),
-    facebookName: getCell(row, "L"),
-    sitio: getCell(row, "M"),
-    tag: getCell(row, "N"),
-    remarks: getCell(row, "O"),
+    sex: getMappedCell(row, mapping, "sex"),
+    civilStatus: getMappedCell(row, mapping, "civilStatus"),
+    employment: getMappedCell(row, mapping, "occupation"),
+    exactAddress: getMappedCell(row, mapping, "exactAddress"),
+    contactNumber: getMappedCell(row, mapping, "contactNumber"),
+    facebookName: getMappedCell(row, mapping, "facebookName"),
+    sitio: getMappedCell(row, mapping, "sitio"),
+    tag: getMappedCell(row, mapping, "tag"),
+    remarks: getMappedCell(row, mapping, "remarks"),
+    voterStatus,
     ignoredNeedsClarification: [...IGNORED_NEEDS_CLARIFICATION_COLUMNS],
     documentRequestHistoryPreview: []
   };
@@ -1063,7 +1117,13 @@ function buildPreviewRow(
     previewRow,
     errors,
     dateDebug: includeDateDebug
-      ? buildDateDebug(rowNumber, birthDateCell, birthDate, Boolean(directBirthDateCell))
+      ? buildDateDebug(
+          rowNumber,
+          birthDateColumn,
+          birthDateCell,
+          birthDate,
+          Boolean(directBirthDateCell)
+        )
       : null
   };
 }
@@ -1171,7 +1231,7 @@ function collectDuplicateWarnings(previewRows, existingResidents) {
   return warnings;
 }
 
-function getMainWorksheet(entries) {
+function getWorkbookSheetMetadata(entries) {
   const workbookXmlBuffer = entries.get("xl/workbook.xml");
   const relationshipsXmlBuffer = entries.get("xl/_rels/workbook.xml.rels");
 
@@ -1183,26 +1243,529 @@ function getMainWorksheet(entries) {
   const relationshipsXml = readTextEntry(relationshipsXmlBuffer);
   const sheets = readWorkbookSheets(workbookXml);
   const relationships = readRelationships(relationshipsXml);
-  const mainSheet = sheets.find((sheet) => sheet.name === MAIN_RESIDENT_SHEET_NAME);
 
-  if (!mainSheet) {
-    throw new Error(`Sheet "${MAIN_RESIDENT_SHEET_NAME}" was not found.`);
+  if (sheets.length === 0) {
+    throw new Error("The uploaded .xlsx workbook does not contain any worksheets.");
   }
 
-  const target = relationships.get(mainSheet.relationshipId);
+  return {
+    sheets,
+    relationships
+  };
+}
+
+function normalizeHeaderRowNumber(value) {
+  const rowNumber = Number(value);
+
+  return Number.isInteger(rowNumber) && rowNumber > 0 ? rowNumber : 1;
+}
+
+function normalizeColumnName(value) {
+  const column = text(value).toUpperCase();
+
+  return /^[A-Z]+$/.test(column) ? column : "";
+}
+
+function normalizeMappingField(field) {
+  const normalizedField = FIELD_ALIASES.get(field) ?? field;
+
+  return SUPPORTED_MAPPING_FIELDS.has(normalizedField) ? normalizedField : "";
+}
+
+function normalizeColumnMapping(columnMapping = {}) {
+  const entries = Object.entries(columnMapping ?? {})
+    .map(([field, column]) => [normalizeMappingField(field), normalizeColumnName(column)])
+    .filter(([field, column]) => field && column);
+
+  if (entries.length === 0) {
+    return { ...DEFAULT_COLUMN_MAPPING };
+  }
+
+  return Object.fromEntries(entries);
+}
+
+function getMappedCell(row, mapping, field) {
+  const canonicalField = normalizeMappingField(field);
+  const column = mapping[canonicalField];
+
+  return column ? getCell(row, column) : "";
+}
+
+function getMappedRawCell(row, mapping, field) {
+  const canonicalField = normalizeMappingField(field);
+  const column = mapping[canonicalField];
+
+  return column ? getRawCell(row, column) : "";
+}
+
+function collapseWhitespace(value) {
+  return text(value).replace(/\s+/g, " ").trim();
+}
+
+function parseFullNameParts(fullName) {
+  const normalizedName = collapseWhitespace(fullName);
+
+  if (!normalizedName) {
+    return {
+      firstName: "",
+      middleName: "",
+      lastName: ""
+    };
+  }
+
+  if (normalizedName.includes(",")) {
+    const [lastName, rest] = normalizedName.split(",", 2).map(collapseWhitespace);
+    const restParts = rest.split(/\s+/).filter(Boolean);
+
+    return {
+      firstName: restParts[0] ?? "",
+      middleName: restParts.slice(1).join(" "),
+      lastName
+    };
+  }
+
+  const parts = normalizedName.split(/\s+/).filter(Boolean);
+
+  if (parts.length === 1) {
+    return {
+      firstName: parts[0],
+      middleName: "",
+      lastName: ""
+    };
+  }
+
+  return {
+    firstName: parts[0],
+    middleName: parts.slice(1, -1).join(" "),
+    lastName: parts.at(-1) ?? ""
+  };
+}
+
+function buildNameFields(row, mapping) {
+  const separateFirstName = getMappedCell(row, mapping, "firstName");
+  const separateMiddleName = getMappedCell(row, mapping, "middleName");
+  const separateLastName = getMappedCell(row, mapping, "lastName");
+  const hasSeparateName = Boolean(separateFirstName || separateMiddleName || separateLastName);
+
+  if (hasSeparateName) {
+    const fullName = [separateFirstName, separateMiddleName, separateLastName]
+      .map(collapseWhitespace)
+      .filter(Boolean)
+      .join(" ");
+
+    return {
+      firstName: collapseWhitespace(separateFirstName),
+      middleName: collapseWhitespace(separateMiddleName),
+      lastName: collapseWhitespace(separateLastName),
+      fullName
+    };
+  }
+
+  const fullName = getMappedCell(row, mapping, "fullName");
+  const parsedName = parseFullNameParts(fullName);
+
+  return {
+    ...parsedName,
+    fullName: collapseWhitespace(fullName)
+  };
+}
+
+function getResidentNameFields(resident) {
+  const parsedName = parseFullNameParts(resident.full_name ?? resident.fullName);
+
+  return {
+    firstName: resident.first_name ?? resident.firstName ?? parsedName.firstName,
+    middleName: resident.middle_name ?? resident.middleName ?? parsedName.middleName,
+    lastName: resident.last_name ?? resident.lastName ?? parsedName.lastName,
+    fullName: resident.full_name ?? resident.fullName ?? ""
+  };
+}
+
+function normalizeVoterStatus(value) {
+  return collapseWhitespace(value);
+}
+
+function getVoterStatus(row, mapping, sheetDefaults = {}) {
+  return normalizeVoterStatus(
+    getMappedCell(row, mapping, "voterStatus") || sheetDefaults.voterStatus
+  );
+}
+
+function normalizeImportMode(importMode) {
+  return IMPORT_MODES.has(importMode) ? importMode : DEFAULT_IMPORT_MODE;
+}
+
+function getResidentExactAddress(resident) {
+  return resident.exact_address ?? resident.exactAddress ?? resident.address ?? "";
+}
+
+function getResidentSitio(resident) {
+  return resident.sitio ?? "";
+}
+
+function buildDuplicateIdentity({
+  firstName,
+  middleName,
+  lastName,
+  fullName,
+  birthDate,
+  exactAddress,
+  sitio
+}) {
+  const parsedName = parseFullNameParts(fullName);
+  const normalizedFirstName = normalizeTextForMatch(firstName || parsedName.firstName);
+  const normalizedMiddleName = normalizeTextForMatch(middleName || parsedName.middleName);
+  const normalizedLastName = normalizeTextForMatch(lastName || parsedName.lastName);
+  const normalizedBirthDate = normalizeDateForMatch(birthDate);
+  const normalizedExactAddress = normalizeTextForMatch(exactAddress);
+  const normalizedSitio = normalizeTextForMatch(sitio);
+  const fullNameKey = [normalizedFirstName, normalizedMiddleName, normalizedLastName]
+    .filter(Boolean)
+    .join(" ");
+  const firstLastKey =
+    normalizedFirstName && normalizedLastName
+      ? `${normalizedFirstName}|${normalizedLastName}`
+      : "";
+
+  return {
+    firstLastKey,
+    nameBirthDate:
+      firstLastKey && normalizedBirthDate ? `${firstLastKey}|${normalizedBirthDate}` : "",
+    nameAddressSitio:
+      fullNameKey && (normalizedExactAddress || normalizedSitio)
+        ? `${fullNameKey}|${normalizedExactAddress}|${normalizedSitio}`
+        : ""
+  };
+}
+
+function buildExistingDuplicateIndexes(existingResidents) {
+  const nameBirthDate = new Map();
+  const nameAddressSitio = new Map();
+  const firstLastName = new Map();
+
+  for (const resident of existingResidents) {
+    const nameFields = getResidentNameFields(resident);
+    const identity = buildDuplicateIdentity({
+      ...nameFields,
+      birthDate: resident.birth_date ?? resident.birthDate,
+      exactAddress: getResidentExactAddress(resident),
+      sitio: getResidentSitio(resident)
+    });
+
+    if (identity.nameBirthDate) {
+      nameBirthDate.set(identity.nameBirthDate, resident);
+    }
+
+    if (identity.nameAddressSitio) {
+      nameAddressSitio.set(identity.nameAddressSitio, resident);
+    }
+
+    if (identity.firstLastKey && !firstLastName.has(identity.firstLastKey)) {
+      firstLastName.set(identity.firstLastKey, resident);
+    }
+  }
+
+  return {
+    nameBirthDate,
+    nameAddressSitio,
+    firstLastName
+  };
+}
+
+function getRowDuplicateMatch(row, existingIndexes, sourceIndexes) {
+  const identity = buildDuplicateIdentity({
+    firstName: row.firstName,
+    middleName: row.middleName,
+    lastName: row.lastName,
+    fullName: row.fullName,
+    birthDate: row.birthDate,
+    exactAddress: row.exactAddress || row.address,
+    sitio: row.sitio
+  });
+
+  if (identity.nameBirthDate) {
+    const existingResident = existingIndexes.nameBirthDate.get(identity.nameBirthDate);
+
+    if (existingResident) {
+      return {
+        status: "exactDuplicate",
+        reason: "nameBirthdate",
+        resident: existingResident
+      };
+    }
+
+    if (sourceIndexes.nameBirthDate.has(identity.nameBirthDate)) {
+      return {
+        status: "exactDuplicate",
+        reason: "sourceDuplicate",
+        resident: null
+      };
+    }
+  }
+
+  if (!identity.nameBirthDate && identity.nameAddressSitio) {
+    const existingResident = existingIndexes.nameAddressSitio.get(identity.nameAddressSitio);
+
+    if (existingResident) {
+      return {
+        status: "exactDuplicate",
+        reason: "nameAddressSitio",
+        resident: existingResident
+      };
+    }
+
+    if (sourceIndexes.nameAddressSitio.has(identity.nameAddressSitio)) {
+      return {
+        status: "exactDuplicate",
+        reason: "sourceDuplicate",
+        resident: null
+      };
+    }
+  }
+
+  if (identity.firstLastKey) {
+    const existingResident = existingIndexes.firstLastName.get(identity.firstLastKey);
+
+    if (existingResident) {
+      return {
+        status: "possibleDuplicate",
+        reason: "nameOnly",
+        resident: existingResident
+      };
+    }
+  }
+
+  return {
+    status: "new",
+    reason: "",
+    resident: null,
+    identity
+  };
+}
+
+function addRowToSourceIndexes(row, sourceIndexes) {
+  const identity = buildDuplicateIdentity({
+    firstName: row.firstName,
+    middleName: row.middleName,
+    lastName: row.lastName,
+    fullName: row.fullName,
+    birthDate: row.birthDate,
+    exactAddress: row.exactAddress || row.address,
+    sitio: row.sitio
+  });
+
+  if (identity.nameBirthDate) {
+    sourceIndexes.nameBirthDate.add(identity.nameBirthDate);
+  }
+
+  if (identity.nameAddressSitio) {
+    sourceIndexes.nameAddressSitio.add(identity.nameAddressSitio);
+  }
+}
+
+function classifyImportRows(previewRows, { errors, existingResidents, importMode }) {
+  const invalidRows = getRowsByNumber(errors);
+  const existingIndexes = buildExistingDuplicateIndexes(existingResidents);
+  const sourceIndexes = {
+    nameBirthDate: new Set(),
+    nameAddressSitio: new Set()
+  };
+
+  return previewRows.map((row) => {
+    if (invalidRows.has(row.rowNumber)) {
+      return {
+        ...row,
+        importStatus: "invalid",
+        matchedResidentId: null,
+        duplicateReason: ""
+      };
+    }
+
+    const match = getRowDuplicateMatch(row, existingIndexes, sourceIndexes);
+    let importStatus = match.status;
+
+    if (
+      importMode === "updateMatches" &&
+      match.status === "exactDuplicate" &&
+      match.resident?.id
+    ) {
+      importStatus = "updateCandidate";
+    }
+
+    if (importStatus === "new") {
+      addRowToSourceIndexes(row, sourceIndexes);
+    }
+
+    return {
+      ...row,
+      importStatus,
+      matchedResidentId: match.resident?.id ?? null,
+      duplicateReason: match.reason
+    };
+  });
+}
+
+function buildImportSummary(rows) {
+  return {
+    totalRows: rows.length,
+    newResidents: rows.filter((row) => row.importStatus === "new").length,
+    duplicatesSkipped: rows.filter(
+      (row) => row.importStatus === "exactDuplicate" || row.importStatus === "possibleDuplicate"
+    ).length,
+    updateCandidates: rows.filter((row) => row.importStatus === "updateCandidate").length,
+    invalidRows: rows.filter((row) => row.importStatus === "invalid").length
+  };
+}
+
+function getRowsByNumber(items) {
+  return new Set(items.map((item) => item.rowNumber));
+}
+
+function buildDetectedColumnsFromHeaderRow(headerRow) {
+  const highestColumnIndex = getHighestColumnIndex(new Map([[1, headerRow]]));
+
+  return Array.from({ length: highestColumnIndex }, (_value, index) => {
+    const column = indexToColumn(index);
+
+    return {
+      column,
+      header: getCell(headerRow, column),
+      field: ""
+    };
+  });
+}
+
+function buildMappingValidationErrors(mapping, headerRow) {
+  const errors = [];
+  const mappedColumns = new Set(Object.values(mapping));
+  const hasNameMapping =
+    Boolean(mapping.fullName) || (Boolean(mapping.firstName) && Boolean(mapping.lastName));
+
+  if (!hasNameMapping) {
+    errors.push(
+      makeValidationError(
+        0,
+        "columnMapping",
+        "nameMappingRequired",
+        "Map either fullName or both firstName and lastName before preview."
+      )
+    );
+  }
+
+  if (!mapping.exactAddress && !mapping.address) {
+    errors.push(
+      makeValidationError(
+        0,
+        "columnMapping",
+        "addressMappingRequired",
+        "Map exactAddress or address before preview."
+      )
+    );
+  }
+
+  for (const column of mappedColumns) {
+    if (!Object.hasOwn(headerRow, column)) {
+      errors.push(
+        makeValidationError(
+          0,
+          "columnMapping",
+          "mappedColumnMissing",
+          `Mapped column ${column} was not found in the selected header row.`
+        )
+      );
+    }
+  }
+
+  return errors;
+}
+
+function getAvailableSheetNames(sheets) {
+  return sheets.map((sheet) => sheet.name).filter(Boolean);
+}
+
+function formatAvailableSheets(sheetNames) {
+  return sheetNames.length > 0 ? sheetNames.join(", ") : "none";
+}
+
+function chooseWorksheet(sheets, selectedSheetName) {
+  const sheetNames = getAvailableSheetNames(sheets);
+  const requestedSheetName = text(selectedSheetName);
+
+  if (requestedSheetName) {
+    const selectedSheet = sheets.find((sheet) => sheet.name === requestedSheetName);
+
+    if (!selectedSheet) {
+      throw new Error(
+        `Sheet "${requestedSheetName}" was not found. Available sheets: ${formatAvailableSheets(
+          sheetNames
+        )}.`
+      );
+    }
+
+    return selectedSheet;
+  }
+
+  return sheets.find((sheet) => sheet.name === MAIN_RESIDENT_SHEET_NAME) ?? sheets[0];
+}
+
+function getWorksheetXml(entries, { selectedSheetName } = {}) {
+  const { sheets, relationships } = getWorkbookSheetMetadata(entries);
+  const selectedSheet = chooseWorksheet(sheets, selectedSheetName);
+  const sheetNames = getAvailableSheetNames(sheets);
+  const target = relationships.get(selectedSheet.relationshipId);
 
   if (!target) {
-    throw new Error(`Sheet "${MAIN_RESIDENT_SHEET_NAME}" does not have a worksheet target.`);
+    throw new Error(`Sheet "${selectedSheet.name}" does not have a worksheet target.`);
   }
 
   const worksheetPath = resolveWorkbookRelationshipTarget(target);
   const worksheetXmlBuffer = entries.get(worksheetPath);
 
   if (!worksheetXmlBuffer) {
-    throw new Error(`Sheet "${MAIN_RESIDENT_SHEET_NAME}" worksheet data was not found.`);
+    throw new Error(`Sheet "${selectedSheet.name}" worksheet data was not found.`);
   }
 
-  return readTextEntry(worksheetXmlBuffer);
+  return {
+    selectedSheetName: selectedSheet.name,
+    sheetNames,
+    worksheetXml: readTextEntry(worksheetXmlBuffer)
+  };
+}
+
+export function getExcelWorkbookSheetSelection(workbookBuffer) {
+  const entries = readZipEntries(workbookBuffer);
+  const { sheets } = getWorkbookSheetMetadata(entries);
+  const selectedSheet = chooseWorksheet(sheets);
+
+  return {
+    sheetNames: getAvailableSheetNames(sheets),
+    defaultSelectedSheet: selectedSheet.name
+  };
+}
+
+export function getExcelWorksheetHeaders(
+  workbookBuffer,
+  {
+    selectedSheetName = "",
+    headerRowNumber = 1
+  } = {}
+) {
+  const entries = readZipEntries(workbookBuffer);
+  const { selectedSheetName: sheetName, sheetNames, worksheetXml } = getWorksheetXml(entries, {
+    selectedSheetName
+  });
+  const sharedStrings = readSharedStrings(entries);
+  const styles = readStyles(entries);
+  const rows = readWorksheetRows(worksheetXml, sharedStrings, styles);
+  const normalizedHeaderRowNumber = normalizeHeaderRowNumber(headerRowNumber);
+  const headerRow = rows.get(normalizedHeaderRowNumber) ?? {};
+
+  return {
+    sheetName,
+    workbookSheetNames: sheetNames,
+    headerRowNumber: normalizedHeaderRowNumber,
+    headers: buildDetectedColumnsFromHeaderRow(headerRow)
+  };
 }
 
 export function parseExcelImportPreview(
@@ -1210,31 +1773,47 @@ export function parseExcelImportPreview(
   {
     existingResidents = [],
     previewRowLimit = PREVIEW_ROW_LIMIT,
-    includeDateDebug = false
+    includeDateDebug = false,
+    selectedSheetName = "",
+    headerRowNumber = 1,
+    columnMapping,
+    sheetDefaults = {},
+    importMode = DEFAULT_IMPORT_MODE
   } = {}
 ) {
   const entries = readZipEntries(workbookBuffer);
-  const worksheetXml = getMainWorksheet(entries);
+  const { selectedSheetName: sheetName, sheetNames, worksheetXml } = getWorksheetXml(entries, {
+    selectedSheetName
+  });
   const sharedStrings = readSharedStrings(entries);
   const styles = readStyles(entries);
   const directCells = readWorksheetCells(worksheetXml, sharedStrings, styles);
   const rows = readWorksheetRows(worksheetXml, sharedStrings, styles);
-  const headerRow = rows.get(1) ?? {};
+  const normalizedHeaderRowNumber = normalizeHeaderRowNumber(headerRowNumber);
+  const normalizedColumnMapping = normalizeColumnMapping(columnMapping);
+  const normalizedImportMode = normalizeImportMode(importMode);
+  const headerRow = rows.get(normalizedHeaderRowNumber) ?? {};
   const highestColumnIndex = getHighestColumnIndex(rows);
   const documentRequestPairsDetected = detectDocumentRequestPairs(headerRow, highestColumnIndex);
+  const mappingErrors = buildMappingValidationErrors(normalizedColumnMapping, headerRow);
   const allPreviewRows = [];
-  const errors = [];
+  const errors = [...mappingErrors];
   const dateDebug = [];
   const dataRowNumbers = [...rows.keys()]
-    .filter((rowNumber) => rowNumber > 1 && rowHasValue(rows.get(rowNumber)))
+    .filter((rowNumber) => rowNumber > normalizedHeaderRowNumber && rowHasValue(rows.get(rowNumber)))
     .sort((left, right) => left - right);
 
-  for (const rowNumber of dataRowNumbers) {
+  for (const rowNumber of mappingErrors.length > 0 ? [] : dataRowNumbers) {
     const { previewRow, errors: rowErrors, dateDebug: rowDateDebug } = buildPreviewRow(
       rowNumber,
       rows.get(rowNumber),
       documentRequestPairsDetected,
-      { directCells, includeDateDebug }
+      {
+        directCells,
+        includeDateDebug,
+        columnMapping: normalizedColumnMapping,
+        sheetDefaults
+      }
     );
 
     allPreviewRows.push(previewRow);
@@ -1245,13 +1824,27 @@ export function parseExcelImportPreview(
     }
   }
 
-  const preview = {
-    sheetName: MAIN_RESIDENT_SHEET_NAME,
-    totalRowsDetected: dataRowNumbers.length,
-    previewRows: allPreviewRows.slice(0, previewRowLimit),
-    warnings: collectDuplicateWarnings(allPreviewRows, existingResidents),
+  const classifiedRows = classifyImportRows(allPreviewRows, {
     errors,
-    detectedColumns: buildDetectedColumns(headerRow),
+    existingResidents,
+    importMode: normalizedImportMode
+  });
+  const preview = {
+    sheetName,
+    workbookSheetNames: sheetNames,
+    headerRowNumber: normalizedHeaderRowNumber,
+    columnMapping: normalizedColumnMapping,
+    sheetDefaults,
+    importMode: normalizedImportMode,
+    importSummary: buildImportSummary(classifiedRows),
+    totalRowsDetected: dataRowNumbers.length,
+    previewRows: classifiedRows.slice(0, previewRowLimit),
+    warnings: collectDuplicateWarnings(classifiedRows, existingResidents),
+    errors,
+    detectedColumns:
+      Object.entries(columnMapping ?? {}).length > 0
+        ? buildDetectedColumnsFromHeaderRow(headerRow)
+        : buildDetectedColumns(headerRow),
     ignoredColumns: buildIgnoredColumns(),
     documentRequestPairsDetected
   };

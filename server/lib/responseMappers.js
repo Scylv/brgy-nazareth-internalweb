@@ -28,6 +28,34 @@ export function toDepartmentResidentResponse(row) {
   };
 }
 
+export function toAdminResidentResponse(row) {
+  if (!isRow(row)) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    householdId: row.household_id,
+    fullName: row.full_name,
+    birthDate: row.birth_date,
+    civilStatus: row.civil_status,
+    occupation: row.occupation,
+    address: row.address,
+    exactAddress: row.exact_address,
+    contactNumber: row.contact_number,
+    additionalInformation: row.additional_information,
+    sectors: row.sectors,
+    registeredVoter: row.registered_voter,
+    precinctNumber: row.precinct_number,
+    sitio: row.sitio,
+    statusColor: row.status_color,
+    archived: Boolean(row.archived_at),
+    archivedAt: row.archived_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
 export function toDocumentRequestResponse(row) {
   if (!isRow(row)) {
     return null;

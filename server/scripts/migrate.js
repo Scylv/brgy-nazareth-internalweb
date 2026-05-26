@@ -1,9 +1,67 @@
 import { pool } from "../db/pool.js";
 import { runSqlFile } from "../db/runSqlFile.js";
 
+const MIGRATIONS = [
+  "001_initial_schema.sql",
+  "002_admin_resident_management_fields.sql"
+];
+
+async function ensureMigrationTracking() {
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS schema_migrations (
+      filename text PRIMARY KEY,
+      applied_at timestamptz NOT NULL DEFAULT now()
+    )`
+  );
+}
+
+async function hasExistingInitialSchema() {
+  const result = await pool.query(
+    `SELECT to_regclass('public.residents') AS residents_table`
+  );
+
+  return Boolean(result.rows[0]?.residents_table);
+}
+
+async function hasMigrationBeenApplied(filename) {
+  const result = await pool.query(
+    `SELECT filename
+    FROM schema_migrations
+    WHERE filename = $1`,
+    [filename]
+  );
+
+  return result.rowCount > 0;
+}
+
+async function markMigrationApplied(filename) {
+  await pool.query(
+    `INSERT INTO schema_migrations (filename)
+    VALUES ($1)
+    ON CONFLICT (filename) DO NOTHING`,
+    [filename]
+  );
+}
+
 try {
-  await runSqlFile(pool, "database/migrations/001_initial_schema.sql");
-  console.log("Migration completed: database/migrations/001_initial_schema.sql");
+  await ensureMigrationTracking();
+
+  for (const migration of MIGRATIONS) {
+    if (await hasMigrationBeenApplied(migration)) {
+      console.log(`Migration skipped: database/migrations/${migration}`);
+      continue;
+    }
+
+    if (migration === "001_initial_schema.sql" && (await hasExistingInitialSchema())) {
+      await markMigrationApplied(migration);
+      console.log(`Migration marked as already applied: database/migrations/${migration}`);
+      continue;
+    }
+
+    await runSqlFile(pool, `database/migrations/${migration}`);
+    await markMigrationApplied(migration);
+    console.log(`Migration completed: database/migrations/${migration}`);
+  }
 } finally {
   await pool.end();
 }

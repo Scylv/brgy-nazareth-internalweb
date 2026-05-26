@@ -362,6 +362,9 @@ VALUES
 INSERT INTO import_batch_rows (
   id,
   import_batch_id,
+  batch_id,
+  resident_id,
+  action,
   row_number,
   raw_data,
   status,
@@ -372,6 +375,9 @@ VALUES
   (
     'IMPROW-2026-0001',
     'IMP-2026-0001',
+    'IMP-2026-0001',
+    'RBI-2024-0001',
+    'imported',
     1,
     '{"id":"RBI-2024-0001","full_name":"Juan Dela Cruz"}'::jsonb,
     'imported',
@@ -381,6 +387,9 @@ VALUES
   (
     'IMPROW-2026-0002',
     'IMP-2026-0001',
+    'IMP-2026-0001',
+    'RBI-2024-0002',
+    'imported',
     2,
     '{"id":"RBI-2024-0002","full_name":"Maria Santos"}'::jsonb,
     'imported',
@@ -390,6 +399,9 @@ VALUES
   (
     'IMPROW-2026-0003',
     'IMP-2026-0001',
+    'IMP-2026-0001',
+    'RBI-2024-0003',
+    'imported',
     3,
     '{"id":"RBI-2024-0003","full_name":"Pedro Bautista"}'::jsonb,
     'imported',

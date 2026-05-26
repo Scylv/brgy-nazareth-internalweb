@@ -24,6 +24,279 @@ function excelDateSerial(year, month, day) {
 }
 
 describe("parseExcelImportPreview", () => {
+  it("uses the expected resident sheet when the workbook contains it", () => {
+    const workbook = createXlsxWorkbook({
+      sheets: [
+        {
+          name: "Other Sheet",
+          rows: buildPhase1Rows([
+            ["Wrong Sheet Resident", "Wrong Zone", "", "", "", "", "", "Single"]
+          ])
+        },
+        {
+          name: MAIN_RESIDENT_SHEET_NAME,
+          rows: buildPhase1Rows([
+            ["Expected Sheet Resident", "Zone 1", "", "", "", "", "", "Single"]
+          ])
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook);
+
+    expect(preview.sheetName).toBe(MAIN_RESIDENT_SHEET_NAME);
+    expect(preview.workbookSheetNames).toEqual(["Other Sheet", MAIN_RESIDENT_SHEET_NAME]);
+    expect(preview.previewRows[0].fullName).toBe("Expected Sheet Resident");
+  });
+
+  it("defaults to the first worksheet when the expected resident sheet is absent", () => {
+    const workbook = createXlsxWorkbook({
+      sheets: [
+        {
+          name: "Imported Residents",
+          rows: buildPhase1Rows([
+            ["First Sheet Resident", "Zone 1", "", "", "", "", "", "Single"]
+          ])
+        },
+        {
+          name: "Other Sheet",
+          rows: buildPhase1Rows([
+            ["Other Sheet Resident", "Zone 2", "", "", "", "", "", "Single"]
+          ])
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook);
+
+    expect(preview.sheetName).toBe("Imported Residents");
+    expect(preview.workbookSheetNames).toEqual(["Imported Residents", "Other Sheet"]);
+    expect(preview.previewRows[0].fullName).toBe("First Sheet Resident");
+  });
+
+  it("uses a user-selected alternate worksheet", () => {
+    const workbook = createXlsxWorkbook({
+      sheets: [
+        {
+          name: MAIN_RESIDENT_SHEET_NAME,
+          rows: buildPhase1Rows([
+            ["Default Sheet Resident", "Zone 1", "", "", "", "", "", "Single"]
+          ])
+        },
+        {
+          name: "Alternate Import",
+          rows: buildPhase1Rows([
+            ["Alternate Sheet Resident", "Zone 2", "", "", "", "", "", "Single"]
+          ])
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook, {
+      selectedSheetName: "Alternate Import"
+    });
+
+    expect(preview.sheetName).toBe("Alternate Import");
+    expect(preview.previewRows[0].fullName).toBe("Alternate Sheet Resident");
+  });
+
+  it("maps an alternate sheet with a different column order", () => {
+    const workbook = createXlsxWorkbook({
+      sheets: [
+        {
+          name: "Alternate Import",
+          rows: [
+            ["Last Name", "First Name", "Birth Date", "Exact Address", "Contact", "Sitio"],
+            ["Dela Cruz", "Juan", "1990-01-05", "House 1", "09170000001", "Sitio One"]
+          ]
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook, {
+      selectedSheetName: "Alternate Import",
+      columnMapping: {
+        lastName: "A",
+        firstName: "B",
+        birthdate: "C",
+        exactAddress: "D",
+        contactNumber: "E",
+        sitio: "F"
+      }
+    });
+
+    expect(preview.errors).toEqual([]);
+    expect(preview.detectedColumns).toEqual([
+      { column: "A", header: "Last Name", field: "" },
+      { column: "B", header: "First Name", field: "" },
+      { column: "C", header: "Birth Date", field: "" },
+      { column: "D", header: "Exact Address", field: "" },
+      { column: "E", header: "Contact", field: "" },
+      { column: "F", header: "Sitio", field: "" }
+    ]);
+    expect(preview.previewRows[0]).toEqual(
+      expect.objectContaining({
+        firstName: "Juan",
+        lastName: "Dela Cruz",
+        fullName: "Juan Dela Cruz",
+        birthDate: "1990-01-05",
+        exactAddress: "House 1",
+        contactNumber: "09170000001",
+        sitio: "Sitio One"
+      })
+    );
+  });
+
+  it("uses a custom header row for mapping and data detection", () => {
+    const workbook = createXlsxWorkbook({
+      sheets: [
+        {
+          name: "Alternate Import",
+          rows: [
+            ["Report title"],
+            ["Generated for upload"],
+            ["Full Name", "Exact Address", "Civil Status"],
+            ["Maria Santos", "House 2", "Single"]
+          ]
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook, {
+      selectedSheetName: "Alternate Import",
+      headerRowNumber: 3,
+      columnMapping: {
+        fullName: "A",
+        exactAddress: "B",
+        civilStatus: "C"
+      }
+    });
+
+    expect(preview.headerRowNumber).toBe(3);
+    expect(preview.totalRowsDetected).toBe(1);
+    expect(preview.detectedColumns).toEqual([
+      { column: "A", header: "Full Name", field: "" },
+      { column: "B", header: "Exact Address", field: "" },
+      { column: "C", header: "Civil Status", field: "" }
+    ]);
+    expect(preview.previewRows[0]).toMatchObject({
+      rowNumber: 4,
+      fullName: "Maria Santos",
+      firstName: "Maria",
+      lastName: "Santos",
+      exactAddress: "House 2",
+      civilStatus: "Single"
+    });
+  });
+
+  it("parses mapped fullName into name parts when separate names are not mapped", () => {
+    const workbook = createXlsxWorkbook({
+      sheets: [
+        {
+          name: "Alternate Import",
+          rows: [
+            ["Complete Name", "Exact Address"],
+            ["Reyes, Ana Marie", "House 3"]
+          ]
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook, {
+      selectedSheetName: "Alternate Import",
+      columnMapping: {
+        fullName: "A",
+        exactAddress: "B"
+      }
+    });
+
+    expect(preview.errors).toEqual([]);
+    expect(preview.previewRows[0]).toMatchObject({
+      fullName: "Reyes, Ana Marie",
+      firstName: "Ana",
+      middleName: "Marie",
+      lastName: "Reyes"
+    });
+  });
+
+  it("applies a sheet-level non-voter default when no voterStatus column is mapped", () => {
+    const workbook = createXlsxWorkbook({
+      sheets: [
+        {
+          name: "Non Voters",
+          rows: [
+            ["First Name", "Last Name", "Exact Address"],
+            ["Pedro", "Bautista", "House 4"]
+          ]
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook, {
+      selectedSheetName: "Non Voters",
+      columnMapping: {
+        firstName: "A",
+        lastName: "B",
+        exactAddress: "C"
+      },
+      sheetDefaults: {
+        voterStatus: "Non-voter"
+      }
+    });
+
+    expect(preview.errors).toEqual([]);
+    expect(preview.previewRows[0]).toMatchObject({
+      fullName: "Pedro Bautista",
+      voterStatus: "Non-voter"
+    });
+  });
+
+  it("returns validation errors when required mappings are missing or point to missing columns", () => {
+    const workbook = createXlsxWorkbook({
+      sheets: [
+        {
+          name: "Alternate Import",
+          rows: [
+            ["First Name"],
+            ["Juan"]
+          ]
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook, {
+      selectedSheetName: "Alternate Import",
+      columnMapping: {
+        firstName: "A",
+        exactAddress: "Z"
+      }
+    });
+
+    expect(preview.previewRows).toEqual([]);
+    expect(preview.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          rowNumber: 0,
+          code: "nameMappingRequired"
+        }),
+        expect.objectContaining({
+          rowNumber: 0,
+          code: "mappedColumnMissing"
+        })
+      ])
+    );
+  });
+
+  it("rejects an invalid selected worksheet with available sheet names", () => {
+    const workbook = createPhase1Workbook([], "Imported Residents");
+
+    expect(() =>
+      parseExcelImportPreview(workbook, {
+        selectedSheetName: "Missing Sheet"
+      })
+    ).toThrow('Sheet "Missing Sheet" was not found. Available sheets: Imported Residents.');
+  });
+
   it("maps the Phase 1 resident columns and repeated assistance/date pairs", () => {
     const workbook = createPhase1Workbook([
       [
@@ -400,12 +673,151 @@ describe("parseExcelImportPreview", () => {
     expect(JSON.stringify(preview.warnings)).not.toContain("Test Resident Echo");
   });
 
-  it("rejects workbooks that do not contain the Phase 1 sheet", () => {
-    const workbook = createPhase1Workbook([], "Non-Voters");
+  it("marks exact duplicates by normalized name parts plus birthdate", () => {
+    const workbook = createXlsxWorkbook({
+      sheets: [
+        {
+          name: "Alternate Import",
+          rows: [
+            ["First", "Last", "Birthdate", "Exact Address"],
+            ["Juan", "Dela Cruz", "1990-01-05", "House 1"]
+          ]
+        }
+      ]
+    });
 
-    expect(() => parseExcelImportPreview(workbook)).toThrow(
-      'Sheet "Brgy Nazareth Inhabitatns" was not found.'
-    );
+    const preview = parseExcelImportPreview(workbook, {
+      selectedSheetName: "Alternate Import",
+      columnMapping: {
+        firstName: "A",
+        lastName: "B",
+        birthdate: "C",
+        exactAddress: "D"
+      },
+      existingResidents: [
+        {
+          id: "RBI-EXISTING-1",
+          full_name: "Juan Dela-Cruz",
+          birth_date: "1990-01-05",
+          exact_address: "Different punctuation is okay"
+        }
+      ]
+    });
+
+    expect(preview.importSummary).toMatchObject({
+      totalRows: 1,
+      newResidents: 0,
+      duplicatesSkipped: 1,
+      updateCandidates: 0,
+      invalidRows: 0
+    });
+    expect(preview.previewRows[0]).toMatchObject({
+      importStatus: "exactDuplicate",
+      matchedResidentId: "RBI-EXISTING-1",
+      duplicateReason: "nameBirthdate"
+    });
+  });
+
+  it("falls back to name plus exact address and sitio when birthdate is missing", () => {
+    const workbook = createXlsxWorkbook({
+      sheets: [
+        {
+          name: "Alternate Import",
+          rows: [
+            ["First", "Middle", "Last", "Exact Address", "Sitio"],
+            ["Maria", "P.", "Santos", "House 7", "Sitio Seven"]
+          ]
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook, {
+      selectedSheetName: "Alternate Import",
+      columnMapping: {
+        firstName: "A",
+        middleName: "B",
+        lastName: "C",
+        exactAddress: "D",
+        sitio: "E"
+      },
+      existingResidents: [
+        {
+          id: "RBI-EXISTING-2",
+          full_name: "Maria P Santos",
+          birth_date: null,
+          exact_address: "House 7",
+          sitio: "Sitio Seven"
+        }
+      ]
+    });
+
+    expect(preview.importSummary).toMatchObject({
+      totalRows: 1,
+      newResidents: 0,
+      duplicatesSkipped: 1,
+      invalidRows: 0
+    });
+    expect(preview.previewRows[0]).toMatchObject({
+      importStatus: "exactDuplicate",
+      matchedResidentId: "RBI-EXISTING-2",
+      duplicateReason: "nameAddressSitio"
+    });
+  });
+
+  it("marks matched rows as update candidates in updateMatches mode", () => {
+    const workbook = createXlsxWorkbook({
+      sheets: [
+        {
+          name: "Alternate Import",
+          rows: [
+            ["First", "Last", "Birthdate", "Exact Address", "Contact"],
+            ["Ana", "Reyes", "1985-03-10", "New House", "09170000123"]
+          ]
+        }
+      ]
+    });
+
+    const preview = parseExcelImportPreview(workbook, {
+      selectedSheetName: "Alternate Import",
+      importMode: "updateMatches",
+      columnMapping: {
+        firstName: "A",
+        lastName: "B",
+        birthdate: "C",
+        exactAddress: "D",
+        contactNumber: "E"
+      },
+      existingResidents: [
+        {
+          id: "RBI-EXISTING-3",
+          full_name: "Ana Reyes",
+          birth_date: "1985-03-10",
+          exact_address: "Old House",
+          contact_number: "09000000000"
+        }
+      ]
+    });
+
+    expect(preview.importMode).toBe("updateMatches");
+    expect(preview.importSummary).toMatchObject({
+      totalRows: 1,
+      newResidents: 0,
+      duplicatesSkipped: 0,
+      updateCandidates: 1,
+      invalidRows: 0
+    });
+    expect(preview.previewRows[0]).toMatchObject({
+      importStatus: "updateCandidate",
+      matchedResidentId: "RBI-EXISTING-3"
+    });
+  });
+
+  it("uses the only sheet when the Phase 1 sheet is absent", () => {
+    const workbook = createPhase1Workbook([], "Non-Voters");
+    const preview = parseExcelImportPreview(workbook);
+
+    expect(preview.sheetName).toBe("Non-Voters");
+    expect(preview.workbookSheetNames).toEqual(["Non-Voters"]);
   });
 
   it("rejects empty workbook input", () => {
