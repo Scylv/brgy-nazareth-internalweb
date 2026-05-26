@@ -823,6 +823,10 @@ function normalizeDateForMatch(value) {
   return parsed.valid ? parsed.value : "";
 }
 
+function normalizeContactForMatch(value) {
+  return normalizeTextForMatch(value);
+}
+
 function normalizeHeader(value) {
   return text(value).toLowerCase().replace(/\s+/g, " ");
 }
@@ -1066,28 +1070,36 @@ function buildPreviewRow(
 
 function indexExistingResidents(existingResidents) {
   const nameBirthDate = new Map();
-  const nameAddress = new Map();
+  const nameExactAddress = new Map();
+  const nameContactNumber = new Map();
 
   for (const resident of existingResidents) {
     const fullName = resident.full_name ?? resident.fullName;
     const birthDate = resident.birth_date ?? resident.birthDate;
     const address = resident.address ?? resident.exactAddress;
+    const contactNumber = resident.contact_number ?? resident.contactNumber;
     const normalizedName = normalizeTextForMatch(fullName);
     const normalizedBirthDate = normalizeDateForMatch(birthDate);
-    const normalizedAddress = normalizeTextForMatch(address);
+    const normalizedExactAddress = normalizeTextForMatch(address);
+    const normalizedContactNumber = normalizeContactForMatch(contactNumber);
 
     if (normalizedName && normalizedBirthDate) {
       nameBirthDate.set(`${normalizedName}|${normalizedBirthDate}`, "existingResident");
     }
 
-    if (normalizedName && normalizedAddress) {
-      nameAddress.set(`${normalizedName}|${normalizedAddress}`, "existingResident");
+    if (normalizedName && normalizedExactAddress) {
+      nameExactAddress.set(`${normalizedName}|${normalizedExactAddress}`, "existingResident");
+    }
+
+    if (normalizedName && normalizedContactNumber) {
+      nameContactNumber.set(`${normalizedName}|${normalizedContactNumber}`, "existingResident");
     }
   }
 
   return {
     nameBirthDate,
-    nameAddress
+    nameExactAddress,
+    nameContactNumber
   };
 }
 
@@ -1098,8 +1110,8 @@ function collectDuplicateWarnings(previewRows, existingResidents) {
   for (const row of previewRows) {
     const normalizedName = normalizeTextForMatch(row.fullName);
     const normalizedBirthDate = normalizeDateForMatch(row.birthDate);
-    const effectiveAddress = row.exactAddress || row.address;
-    const normalizedAddress = normalizeTextForMatch(effectiveAddress);
+    const normalizedExactAddress = normalizeTextForMatch(row.exactAddress);
+    const normalizedContactNumber = normalizeContactForMatch(row.contactNumber);
 
     if (normalizedName && normalizedBirthDate) {
       const key = `${normalizedName}|${normalizedBirthDate}`;
@@ -1119,21 +1131,39 @@ function collectDuplicateWarnings(previewRows, existingResidents) {
       }
     }
 
-    if (normalizedName && normalizedAddress) {
-      const key = `${normalizedName}|${normalizedAddress}`;
-      const matchSource = duplicateIndex.nameAddress.get(key);
+    if (normalizedName && normalizedExactAddress) {
+      const key = `${normalizedName}|${normalizedExactAddress}`;
+      const matchSource = duplicateIndex.nameExactAddress.get(key);
 
       if (matchSource) {
         warnings.push(
           makeDuplicateWarning(
             row.rowNumber,
-            "address",
-            "possibleDuplicateNameAddress",
+            "exactAddress",
+            "possibleDuplicateNameExactAddress",
             matchSource
           )
         );
       } else {
-        duplicateIndex.nameAddress.set(key, "previewRow");
+        duplicateIndex.nameExactAddress.set(key, "previewRow");
+      }
+    }
+
+    if (normalizedName && normalizedContactNumber) {
+      const key = `${normalizedName}|${normalizedContactNumber}`;
+      const matchSource = duplicateIndex.nameContactNumber.get(key);
+
+      if (matchSource) {
+        warnings.push(
+          makeDuplicateWarning(
+            row.rowNumber,
+            "contactNumber",
+            "possibleDuplicateNameContactNumber",
+            matchSource
+          )
+        );
+      } else {
+        duplicateIndex.nameContactNumber.set(key, "previewRow");
       }
     }
   }

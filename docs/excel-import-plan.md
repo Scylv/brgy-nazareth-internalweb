@@ -184,12 +184,18 @@ by name alone.
 Rules:
 
 - Do not reject or auto-merge by full name alone.
-- Possible duplicate if normalized full name and birthday match an existing
-  resident.
-- Possible duplicate if normalized full name and normalized address match an
-  existing resident.
-- If birthday is blank, flag a same-name or same-name/address match for review
-  instead of auto-merging.
+- Strong duplicate if normalized full name and birthday match an existing
+  resident or another valid source row.
+- Possible duplicate if normalized full name and exact address match an
+  existing resident or another source row.
+- Possible duplicate if normalized full name and contact number match an
+  existing resident or another source row.
+- Same address by itself can indicate household grouping and should not be
+  treated as a duplicate.
+- Same family name by itself, including relatives at the same address, should
+  not be treated as a duplicate.
+- If birthday is blank, review same full-name matches only when exact address or
+  contact number also matches instead of auto-merging.
 - If both birthday and address are blank or invalid, the row cannot be imported.
 - Review results should show the source row and the matched resident candidate
   without exposing unrelated sensitive fields.
@@ -406,3 +412,10 @@ The implementation should be a small vertical slice:
 6. Record import batch rows, import summary, and audit logs.
 7. Defer `Non-Voters`, senior sheets, Facebook names, tags, remarks, and
    unlabeled columns until the barangay answers the clarification questions.
+
+Planned Admin follow-up features:
+
+- Add an Admin backup panel with one-click backup and a list showing backup
+  date/time and resident count.
+- Add Admin resident management for searching, editing, and archiving imported
+  residents without introducing hard delete in the first pass.

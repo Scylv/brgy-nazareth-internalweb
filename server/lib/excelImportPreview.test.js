@@ -158,7 +158,73 @@ describe("parseExcelImportPreview", () => {
     );
   });
 
-  it("warns for duplicates by normalized name plus birthday or address but not name alone", () => {
+  it("does not warn when different residents share an address", () => {
+    const workbook = createPhase1Workbook([
+      [
+        "Test Resident Household One",
+        "Zone 4",
+        "",
+        "",
+        "",
+        "",
+        "1985-03-15",
+        "Married",
+        "",
+        "House 4, Zone 4"
+      ],
+      [
+        "Test Resident Household Two",
+        "Zone 4",
+        "",
+        "",
+        "",
+        "",
+        "1990-04-16",
+        "Single",
+        "",
+        "House 4, Zone 4"
+      ]
+    ]);
+
+    const preview = parseExcelImportPreview(workbook);
+
+    expect(preview.warnings).toEqual([]);
+  });
+
+  it("does not warn when relatives with the same family name share an address", () => {
+    const workbook = createPhase1Workbook([
+      [
+        "Maria Santos",
+        "Zone 4",
+        "",
+        "",
+        "",
+        "",
+        "1985-03-15",
+        "Married",
+        "",
+        "House 4, Zone 4"
+      ],
+      [
+        "Pedro Santos",
+        "Zone 4",
+        "",
+        "",
+        "",
+        "",
+        "1990-04-16",
+        "Single",
+        "",
+        "House 4, Zone 4"
+      ]
+    ]);
+
+    const preview = parseExcelImportPreview(workbook);
+
+    expect(preview.warnings).toEqual([]);
+  });
+
+  it("warns strongly for duplicates by normalized full name plus birthday", () => {
     const workbook = createPhase1Workbook([
       [
         "Test Resident Delta",
@@ -205,17 +271,78 @@ describe("parseExcelImportPreview", () => {
         expect.objectContaining({
           rowNumber: 3,
           code: "possibleDuplicateNameBirthDate"
-        }),
-        expect.objectContaining({
-          rowNumber: 3,
-          code: "possibleDuplicateNameAddress"
         })
       ])
     );
     expect(preview.warnings).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
+          rowNumber: 4
+        })
+      ])
+    );
+  });
+
+  it("warns for possible duplicates by full name plus exact address or contact number", () => {
+    const workbook = createPhase1Workbook([
+      [
+        "Test Resident Contact",
+        "Zone 4",
+        "",
+        "",
+        "",
+        "",
+        "1985-03-15",
+        "Married",
+        "",
+        "House 4, Zone 4",
+        "09170000004"
+      ],
+      [
+        "test resident contact",
+        "Different Zone",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Single",
+        "",
+        "House 4, Zone 4",
+        "09999999999"
+      ],
+      [
+        "TEST RESIDENT CONTACT",
+        "Other Zone",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "Single",
+        "",
+        "Other House",
+        "09170000004"
+      ]
+    ]);
+
+    const preview = parseExcelImportPreview(workbook);
+
+    expect(preview.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          rowNumber: 3,
+          code: "possibleDuplicateNameExactAddress"
+        }),
+        expect.objectContaining({
           rowNumber: 4,
+          code: "possibleDuplicateNameContactNumber"
+        })
+      ])
+    );
+    expect(preview.warnings).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
           code: "possibleDuplicateNameOnly"
         })
       ])
@@ -234,7 +361,8 @@ describe("parseExcelImportPreview", () => {
         "1970-12-24",
         "Widowed",
         "",
-        "House 5, Zone 5"
+        "House 5, Zone 5",
+        "09170000005"
       ]
     ]);
 
@@ -244,7 +372,8 @@ describe("parseExcelImportPreview", () => {
           id: "RBI-FAKE-0001",
           full_name: "test resident echo",
           birth_date: "1970-12-24",
-          address: "House 5, Zone 5"
+          address: "House 5, Zone 5",
+          contact_number: "09170000005"
         }
       ]
     });
@@ -258,7 +387,12 @@ describe("parseExcelImportPreview", () => {
         }),
         expect.objectContaining({
           rowNumber: 2,
-          code: "possibleDuplicateNameAddress",
+          code: "possibleDuplicateNameExactAddress",
+          matchSource: "existingResident"
+        }),
+        expect.objectContaining({
+          rowNumber: 2,
+          code: "possibleDuplicateNameContactNumber",
           matchSource: "existingResident"
         })
       ])

@@ -73,7 +73,8 @@ async function loadExistingResidentsForCommit(pool) {
       id,
       full_name,
       birth_date,
-      address
+      address,
+      contact_number
     FROM residents
     ORDER BY full_name ASC`
   );
@@ -88,7 +89,11 @@ function getRowsByNumber(items) {
 function getExistingDuplicateRows(preview, failedRows) {
   return new Set(
     preview.warnings
-      .filter((warning) => warning.matchSource === "existingResident")
+      .filter(
+        (warning) =>
+          warning.matchSource === "existingResident" &&
+          warning.code === "possibleDuplicateNameBirthDate"
+      )
       .map((warning) => warning.rowNumber)
       .filter((rowNumber) => !failedRows.has(rowNumber))
   );
@@ -97,12 +102,10 @@ function getExistingDuplicateRows(preview, failedRows) {
 function getResidentMatchKeys(row) {
   const normalizedName = normalizeTextForMatch(row.fullName);
   const normalizedBirthDate = trimText(row.birthDate);
-  const normalizedAddress = normalizeTextForMatch(row.exactAddress || row.address);
 
   return {
     nameBirthDate:
-      normalizedName && normalizedBirthDate ? `${normalizedName}|${normalizedBirthDate}` : "",
-    nameAddress: normalizedName && normalizedAddress ? `${normalizedName}|${normalizedAddress}` : ""
+      normalizedName && normalizedBirthDate ? `${normalizedName}|${normalizedBirthDate}` : ""
   };
 }
 
@@ -110,7 +113,6 @@ function getCommitRows(preview) {
   const failedRows = getRowsByNumber(preview.errors);
   const duplicateRows = getExistingDuplicateRows(preview, failedRows);
   const seenNameBirthDates = new Set();
-  const seenNameAddresses = new Set();
   const rowsToCreate = [];
 
   for (const row of preview.previewRows) {
@@ -120,10 +122,7 @@ function getCommitRows(preview) {
 
     const keys = getResidentMatchKeys(row);
 
-    if (
-      (keys.nameBirthDate && seenNameBirthDates.has(keys.nameBirthDate)) ||
-      (keys.nameAddress && seenNameAddresses.has(keys.nameAddress))
-    ) {
+    if (keys.nameBirthDate && seenNameBirthDates.has(keys.nameBirthDate)) {
       duplicateRows.add(row.rowNumber);
       continue;
     }
@@ -132,10 +131,6 @@ function getCommitRows(preview) {
 
     if (keys.nameBirthDate) {
       seenNameBirthDates.add(keys.nameBirthDate);
-    }
-
-    if (keys.nameAddress) {
-      seenNameAddresses.add(keys.nameAddress);
     }
   }
 
