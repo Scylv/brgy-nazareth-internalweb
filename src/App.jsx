@@ -8,6 +8,7 @@ import {
 } from "./features/admin/api/adminProfilesApi";
 import { commitExcelImport, previewExcelImport } from "./features/admin/api/excelImportApi";
 import AdminPanel from "./features/admin/components/AdminPanel";
+import { commitExcelImportAndRefreshResidents } from "./features/admin/lib/excelImportCommitState";
 import {
   changePassword,
   fetchCurrentUser,
@@ -116,7 +117,7 @@ export default function App() {
   useEffect(() => {
     let isActive = true;
 
-    if (!currentUser || !["department", "lupon"].includes(currentUser.role)) {
+    if (!currentUser || !["admin", "department", "lupon"].includes(currentUser.role)) {
       setDatabaseResidentList([]);
       setIsDepartmentResidentsLoading(false);
       setDepartmentResidentsError("");
@@ -658,10 +659,22 @@ export default function App() {
     setExcelImportError("");
 
     try {
-      const result = await commitExcelImport(file, confirmations);
+      const { summary, residentRefreshError } = await commitExcelImportAndRefreshResidents({
+        confirmations,
+        commitExcelImportRequest: commitExcelImport,
+        fetchResidentList: fetchResidents,
+        file,
+        setDatabaseResidentList,
+        setExcelImportCommitSummary
+      });
 
-      setExcelImportCommitSummary(result.summary);
-      return result.summary;
+      if (residentRefreshError) {
+        setExcelImportError(
+          "Import committed, but resident metrics could not refresh. Reload Admin to verify the latest count."
+        );
+      }
+
+      return summary;
     } catch (error) {
       setExcelImportCommitSummary(null);
       setExcelImportError(error?.message ?? "Excel import commit failed.");
@@ -784,7 +797,7 @@ export default function App() {
           onPreviewExcelImport={handlePreviewExcelImport}
           onResetPassword={handleResetAdminProfilePassword}
           onToggleAccountStatus={handleToggleAdminProfileStatus}
-          residents={residentList}
+          residents={databaseResidentList}
           users={adminProfileList}
         />
       ) : null}

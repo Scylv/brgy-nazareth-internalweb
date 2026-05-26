@@ -8,6 +8,13 @@ import { createDocumentRequestsRouter } from "./routes/documentRequests.js";
 import { createLuponCasesRouter } from "./routes/luponCases.js";
 import { createResidentsRouter } from "./routes/residents.js";
 
+const CORS_ALLOWED_HEADERS = [
+  "Content-Type",
+  "X-File-Name",
+  "X-Import-Confirmed",
+  "X-Backup-Confirmed"
+].join(", ");
+
 export function createApp(pool) {
   const app = express();
   const allowedOrigins = getCorsOrigins();
@@ -25,7 +32,7 @@ export function createApp(pool) {
     }
 
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,PUT,DELETE,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-File-Name");
+    res.setHeader("Access-Control-Allow-Headers", CORS_ALLOWED_HEADERS);
 
     if (req.method === "OPTIONS") {
       return res.sendStatus(204);

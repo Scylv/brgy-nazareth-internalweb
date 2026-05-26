@@ -164,7 +164,8 @@ function createCommitPool() {
       id: "RBI-FAKE-0002",
       full_name: "Existing Synthetic Resident",
       birth_date: "1980-01-01",
-      address: "Existing Address"
+      address: "Existing Address",
+      contact_number: "09170000008"
     }
   ];
 
@@ -261,7 +262,8 @@ function createCommitPool() {
           id: resident.id,
           full_name: resident.fullName,
           birth_date: resident.birthDate,
-          address: resident.address
+          address: resident.address,
+          contact_number: resident.contactNumber
         });
 
         return { rows: [resident], rowCount: 1 };
@@ -420,6 +422,53 @@ describe("Excel import preview route", () => {
 });
 
 describe("Excel import commit route", () => {
+  it("allows local development preflight requests with commit confirmation headers", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const pool = createCommitPool();
+    const app = createApp(pool);
+
+    const response = await request(app)
+      .options("/api/admin/excel-import/commit")
+      .set("Origin", "http://localhost:5173")
+      .set("Access-Control-Request-Method", "POST")
+      .set(
+        "Access-Control-Request-Headers",
+        "Content-Type, X-File-Name, X-Import-Confirmed, X-Backup-Confirmed"
+      );
+
+    expect(response.status).toBe(204);
+    expect(response.headers["access-control-allow-origin"]).toBe("http://localhost:5173");
+    expect(response.headers["access-control-allow-credentials"]).toBe("true");
+    expect(response.headers["access-control-allow-methods"]).toContain("POST");
+    expect(response.headers["access-control-allow-methods"]).toContain("OPTIONS");
+    expect(response.headers["access-control-allow-headers"]).toContain("Content-Type");
+    expect(response.headers["access-control-allow-headers"]).toContain("X-File-Name");
+    expect(response.headers["access-control-allow-headers"]).toContain("X-Import-Confirmed");
+    expect(response.headers["access-control-allow-headers"]).toContain("X-Backup-Confirmed");
+    expect(pool.queries).toEqual([]);
+  });
+
+  it("keeps trusted-origin protection on actual commit POST requests", async () => {
+    const pool = createCommitPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+
+    const response = await request(app)
+      .post("/api/admin/excel-import/commit")
+      .set("Cookie", cookie)
+      .set("Content-Type", XLSX_CONTENT_TYPE)
+      .set("X-File-Name", "phase1-fake.xlsx")
+      .set("X-Import-Confirmed", "true")
+      .set("X-Backup-Confirmed", "true")
+      .send(createCommitWorkbook([]));
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toContain("trusted origin");
+    expect(pool.queries.some((query) => query.sql.includes("FROM residents"))).toBe(false);
+    expect(pool.insertedResidents).toEqual([]);
+    expect(pool.audits).toEqual([]);
+  });
+
   it("requires explicit Admin and backup confirmation before parsing the workbook", async () => {
     const pool = createCommitPool();
     const app = createApp(pool);
@@ -695,6 +744,104 @@ describe("Excel import commit route", () => {
       expect.objectContaining({
         fullName: "Later Valid Resident",
         address: "House 10, Zone 10"
+      })
+    ]);
+  });
+
+  it("does not skip rows only because full name and exact address match", async () => {
+    const pool = createCommitPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+
+    const response = await request(app)
+      .post("/api/admin/excel-import/commit")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", XLSX_CONTENT_TYPE)
+      .set("X-File-Name", "phase1-fake.xlsx")
+      .set("X-Import-Confirmed", "true")
+      .set("X-Backup-Confirmed", "true")
+      .send(
+        createCommitWorkbook([
+          [
+            "Existing Synthetic Resident",
+            "Zone 12",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "Single",
+            "Vendor",
+            "Existing Address",
+            "09999999999"
+          ]
+        ])
+      );
+
+    expect(response.status, JSON.stringify(response.body)).toBe(200);
+    expect(response.body.summary).toEqual(
+      expect.objectContaining({
+        rowsDetected: 1,
+        created: 1,
+        skippedDuplicates: 0,
+        failedValidation: 0
+      })
+    );
+    expect(pool.insertedResidents).toEqual([
+      expect.objectContaining({
+        fullName: "Existing Synthetic Resident",
+        birthDate: null,
+        address: "Existing Address"
+      })
+    ]);
+  });
+
+  it("does not skip rows only because full name and contact number match", async () => {
+    const pool = createCommitPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "admin", "admin123");
+
+    const response = await request(app)
+      .post("/api/admin/excel-import/commit")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", XLSX_CONTENT_TYPE)
+      .set("X-File-Name", "phase1-fake.xlsx")
+      .set("X-Import-Confirmed", "true")
+      .set("X-Backup-Confirmed", "true")
+      .send(
+        createCommitWorkbook([
+          [
+            "Existing Synthetic Resident",
+            "Zone 13",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "Single",
+            "Vendor",
+            "Different Address",
+            "09170000008"
+          ]
+        ])
+      );
+
+    expect(response.status, JSON.stringify(response.body)).toBe(200);
+    expect(response.body.summary).toEqual(
+      expect.objectContaining({
+        rowsDetected: 1,
+        created: 1,
+        skippedDuplicates: 0,
+        failedValidation: 0
+      })
+    );
+    expect(pool.insertedResidents).toEqual([
+      expect.objectContaining({
+        fullName: "Existing Synthetic Resident",
+        birthDate: null,
+        contactNumber: "09170000008"
       })
     ]);
   });

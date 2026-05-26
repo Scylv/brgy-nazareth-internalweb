@@ -81,7 +81,8 @@ async function loadExistingResidentsForImportPreview(pool) {
       id,
       full_name,
       birth_date,
-      address
+      address,
+      contact_number
     FROM residents
     ORDER BY full_name ASC`
   );
