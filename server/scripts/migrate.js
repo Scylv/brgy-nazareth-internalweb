@@ -3,7 +3,9 @@ import { runSqlFile } from "../db/runSqlFile.js";
 
 const MIGRATIONS = [
   "001_initial_schema.sql",
-  "002_admin_resident_management_fields.sql"
+  "002_admin_resident_management_fields.sql",
+  "003_import_batch_undo_fields.sql",
+  "004_resident_documents.sql"
 ];
 
 async function ensureMigrationTracking() {

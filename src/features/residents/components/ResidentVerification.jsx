@@ -1,4 +1,5 @@
 import Button from "../../../shared/components/Button";
+import ResidentDocumentPanel from "../../documents/components/ResidentDocumentPanel";
 import StatusBadge from "../../../shared/components/StatusBadge";
 import DocumentRequestHistory from "../../../shared/components/DocumentRequestHistory";
 import Notice from "../../../shared/components/Notice";
@@ -83,6 +84,15 @@ export default function ResidentVerification({ documentRequests, resident, onBac
       </div>
 
       <DocumentRequestHistory requests={residentDocumentRequests} />
+
+      <ResidentDocumentPanel
+        allowedScopes={["department_visible", "general_internal"]}
+        defaultVisibilityScope="department_visible"
+        description="PDF and image files used for resident verification."
+        residentId={resident.id}
+        residentName={resident.name}
+        title="General / Vital Documents"
+      />
     </div>
   );
 }

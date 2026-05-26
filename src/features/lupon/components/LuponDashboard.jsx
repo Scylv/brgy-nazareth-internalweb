@@ -1,4 +1,5 @@
 import Button from "../../../shared/components/Button";
+import ResidentDocumentPanel from "../../documents/components/ResidentDocumentPanel";
 import StatusBadge from "../../../shared/components/StatusBadge";
 import DocumentRequestHistory from "../../../shared/components/DocumentRequestHistory";
 import MetricCard from "../../../shared/components/MetricCard";
@@ -172,10 +173,30 @@ export default function LuponDashboard({
       </SectionCard>
 
       {selectedResident ? (
-        <DocumentRequestHistory
-          requests={selectedResidentDocumentRequests}
-          title={`${selectedResident.name} Document History`}
-        />
+        <section className="space-y-6">
+          <DocumentRequestHistory
+            requests={selectedResidentDocumentRequests}
+            title={`${selectedResident.name} Document History`}
+          />
+
+          <ResidentDocumentPanel
+            allowedScopes={["department_visible", "general_internal"]}
+            defaultVisibilityScope="general_internal"
+            description="Shared resident PDF and image files available for internal verification."
+            residentId={selectedResident.id}
+            residentName={selectedResident.name}
+            title="General / Vital Documents"
+          />
+
+          <ResidentDocumentPanel
+            allowedScopes={["lupon_confidential"]}
+            defaultVisibilityScope="lupon_confidential"
+            description="Lupon-only case-related PDFs and images."
+            residentId={selectedResident.id}
+            residentName={selectedResident.name}
+            title="Lupon Confidential Documents"
+          />
+        </section>
       ) : null}
     </div>
   );

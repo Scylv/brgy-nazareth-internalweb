@@ -6,6 +6,10 @@ import { createAdminRouter } from "./routes/admin.js";
 import { createAuthRouter } from "./routes/auth.js";
 import { createDocumentRequestsRouter } from "./routes/documentRequests.js";
 import { createLuponCasesRouter } from "./routes/luponCases.js";
+import {
+  createResidentDocumentCollectionRouter,
+  createResidentDocumentFilesRouter
+} from "./routes/residentDocuments.js";
 import { createResidentsRouter } from "./routes/residents.js";
 
 const CORS_ALLOWED_HEADERS = [
@@ -17,7 +21,10 @@ const CORS_ALLOWED_HEADERS = [
   "X-Sheet-Defaults",
   "X-Import-Mode",
   "X-Import-Confirmed",
-  "X-Backup-Confirmed"
+  "X-Backup-Confirmed",
+  "X-Document-Type",
+  "X-Visibility-Scope",
+  "X-Linked-Case-Id"
 ].join(", ");
 
 export function createApp(pool) {
@@ -57,7 +64,19 @@ export function createApp(pool) {
 
   app.use("/api/auth", createAuthRouter(pool, { requireTrustedOrigin }));
   app.use("/api/admin", requireAuth, requireTrustedOrigin, createAdminRouter(pool));
+  app.use(
+    "/api/residents/:residentId/documents",
+    requireAuth,
+    requireTrustedOrigin,
+    createResidentDocumentCollectionRouter(pool)
+  );
   app.use("/api/residents", requireAuth, requireTrustedOrigin, createResidentsRouter(pool));
+  app.use(
+    "/api/resident-documents/:documentId",
+    requireAuth,
+    requireTrustedOrigin,
+    createResidentDocumentFilesRouter(pool)
+  );
   app.use(
     "/api/document-requests",
     requireAuth,
@@ -67,8 +86,12 @@ export function createApp(pool) {
   app.use("/api/lupon", requireAuth, requireTrustedOrigin, createLuponCasesRouter(pool));
 
   app.use((error, _req, res, _next) => {
+    if (error?.type === "entity.too.large") {
+      return res.status(413).json({ error: "Document file is too large." });
+    }
+
     console.error(error);
-    res.status(500).json({ error: "Unexpected server error." });
+    return res.status(500).json({ error: "Unexpected server error." });
   });
 
   return app;
