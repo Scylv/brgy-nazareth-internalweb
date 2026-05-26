@@ -239,6 +239,12 @@ CREATE TABLE import_batches (
   id text PRIMARY KEY,
   import_type text NOT NULL,
   source_filename text NOT NULL,
+  filename text,
+  sheet_name text,
+  header_row integer,
+  mapping jsonb NOT NULL DEFAULT '{}'::jsonb,
+  defaults jsonb NOT NULL DEFAULT '{}'::jsonb,
+  mode text NOT NULL DEFAULT 'skipDuplicates',
   status text NOT NULL CHECK (
     status IN (
       'pending',
@@ -252,12 +258,28 @@ CREATE TABLE import_batches (
   failed_rows integer NOT NULL DEFAULT 0 CHECK (failed_rows >= 0),
   created_by_profile_id text REFERENCES profiles(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
-  completed_at timestamptz
+  completed_at timestamptz,
+  rolled_back_at timestamptz
 );
 
 CREATE TABLE import_batch_rows (
   id text PRIMARY KEY,
-  import_batch_id text NOT NULL REFERENCES import_batches(id) ON DELETE CASCADE,
+  import_batch_id text REFERENCES import_batches(id) ON DELETE CASCADE,
+  batch_id text NOT NULL REFERENCES import_batches(id) ON DELETE CASCADE,
+  resident_id text REFERENCES residents(id) ON DELETE SET NULL,
+  action text NOT NULL DEFAULT 'pending' CHECK (
+    action IN (
+      'created',
+      'updated',
+      'skipped_duplicate',
+      'invalid',
+      'pending',
+      'imported',
+      'failed'
+    )
+  ),
+  previous_values jsonb NOT NULL DEFAULT '{}'::jsonb,
+  new_values jsonb NOT NULL DEFAULT '{}'::jsonb,
   row_number integer NOT NULL CHECK (row_number > 0),
   raw_data jsonb NOT NULL DEFAULT '{}'::jsonb,
   status text NOT NULL CHECK (
@@ -271,7 +293,7 @@ CREATE TABLE import_batch_rows (
   created_record_type text,
   created_record_id text,
   created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (import_batch_id, row_number)
+  UNIQUE (batch_id, row_number)
 );
 
 CREATE INDEX idx_residents_household_id ON residents(household_id);
@@ -308,4 +330,4 @@ CREATE INDEX idx_attachments_owner ON attachments(owner_type, owner_id);
 CREATE INDEX idx_audit_logs_actor_profile_id ON audit_logs(actor_profile_id);
 CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
 
-CREATE INDEX idx_import_batch_rows_batch_id ON import_batch_rows(import_batch_id);
+CREATE INDEX idx_import_batch_rows_batch_id ON import_batch_rows(batch_id);

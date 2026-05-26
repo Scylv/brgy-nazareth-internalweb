@@ -1,7 +1,11 @@
 import { Router, raw } from "express";
 import { writeAuditLog } from "../lib/audit.js";
-import { commitPhase1ExcelImport } from "../lib/excelImportCommit.js";
-import { parseExcelImportPreview } from "../lib/excelImportPreview.js";
+import { commitPhase1ExcelImport, undoResidentImportBatch } from "../lib/excelImportCommit.js";
+import {
+  getExcelWorkbookSheetSelection,
+  getExcelWorksheetHeaders,
+  parseExcelImportPreview
+} from "../lib/excelImportPreview.js";
 import { createId } from "../lib/ids.js";
 import { hashPassword } from "../lib/passwords.js";
 import { toAdminProfileResponse, toAdminResidentResponse } from "../lib/responseMappers.js";
@@ -59,6 +63,44 @@ function decodeHeaderValue(value) {
 
 function getUploadFilename(req) {
   return decodeHeaderValue(req.get("x-file-name"));
+}
+
+function getSelectedSheetName(req) {
+  return decodeHeaderValue(req.get("x-sheet-name"));
+}
+
+function getSelectedHeaderRowNumber(req) {
+  const headerRowNumber = Number(decodeHeaderValue(req.get("x-header-row")));
+
+  return Number.isInteger(headerRowNumber) && headerRowNumber > 0 ? headerRowNumber : 1;
+}
+
+function parseJsonHeader(req, headerName) {
+  const value = decodeHeaderValue(req.get(headerName));
+
+  if (!value) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch (_error) {
+    return {};
+  }
+}
+
+function getColumnMapping(req) {
+  return parseJsonHeader(req, "x-column-mapping");
+}
+
+function getSheetDefaults(req) {
+  return parseJsonHeader(req, "x-sheet-defaults");
+}
+
+function getImportMode(req) {
+  return decodeHeaderValue(req.get("x-import-mode"));
 }
 
 function getBaseContentType(req) {
@@ -124,7 +166,9 @@ async function loadExistingResidentsForImportPreview(pool) {
       full_name,
       birth_date,
       address,
-      contact_number
+      exact_address,
+      contact_number,
+      sitio
     FROM residents
     ORDER BY full_name ASC`
   );
@@ -484,6 +528,82 @@ export function createAdminRouter(pool) {
   });
 
   router.post(
+    "/excel-import/sheets",
+    requireRole("admin"),
+    raw({
+      limit: EXCEL_PREVIEW_UPLOAD_LIMIT,
+      type: "*/*"
+    }),
+    async (req, res, next) => {
+      if (!isSupportedXlsxUpload(req)) {
+        return res.status(415).json({
+          error: "Only .xlsx workbook uploads are supported for sheet selection."
+        });
+      }
+
+      if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+        return res.status(400).json({ error: "An .xlsx workbook file is required." });
+      }
+
+      try {
+        return res.json(getExcelWorkbookSheetSelection(req.body));
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          (error.message.includes(".xlsx") ||
+            error.message.includes("worksheet") ||
+            error.message.includes("workbook"))
+        ) {
+          return res.status(400).json({ error: error.message });
+        }
+
+        return next(error);
+      }
+    }
+  );
+
+  router.post(
+    "/excel-import/headers",
+    requireRole("admin"),
+    raw({
+      limit: EXCEL_PREVIEW_UPLOAD_LIMIT,
+      type: "*/*"
+    }),
+    async (req, res, next) => {
+      if (!isSupportedXlsxUpload(req)) {
+        return res.status(415).json({
+          error: "Only .xlsx workbook uploads are supported for header selection."
+        });
+      }
+
+      if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+        return res.status(400).json({ error: "An .xlsx workbook file is required." });
+      }
+
+      try {
+        return res.json(
+          getExcelWorksheetHeaders(req.body, {
+            selectedSheetName: getSelectedSheetName(req),
+            headerRowNumber: getSelectedHeaderRowNumber(req)
+          })
+        );
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          (error.message.includes(".xlsx") ||
+            error.message.includes("Sheet") ||
+            error.message.includes("worksheet") ||
+            error.message.includes("workbook"))
+        ) {
+          return res.status(400).json({ error: error.message });
+        }
+
+        return next(error);
+      }
+    }
+  );
+
+  router.post(
     "/excel-import/preview",
     requireRole("admin"),
     raw({
@@ -505,7 +625,12 @@ export function createAdminRouter(pool) {
         const existingResidents = await loadExistingResidentsForImportPreview(pool);
         const preview = parseExcelImportPreview(req.body, {
           existingResidents,
-          includeDateDebug: shouldIncludeExcelDateDebug()
+          includeDateDebug: shouldIncludeExcelDateDebug(),
+          selectedSheetName: getSelectedSheetName(req),
+          headerRowNumber: getSelectedHeaderRowNumber(req),
+          columnMapping: getColumnMapping(req),
+          sheetDefaults: getSheetDefaults(req),
+          importMode: getImportMode(req)
         });
         const sourceFilename = getUploadFilename(req);
 
@@ -577,7 +702,12 @@ export function createAdminRouter(pool) {
         const result = await commitPhase1ExcelImport(pool, {
           actor: req.user,
           sourceFilename: getUploadFilename(req),
-          workbookBuffer: req.body
+          workbookBuffer: req.body,
+          selectedSheetName: getSelectedSheetName(req),
+          headerRowNumber: getSelectedHeaderRowNumber(req),
+          columnMapping: getColumnMapping(req),
+          sheetDefaults: getSheetDefaults(req),
+          importMode: getImportMode(req)
         });
 
         return res.json(result);
@@ -589,6 +719,27 @@ export function createAdminRouter(pool) {
             error.message.includes("workbook"))
         ) {
           return res.status(400).json({ error: error.message });
+        }
+
+        return next(error);
+      }
+    }
+  );
+
+  router.post(
+    "/excel-import/batches/:id/undo",
+    requireRole("admin"),
+    async (req, res, next) => {
+      try {
+        const result = await undoResidentImportBatch(pool, {
+          actor: req.user,
+          importBatchId: req.params.id
+        });
+
+        return res.json(result);
+      } catch (error) {
+        if (error?.status) {
+          return res.status(error.status).json({ error: error.message });
         }
 
         return next(error);

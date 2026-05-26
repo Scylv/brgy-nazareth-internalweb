@@ -11,6 +11,11 @@ import { createResidentsRouter } from "./routes/residents.js";
 const CORS_ALLOWED_HEADERS = [
   "Content-Type",
   "X-File-Name",
+  "X-Sheet-Name",
+  "X-Header-Row",
+  "X-Column-Mapping",
+  "X-Sheet-Defaults",
+  "X-Import-Mode",
   "X-Import-Confirmed",
   "X-Backup-Confirmed"
 ].join(", ");

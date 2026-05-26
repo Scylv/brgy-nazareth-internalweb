@@ -28,6 +28,28 @@ const counterCards = [
     tone: "amber"
   }
 ];
+const importMappingFields = [
+  ["firstName", "First name"],
+  ["middleName", "Middle name"],
+  ["lastName", "Last name"],
+  ["fullName", "Full name"],
+  ["birthdate", "Birthdate"],
+  ["sex", "Sex"],
+  ["civilStatus", "Civil status"],
+  ["exactAddress", "Exact address"],
+  ["sitio", "Sitio"],
+  ["contactNumber", "Contact number"],
+  ["voterStatus", "Voter status"],
+  ["remarks", "Remarks"],
+  ["address", "Address"],
+  ["precinctNo", "Precinct number"],
+  ["occupation", "Occupation"]
+];
+const importModeOptions = [
+  ["skipDuplicates", "Skip duplicates"],
+  ["createOnly", "Create only"],
+  ["updateMatches", "Update matches"]
+];
 
 export default function AdminPanel({
   actionError = "",
@@ -35,27 +57,44 @@ export default function AdminPanel({
   adminResidentQuery = "",
   adminResidents = [],
   documentRequests,
+  excelImportColumnMapping = {},
   excelImportCommitSummary = null,
   excelImportError = "",
+  excelImportHeaderRowNumber = 1,
+  excelImportHeaders = [],
+  excelImportMode = "skipDuplicates",
   excelImportPreview = null,
+  excelImportSheetDefaults = {},
+  excelImportSheetNames = [],
   includeArchivedResidents = false,
   error = "",
   isAdminResidentsLoading = false,
   isExcelImportCommitLoading = false,
   isExcelImportPreviewLoading = false,
+  isExcelImportSheetsLoading = false,
+  isExcelImportUndoLoading = false,
   isLoading = false,
   isMutating = false,
   onAdminResidentQueryChange,
   onArchiveResident,
   onCommitExcelImport,
   onCreateAccount,
+  onExcelImportColumnMappingChange,
+  onExcelImportModeChange,
+  onExcelImportHeaderRowChange,
+  onExcelImportSheetDefaultChange,
+  onLoadExcelWorksheetHeaders,
+  onLoadExcelWorkbookSheets,
   onPreviewExcelImport,
   onRestoreResident,
   onResetPassword,
   onToggleAccountStatus,
   onToggleIncludeArchivedResidents,
   onUpdateResident,
+  onUndoExcelImport,
+  onSelectedExcelImportSheetChange,
   residents,
+  selectedExcelImportSheet = "",
   users
 }) {
   const [accountForm, setAccountForm] = useState({
@@ -82,6 +121,13 @@ export default function AdminPanel({
   const excelImportWarnings = excelImportPreview?.warnings ?? [];
   const ignoredImportColumns = excelImportPreview?.ignoredColumns ?? [];
   const documentRequestPairs = excelImportPreview?.documentRequestPairsDetected ?? [];
+  const importSummary = excelImportPreview?.importSummary ?? {
+    totalRows: excelImportPreview?.totalRowsDetected ?? 0,
+    newResidents: 0,
+    duplicatesSkipped: 0,
+    updateCandidates: 0,
+    invalidRows: excelImportErrors.length
+  };
 
   function handleAccountFormChange(event) {
     const { name, value } = event.target;
@@ -132,13 +178,81 @@ export default function AdminPanel({
     }));
   }
 
-  function handleExcelFileChange(event) {
-    setSelectedImportFile(event.target.files?.[0] ?? null);
+  async function handleExcelFileChange(event) {
+    const file = event.target.files?.[0] ?? null;
+
+    setSelectedImportFile(file);
     setPreviewedImportFile(null);
     setExcelImportConfirmations({
       importConfirmed: false,
       backupConfirmed: false
     });
+    await onLoadExcelWorkbookSheets?.(file);
+  }
+
+  async function handleExcelSheetChange(event) {
+    const sheetName = event.target.value;
+
+    onSelectedExcelImportSheetChange?.(sheetName);
+    setPreviewedImportFile(null);
+    setExcelImportConfirmations({
+      importConfirmed: false,
+      backupConfirmed: false
+    });
+    await onLoadExcelWorksheetHeaders?.(selectedImportFile, {
+      selectedSheetName: sheetName,
+      headerRowNumber: excelImportHeaderRowNumber
+    });
+  }
+
+  async function handleExcelHeaderRowChange(event) {
+    const headerRowNumber = Number(event.target.value);
+
+    onExcelImportHeaderRowChange?.(headerRowNumber);
+    setPreviewedImportFile(null);
+    setExcelImportConfirmations({
+      importConfirmed: false,
+      backupConfirmed: false
+    });
+    await onLoadExcelWorksheetHeaders?.(selectedImportFile, {
+      selectedSheetName: selectedExcelImportSheet,
+      headerRowNumber
+    });
+  }
+
+  function handleExcelMappingChange(event) {
+    const { name, value } = event.target;
+
+    setPreviewedImportFile(null);
+    setExcelImportConfirmations({
+      importConfirmed: false,
+      backupConfirmed: false
+    });
+    onExcelImportColumnMappingChange?.(name, value);
+  }
+
+  function handleExcelSheetDefaultChange(event) {
+    const { name, value } = event.target;
+
+    setPreviewedImportFile(null);
+    setExcelImportConfirmations({
+      importConfirmed: false,
+      backupConfirmed: false
+    });
+    onExcelImportSheetDefaultChange?.(name, value);
+  }
+
+  function handleExcelModeChange(event) {
+    setPreviewedImportFile(null);
+    setExcelImportConfirmations({
+      importConfirmed: false,
+      backupConfirmed: false
+    });
+    onExcelImportModeChange?.(event.target.value);
+  }
+
+  function handleUndoImport() {
+    onUndoExcelImport?.(excelImportCommitSummary?.importBatchId);
   }
 
   function openResetForm(profileId) {
@@ -441,8 +555,59 @@ export default function AdminPanel({
                 type="file"
               />
             </label>
+            {selectedImportFile ? (
+              <label className="space-y-2 text-sm font-semibold text-slate-700">
+                Worksheet
+                <select
+                  className="w-full min-w-[16rem] rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                  disabled={isExcelImportSheetsLoading || excelImportSheetNames.length === 0}
+                  onChange={handleExcelSheetChange}
+                  value={selectedExcelImportSheet}
+                >
+                  {excelImportSheetNames.map((sheetName) => (
+                    <option key={sheetName} value={sheetName}>
+                      {sheetName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {selectedImportFile ? (
+              <label className="space-y-2 text-sm font-semibold text-slate-700">
+                Header row
+                <input
+                  className="w-28 rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                  min="1"
+                  onChange={handleExcelHeaderRowChange}
+                  type="number"
+                  value={excelImportHeaderRowNumber}
+                />
+              </label>
+            ) : null}
+            {selectedImportFile ? (
+              <label className="space-y-2 text-sm font-semibold text-slate-700">
+                Import mode
+                <select
+                  className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                  onChange={handleExcelModeChange}
+                  value={excelImportMode}
+                >
+                  {importModeOptions.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <Button
-              disabled={!selectedImportFile || isExcelImportPreviewLoading || isExcelImportCommitLoading}
+              disabled={
+                !selectedImportFile ||
+                !selectedExcelImportSheet ||
+                isExcelImportSheetsLoading ||
+                isExcelImportPreviewLoading ||
+                isExcelImportCommitLoading
+              }
               size="lg"
               type="submit"
             >
@@ -451,45 +616,114 @@ export default function AdminPanel({
           </form>
         </div>
 
+        {isExcelImportSheetsLoading ? (
+          <StateMessage className="mt-4" tone="info">
+            Reading workbook worksheets...
+          </StateMessage>
+        ) : null}
+
         {excelImportError ? (
           <StateMessage className="mt-4" tone="danger">
             {excelImportError}
           </StateMessage>
         ) : null}
 
+        {selectedImportFile && excelImportHeaders.length > 0 ? (
+          <div className="mt-5 border-y border-orange-100 py-5">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-[0.16em] text-slate-700">
+                  Column Mapping
+                </h3>
+                <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {importMappingFields.map(([field, label]) => (
+                    <label className="space-y-2 text-sm font-semibold text-slate-700" key={field}>
+                      {label}
+                      <select
+                        className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                        name={field}
+                        onChange={handleExcelMappingChange}
+                        value={excelImportColumnMapping[field] ?? ""}
+                      >
+                        <option value="">Unmapped</option>
+                        {excelImportHeaders.map((header) => (
+                          <option key={`${field}-${header.column}`} value={header.column}>
+                            {header.column}
+                            {header.header ? ` - ${header.header}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <label className="space-y-2 text-sm font-semibold text-slate-700">
+                Voter status default
+                <select
+                  className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                  name="voterStatus"
+                  onChange={handleExcelSheetDefaultChange}
+                  value={excelImportSheetDefaults.voterStatus ?? ""}
+                >
+                  <option value="">No default</option>
+                  <option value="Voter">Voter</option>
+                  <option value="Non-voter">Non-voter</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        ) : null}
+
         {excelImportPreview ? (
           <div className="mt-5 space-y-5">
-            <dl className="grid gap-4 border-y border-orange-100 py-4 md:grid-cols-4">
+            <dl className="grid gap-4 border-y border-orange-100 py-4 md:grid-cols-6">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-gov-700">
+                  Worksheet
+                </dt>
+                <dd className="mt-2 text-lg font-black text-slate-900">
+                  {excelImportPreview.sheetName}
+                </dd>
+              </div>
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-gov-700">
                   Rows
                 </dt>
                 <dd className="mt-2 text-2xl font-black text-slate-900">
-                  {excelImportPreview.totalRowsDetected}
+                  {importSummary.totalRows}
                 </dd>
               </div>
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-gov-700">
-                  Errors
+                  New
                 </dt>
                 <dd className="mt-2 text-2xl font-black text-slate-900">
-                  {excelImportErrors.length}
+                  {importSummary.newResidents}
                 </dd>
               </div>
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-gov-700">
-                  Warnings
+                  Duplicates
                 </dt>
                 <dd className="mt-2 text-2xl font-black text-slate-900">
-                  {excelImportWarnings.length}
+                  {importSummary.duplicatesSkipped}
                 </dd>
               </div>
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-gov-700">
-                  Request Pairs
+                  Updates
                 </dt>
                 <dd className="mt-2 text-2xl font-black text-slate-900">
-                  {documentRequestPairs.length}
+                  {importSummary.updateCandidates}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-gov-700">
+                  Invalid
+                </dt>
+                <dd className="mt-2 text-2xl font-black text-slate-900">
+                  {importSummary.invalidRows}
                 </dd>
               </div>
             </dl>
@@ -600,6 +834,7 @@ export default function AdminPanel({
                   <thead className="bg-orange-50 text-xs font-semibold uppercase tracking-[0.12em] text-gov-800">
                     <tr>
                       <th className="px-4 py-3">Row</th>
+                      <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3">Full Name</th>
                       <th className="px-4 py-3">Address</th>
                       <th className="px-4 py-3">Exact Address</th>
@@ -615,6 +850,7 @@ export default function AdminPanel({
                     {excelImportRows.map((row) => (
                       <tr key={row.rowNumber}>
                         <td className="px-4 py-3 font-semibold text-slate-900">{row.rowNumber}</td>
+                        <td className="px-4 py-3 text-slate-700">{row.importStatus || "new"}</td>
                         <td className="px-4 py-3 text-slate-700">{row.fullName || "-"}</td>
                         <td className="px-4 py-3 text-slate-700">{row.address || "-"}</td>
                         <td className="px-4 py-3 text-slate-700">{row.exactAddress || "-"}</td>
@@ -665,6 +901,7 @@ export default function AdminPanel({
                     !selectedImportFile ||
                     !previewedImportFile ||
                     selectedImportFile !== previewedImportFile ||
+                    !selectedExcelImportSheet ||
                     !excelImportConfirmations.importConfirmed ||
                     !excelImportConfirmations.backupConfirmed ||
                     isExcelImportPreviewLoading ||
@@ -688,7 +925,7 @@ export default function AdminPanel({
             <h3 className="text-sm font-black uppercase tracking-[0.16em] text-emerald-700">
               Import Summary
             </h3>
-            <dl className="mt-3 grid gap-4 md:grid-cols-5">
+            <dl className="mt-3 grid gap-4 md:grid-cols-6">
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
                   Rows
@@ -703,6 +940,14 @@ export default function AdminPanel({
                 </dt>
                 <dd className="mt-2 text-2xl font-black text-slate-900">
                   {excelImportCommitSummary.created}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                  Updated
+                </dt>
+                <dd className="mt-2 text-2xl font-black text-slate-900">
+                  {excelImportCommitSummary.updated ?? 0}
                 </dd>
               </div>
               <div>
@@ -735,6 +980,26 @@ export default function AdminPanel({
                 {excelImportCommitSummary.documentHistoryDeferred} assistance history item
                 {excelImportCommitSummary.documentHistoryDeferred === 1 ? "" : "s"} deferred.
               </StateMessage>
+            ) : null}
+            {excelImportCommitSummary.undoSummary ? (
+              <StateMessage className="mt-4" tone="info">
+                Undo complete. {excelImportCommitSummary.undoSummary.archivedCreated} created
+                resident{excelImportCommitSummary.undoSummary.archivedCreated === 1 ? "" : "s"} archived and{" "}
+                {excelImportCommitSummary.undoSummary.restoredUpdated} update
+                {excelImportCommitSummary.undoSummary.restoredUpdated === 1 ? "" : "s"} restored.
+              </StateMessage>
+            ) : null}
+            {excelImportCommitSummary.importBatchId ? (
+              <div className="mt-4">
+                <Button
+                  disabled={excelImportCommitSummary.undone || isExcelImportUndoLoading}
+                  onClick={handleUndoImport}
+                  type="button"
+                  variant="secondary"
+                >
+                  {isExcelImportUndoLoading ? "Undoing" : "Undo Import"}
+                </Button>
+              </div>
             ) : null}
           </div>
         ) : null}
