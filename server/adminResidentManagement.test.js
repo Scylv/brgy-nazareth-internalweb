@@ -85,9 +85,24 @@ function createAdminResidentPool() {
         changedFields: ["confidentialSummary"],
         confidentialSummary: "Sensitive mediation narrative.",
         noteBody: "Private note body.",
-        caseTitle: "Boundary dispute"
+        caseTitle: "Boundary dispute",
+        storage_path: "resident-documents/RBI-2026-0001/private-note.pdf",
+        stored_filename: "private-note.pdf"
       },
       created_at: "2026-05-26T04:00:00.000Z"
+    },
+    {
+      id: "AUD-2",
+      actor_profile_id: "admin-1",
+      actor_name: "Ricardo Morales",
+      actor_role: "admin",
+      action: "resident.admin_created",
+      entity_type: "resident",
+      entity_id: "RBI-2026-0001",
+      metadata: {
+        actorRole: "admin"
+      },
+      created_at: "2026-05-26T05:00:00.000Z"
     }
   ];
 
@@ -118,11 +133,16 @@ function createAdminResidentPool() {
       }
 
       if (sql.includes("FROM audit_logs") && sql.includes("COUNT(*)")) {
-        return { rows: [{ total: String(auditLogRows.length) }], rowCount: 1 };
+        const rows = filterAuditLogRows(params);
+        return { rows: [{ total: String(rows.length) }], rowCount: 1 };
       }
 
       if (sql.includes("FROM audit_logs")) {
-        return { rows: auditLogRows, rowCount: auditLogRows.length };
+        const rows = filterAuditLogRows(params);
+        const limit = params.find((param) => Number(param) === param && param > 0) ?? rows.length;
+        const offset = params.at(-1) === 0 || params.at(-1) > 0 ? params.at(-1) : 0;
+
+        return { rows: rows.slice(offset, offset + limit), rowCount: rows.length };
       }
 
       if (sql.includes("FROM profiles")) {
@@ -260,6 +280,21 @@ function createAdminResidentPool() {
 
       return matches && matchesStatus;
     });
+  }
+
+  function filterAuditLogRows(params) {
+    const textParams = params.filter((param) => typeof param === "string");
+    const entityTypeParam = textParams.find((param) =>
+      String(param).replace(/%/g, "").includes("_")
+    );
+
+    if (!entityTypeParam) {
+      return auditLogRows;
+    }
+
+    const entityType = entityTypeParam.replace(/%/g, "").toLowerCase();
+
+    return auditLogRows.filter((row) => row.entity_type.toLowerCase().includes(entityType));
   }
 }
 
@@ -566,13 +601,13 @@ describe("admin resident management", () => {
     const adminCookie = await loginAs(app, "admin", "admin123");
 
     const response = await request(app)
-      .get("/api/admin/audit-logs?page=1&pageSize=10&entityType=lupon_case")
+      .get("/api/admin/audit-logs?page=1&pageSize=500&entityType=lupon%20case")
       .set("Cookie", adminCookie);
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
       page: 1,
-      pageSize: 10,
+      pageSize: 100,
       total: 1,
       totalPages: 1
     });
@@ -587,13 +622,21 @@ describe("admin resident management", () => {
     expect(JSON.stringify(response.body)).not.toContain("Sensitive mediation narrative");
     expect(JSON.stringify(response.body)).not.toContain("Private note body");
     expect(JSON.stringify(response.body)).not.toContain("Boundary dispute");
+    expect(JSON.stringify(response.body)).not.toContain("storage_path");
+    expect(JSON.stringify(response.body)).not.toContain("stored_filename");
+    expect(JSON.stringify(response.body)).not.toContain("private-note.pdf");
 
-    const departmentCookie = await loginAs(app, "department", "dept123");
-    const blockedResponse = await request(app)
-      .get("/api/admin/audit-logs")
-      .set("Cookie", departmentCookie);
+    for (const [username, password] of [
+      ["department", "dept123"],
+      ["lupon", "lupon123"]
+    ]) {
+      const blockedCookie = await loginAs(app, username, password);
+      const blockedResponse = await request(app)
+        .get("/api/admin/audit-logs")
+        .set("Cookie", blockedCookie);
 
-    expect(blockedResponse.status).toBe(403);
+      expect(blockedResponse.status).toBe(403);
+    }
   });
 
   it("blocks Department and Lupon users from Admin resident mutation routes", async () => {

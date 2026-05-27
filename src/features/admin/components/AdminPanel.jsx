@@ -58,6 +58,7 @@ const sectorOptions = [
   "PWD",
   "Indigent"
 ];
+const STAFF_ACCOUNT_PAGE_SIZE = 3;
 
 function createBlankAdminResidentForm() {
   return {
@@ -120,6 +121,14 @@ export default function AdminPanel({
   adminResidentQuery = "",
   adminResidentStatusFilter = "active",
   adminResidents = [],
+  auditLogFilters = {
+    actor: "",
+    role: "",
+    action: "",
+    entityType: "",
+    dateFrom: "",
+    dateTo: ""
+  },
   auditLogPagination = {
     page: 1,
     pageSize: 25,
@@ -194,6 +203,12 @@ export default function AdminPanel({
     initialResidentFormMode === "create" ? createBlankAdminResidentForm() : null
   );
   const [residentFormLocalError, setResidentFormLocalError] = useState(residentFormError);
+  const [staffAccountQuery, setStaffAccountQuery] = useState("");
+  const [accountGroupPages, setAccountGroupPages] = useState({
+    admin: 1,
+    department: 1,
+    lupon: 1
+  });
   const [excelImportConfirmations, setExcelImportConfirmations] = useState({
     importConfirmed: false,
     backupConfirmed: false
@@ -212,6 +227,35 @@ export default function AdminPanel({
     updateCandidates: 0,
     invalidRows: excelImportErrors.length
   };
+  const normalizedStaffAccountQuery = staffAccountQuery.trim().toLowerCase();
+  const paginatedAccountGroups = accountGroups.map((group) => {
+    const accounts = normalizedStaffAccountQuery
+      ? group.accounts.filter((account) =>
+          [
+            account.name,
+            account.displayName,
+            account.username,
+            account.role,
+            account.status
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase()
+            .includes(normalizedStaffAccountQuery)
+        )
+      : group.accounts;
+    const totalPages = accounts.length > 0 ? Math.ceil(accounts.length / STAFF_ACCOUNT_PAGE_SIZE) : 0;
+    const page = Math.min(accountGroupPages[group.role] ?? 1, Math.max(totalPages, 1));
+    const offset = (page - 1) * STAFF_ACCOUNT_PAGE_SIZE;
+
+    return {
+      ...group,
+      filteredCount: accounts.length,
+      page,
+      totalPages,
+      accounts: accounts.slice(offset, offset + STAFF_ACCOUNT_PAGE_SIZE)
+    };
+  });
 
   function handleAccountFormChange(event) {
     const { name, value } = event.target;
@@ -219,6 +263,22 @@ export default function AdminPanel({
     setAccountForm((current) => ({
       ...current,
       [name]: value
+    }));
+  }
+
+  function handleStaffAccountQueryChange(event) {
+    setStaffAccountQuery(event.target.value);
+    setAccountGroupPages({
+      admin: 1,
+      department: 1,
+      lupon: 1
+    });
+  }
+
+  function handleAccountGroupPageChange(role, page) {
+    setAccountGroupPages((current) => ({
+      ...current,
+      [role]: Math.max(1, page)
     }));
   }
 
@@ -431,6 +491,16 @@ export default function AdminPanel({
     }
   }
 
+  function handleAuditLogFilterChange(event) {
+    const { name, value } = event.target;
+
+    onAuditLogPageChange?.(1);
+    onAuditLogFilterChange?.({
+      ...auditLogFilters,
+      [name]: value
+    });
+  }
+
   return (
     <div className="space-y-6">
       <SectionCard variant="hero">
@@ -529,37 +599,51 @@ export default function AdminPanel({
           }`}
         >
           <div className="overflow-x-auto rounded-2xl border border-orange-100">
-            <table className="min-w-[64rem] divide-y divide-orange-100 text-left text-sm">
+            <table className="min-w-full table-fixed divide-y divide-orange-100 text-left text-sm">
+              <colgroup>
+                <col className="w-[24%]" />
+                <col className="w-[28%]" />
+                <col className="w-[10%]" />
+                <col className="w-[13%]" />
+                <col className="w-[11%]" />
+                <col className="w-[14%]" />
+              </colgroup>
               <thead className="bg-orange-50 text-xs font-semibold uppercase tracking-[0.12em] text-gov-800">
                 <tr>
-                  <th className="px-4 py-3">Resident</th>
-                  <th className="px-4 py-3">Address</th>
-                  <th className="px-4 py-3">Precinct</th>
-                  <th className="px-4 py-3">Contact</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Action</th>
+                  <th className="px-3 py-3">Resident</th>
+                  <th className="px-3 py-3">Address</th>
+                  <th className="px-3 py-3">Precinct</th>
+                  <th className="px-3 py-3">Contact</th>
+                  <th className="px-3 py-3">Status</th>
+                  <th className="px-3 py-3">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-orange-100 bg-white">
                 {!isAdminResidentsLoading
                   ? adminResidents.map((resident) => (
                       <tr key={resident.id}>
-                        <td className="px-4 py-3">
-                          <p className="font-semibold text-slate-900">{resident.fullName}</p>
-                          <p className="text-xs text-slate-500">{resident.id}</p>
+                        <td className="px-3 py-3 align-top">
+                          <p className="break-words font-semibold text-slate-900">
+                            {resident.fullName}
+                          </p>
+                          <p className="break-all text-xs text-slate-500">{resident.id}</p>
                         </td>
-                        <td className="px-4 py-3 text-slate-700">
-                          <p>{resident.address || "-"}</p>
-                          <p className="text-xs text-slate-500">{resident.exactAddress || "-"}</p>
-                          <p className="text-xs text-slate-500">{resident.sitio || "-"}</p>
+                        <td className="px-3 py-3 align-top text-slate-700">
+                          <p className="break-words">{resident.address || "-"}</p>
+                          <p className="break-words text-xs text-slate-500">
+                            {resident.exactAddress || "-"}
+                          </p>
+                          <p className="break-words text-xs text-slate-500">
+                            {resident.sitio || "-"}
+                          </p>
                         </td>
-                        <td className="px-4 py-3 text-slate-700">
+                        <td className="px-3 py-3 align-top text-slate-700">
                           {resident.precinctNumber || "-"}
                         </td>
-                        <td className="px-4 py-3 text-slate-700">
+                        <td className="break-words px-3 py-3 align-top text-slate-700">
                           {resident.contactNumber || "-"}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3 align-top">
                           <span
                             className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${
                               resident.archived
@@ -570,7 +654,7 @@ export default function AdminPanel({
                             {resident.archived ? "Archived" : "Active"}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3 align-top">
                           <div className="flex flex-wrap gap-2">
                             <Button
                               disabled={isMutating}
@@ -785,6 +869,141 @@ export default function AdminPanel({
               ) : null}
             </aside>
           ) : null}
+        </div>
+      </SectionCard>
+
+      <SectionCard>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <SectionHeader eyebrow="Audit Logs" title="Administrative Activity" />
+            <p className="mt-2 text-sm font-semibold text-slate-600">
+              {auditLogPagination.total} matching log
+              {auditLogPagination.total === 1 ? "" : "s"}. Page size {auditLogPagination.pageSize}
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {[
+              ["actor", "Actor"],
+              ["action", "Action"],
+              ["entityType", "Entity type"]
+            ].map(([name, label]) => (
+              <label className="space-y-2 text-sm font-semibold text-slate-700" key={name}>
+                {label}
+                <input
+                  className="w-full rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                  name={name}
+                  onChange={handleAuditLogFilterChange}
+                  value={auditLogFilters[name] ?? ""}
+                />
+              </label>
+            ))}
+
+            <label className="space-y-2 text-sm font-semibold text-slate-700">
+              Role
+              <select
+                className="w-full rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                name="role"
+                onChange={handleAuditLogFilterChange}
+                value={auditLogFilters.role ?? ""}
+              >
+                <option value="">All roles</option>
+                <option value="admin">Admin</option>
+                <option value="department">Department</option>
+                <option value="lupon">Lupon</option>
+              </select>
+            </label>
+
+            <label className="space-y-2 text-sm font-semibold text-slate-700">
+              From
+              <input
+                className="w-full rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                name="dateFrom"
+                onChange={handleAuditLogFilterChange}
+                type="date"
+                value={auditLogFilters.dateFrom ?? ""}
+              />
+            </label>
+
+            <label className="space-y-2 text-sm font-semibold text-slate-700">
+              To
+              <input
+                className="w-full rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                name="dateTo"
+                onChange={handleAuditLogFilterChange}
+                type="date"
+                value={auditLogFilters.dateTo ?? ""}
+              />
+            </label>
+          </div>
+        </div>
+
+        {isAdminAuditLogsLoading ? (
+          <StateMessage className="mt-4" tone="info">
+            Loading audit logs from the database API...
+          </StateMessage>
+        ) : null}
+
+        <div className="mt-5 overflow-x-auto rounded-2xl border border-orange-100">
+          <table className="min-w-[72rem] divide-y divide-orange-100 text-left text-sm">
+            <thead className="bg-orange-50 text-xs font-semibold uppercase tracking-[0.12em] text-gov-800">
+              <tr>
+                <th className="px-4 py-3">Timestamp</th>
+                <th className="px-4 py-3">Actor</th>
+                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3">Action</th>
+                <th className="px-4 py-3">Entity</th>
+                <th className="px-4 py-3">Reference</th>
+                <th className="px-4 py-3">Details</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-orange-100 bg-white">
+              {!isAdminAuditLogsLoading
+                ? auditLogs.map((log) => (
+                    <tr key={log.id}>
+                      <td className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900">
+                        {log.timestamp ? String(log.timestamp).replace("T", " ").slice(0, 19) : "-"}
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">{log.actorName || "System"}</td>
+                      <td className="px-4 py-3 text-slate-700">{log.role || "-"}</td>
+                      <td className="px-4 py-3 text-slate-700">{log.action || "-"}</td>
+                      <td className="px-4 py-3 text-slate-700">{log.entityType || "-"}</td>
+                      <td className="px-4 py-3 text-slate-700">{log.entityReference || "-"}</td>
+                      <td className="px-4 py-3 text-slate-700">{log.details || "-"}</td>
+                    </tr>
+                  ))
+                : null}
+            </tbody>
+          </table>
+          {!isAdminAuditLogsLoading && auditLogs.length === 0 ? (
+            <StateMessage className="rounded-none border-0 bg-white px-5 py-8 text-center" tone="neutral">
+              No audit logs match the current filters.
+            </StateMessage>
+          ) : null}
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-slate-600">
+            Page {auditLogPagination.page} of {Math.max(auditLogPagination.totalPages, 1)}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              disabled={!auditLogPagination.hasPrevious}
+              onClick={() => onAuditLogPageChange?.(auditLogPagination.page - 1)}
+              size="sm"
+              variant="secondary"
+            >
+              Previous
+            </Button>
+            <Button
+              disabled={!auditLogPagination.hasNext}
+              onClick={() => onAuditLogPageChange?.(auditLogPagination.page + 1)}
+              size="sm"
+              variant="secondary"
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </SectionCard>
 
@@ -1253,7 +1472,19 @@ export default function AdminPanel({
       </SectionCard>
 
       <SectionCard>
-        <SectionHeader eyebrow="Provision Account" title="Create Staff Access" />
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <SectionHeader eyebrow="Provision Account" title="Create Staff Access" />
+
+          <label className="w-full space-y-2 text-sm font-semibold text-slate-700 lg:max-w-sm">
+            Search staff
+            <input
+              className="w-full rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+              onChange={handleStaffAccountQueryChange}
+              placeholder="Name, username, role, status"
+              value={staffAccountQuery}
+            />
+          </label>
+        </div>
 
         <form className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr_12rem_1fr_auto]" onSubmit={handleCreateAccount}>
           <label className="space-y-2 text-sm font-semibold text-slate-700">
@@ -1314,13 +1545,14 @@ export default function AdminPanel({
       </SectionCard>
 
       <section className="grid gap-5 xl:grid-cols-3">
-        {accountGroups.map((group) => (
+        {paginatedAccountGroups.map((group) => (
           <SectionCard className="overflow-hidden" key={group.role} padding="none">
             <div className="flex items-center justify-between gap-4 bg-orange-50 px-5 py-4">
               <div>
                 <h3 className="text-lg font-black text-slate-900">{group.label}</h3>
                 <p className="text-sm text-slate-600">
-                  {group.count} account{group.count === 1 ? "" : "s"}
+                  {group.filteredCount} matching account
+                  {group.filteredCount === 1 ? "" : "s"}
                 </p>
               </div>
               <span className="rounded-full border border-orange-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-gov-700">
@@ -1407,9 +1639,33 @@ export default function AdminPanel({
 
               {group.accounts.length === 0 ? (
                 <StateMessage className="rounded-none border-0 bg-white px-5 py-8 text-center" tone="neutral">
-                  No database profiles assigned to this role.
+                  No staff accounts match this role and search.
                 </StateMessage>
               ) : null}
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-orange-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-semibold text-slate-600">
+                Page {group.page} of {Math.max(group.totalPages, 1)}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  disabled={group.page <= 1}
+                  onClick={() => handleAccountGroupPageChange(group.role, group.page - 1)}
+                  size="sm"
+                  variant="secondary"
+                >
+                  Previous
+                </Button>
+                <Button
+                  disabled={group.page >= Math.max(group.totalPages, 1)}
+                  onClick={() => handleAccountGroupPageChange(group.role, group.page + 1)}
+                  size="sm"
+                  variant="secondary"
+                >
+                  Next
+                </Button>
+              </div>
             </div>
           </SectionCard>
         ))}

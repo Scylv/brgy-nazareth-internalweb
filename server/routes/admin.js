@@ -717,7 +717,7 @@ export function createAdminRouter(pool) {
     const actor = normalizeText(req.query?.actor || req.query?.profile);
     const role = normalizeText(req.query?.role);
     const action = normalizeText(req.query?.action);
-    const entityType = normalizeText(req.query?.entityType);
+    const entityType = normalizeText(req.query?.entityType).replace(/\s+/g, "_");
     const dateFrom = normalizeText(req.query?.dateFrom);
     const dateTo = normalizeText(req.query?.dateTo);
 
@@ -736,7 +736,7 @@ export function createAdminRouter(pool) {
     }
 
     if (entityType) {
-      addCondition("audit_logs.entity_type = ?", entityType);
+      addCondition("lower(audit_logs.entity_type) LIKE lower(?)", `%${entityType}%`);
     }
 
     if (dateFrom) {

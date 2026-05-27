@@ -74,9 +74,10 @@ const DEFAULT_EXCEL_IMPORT_SHEET_DEFAULTS = {
   voterStatus: ""
 };
 const DEFAULT_EXCEL_IMPORT_MODE = "skipDuplicates";
+const ADMIN_PAGE_SIZE = 5;
 const DEFAULT_PAGINATION = {
   page: 1,
-  pageSize: 25,
+  pageSize: ADMIN_PAGE_SIZE,
   total: 0,
   totalPages: 0,
   hasNext: false,
@@ -1461,6 +1462,7 @@ export default function App() {
           adminResidentPagination={adminResidentPagination}
           adminResidentStatusFilter={adminResidentStatusFilter}
           adminResidents={adminResidentList}
+          auditLogFilters={adminAuditLogFilters}
           auditLogPagination={adminAuditLogPagination}
           auditLogs={adminAuditLogs}
           includeArchivedResidents={adminIncludeArchivedResidents}

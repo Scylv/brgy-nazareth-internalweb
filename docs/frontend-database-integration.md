@@ -50,6 +50,30 @@ Admin profile listing is connected to:
 GET /api/admin/profiles
 ```
 
+Admin account management is connected to:
+
+```text
+POST  /api/admin/profiles
+PATCH /api/admin/profiles/:id/status
+POST  /api/admin/profiles/:id/reset-password
+```
+
+Admin resident management is connected to:
+
+```text
+GET   /api/admin/residents
+POST  /api/admin/residents
+PATCH /api/admin/residents/:id
+POST  /api/admin/residents/:id/archive
+POST  /api/admin/residents/:id/restore
+```
+
+Admin audit review is connected to:
+
+```text
+GET /api/admin/audit-logs
+```
+
 The frontend maps backend response shapes such as:
 
 ```text
@@ -57,6 +81,7 @@ The frontend maps backend response shapes such as:
 { documentRequests: [...] }
 { luponCases: [...] }
 { profiles: [...] }
+{ items: [...], page, pageSize, total, totalPages, hasNext, hasPrevious }
 ```
 
 into the field names expected by the existing React components.
@@ -146,6 +171,8 @@ credentials.
 5. Log in as Lupon and update an existing resident status.
 6. Log back in as Department and confirm the updated status is visible.
 7. Log in as Admin and confirm profile rows load from `GET /api/admin/profiles`.
+8. Confirm Admin resident rows load from `GET /api/admin/residents` with backend pagination.
+9. Confirm Admin audit rows load from `GET /api/admin/audit-logs` and show only safe details.
 
 The Department search area also shows:
 
@@ -175,12 +202,13 @@ Expected result:
 - Department can access residents and document request create/read/status/archive routes.
 - Department cannot access Lupon case routes.
 - Department responses do not include `confidentialSummary` or `noteBody`.
+- Department cannot access Admin resident creation or audit routes.
+- Admin audit responses do not include Lupon confidential summaries, notes, storage paths, or stored filenames.
 
 ## Known Limitations
 
 - Authentication uses synthetic seed accounts only.
 - Logout clears the browser cookie, but the signed stateless token is not revoked server-side.
-- Resident creation is not database-backed yet.
 - Department document request reads, creates, status transitions, releases, and archives are database-backed.
-- Admin profile listing is database-backed; account creation, role edits, deactivation, and password reset are planned.
-- Excel import and file uploads are not implemented yet.
+- Admin profile management, resident pagination/create/edit/archive/restore, Excel import preview/commit, resident document metadata, and sanitized audit log review are database-backed.
+- Production user provisioning, database backup automation, and hardened database-level access policies are not implemented yet.
