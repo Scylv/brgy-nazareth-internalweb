@@ -7,7 +7,7 @@ export const documentRequests = [
     requestDate: "2026-05-02",
     releaseDate: "2026-05-04",
     expiryDate: "2026-11-04",
-    status: "released",
+    status: "Released",
     processedBy: "Elena Ledesma"
   },
   {
@@ -18,7 +18,7 @@ export const documentRequests = [
     requestDate: "2026-05-01",
     releaseDate: "",
     expiryDate: "2026-08-01",
-    status: "processing",
+    status: "Processing",
     processedBy: "Elena Ledesma"
   },
   {
@@ -29,7 +29,7 @@ export const documentRequests = [
     requestDate: "2026-04-28",
     releaseDate: "",
     expiryDate: "2026-05-18",
-    status: "pending",
+    status: "On Hold",
     processedBy: "Elena Ledesma"
   },
   {
@@ -40,7 +40,7 @@ export const documentRequests = [
     requestDate: "2026-04-14",
     releaseDate: "2026-04-16",
     expiryDate: "2027-04-16",
-    status: "released",
+    status: "Released",
     processedBy: "Elena Ledesma"
   },
   {
@@ -51,7 +51,7 @@ export const documentRequests = [
     requestDate: "2026-03-22",
     releaseDate: "2026-03-23",
     expiryDate: "2026-06-23",
-    status: "released",
+    status: "Released",
     processedBy: "Elena Ledesma"
   },
   {
@@ -62,7 +62,7 @@ export const documentRequests = [
     requestDate: "2026-02-18",
     releaseDate: "2026-02-20",
     expiryDate: "2026-05-09",
-    status: "released",
+    status: "Released",
     processedBy: "Elena Ledesma"
   }
 ];

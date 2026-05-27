@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>System Logs | Barangay Nazareth</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#d8dadc",
+                    "on-primary-fixed-variant": "#7a3000",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#e0e3e5",
+                    "surface-tint": "#a04100",
+                    "inverse-on-surface": "#eff1f3",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#9ccaff",
+                    "inverse-primary": "#ffb693",
+                    "tertiary-container": "#059eff",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed": "#ffdbcc",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface": "#191c1e",
+                    "primary": "#a04100",
+                    "secondary-fixed-dim": "#ffb693",
+                    "tertiary-fixed": "#d0e4ff",
+                    "tertiary": "#0062a1",
+                    "inverse-surface": "#2d3133",
+                    "on-tertiary-fixed-variant": "#00497b",
+                    "secondary-container": "#fe9a69",
+                    "primary-fixed-dim": "#ffb693",
+                    "on-tertiary-fixed": "#001d35",
+                    "on-secondary-container": "#763006",
+                    "on-primary-fixed": "#351000",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#ff6b00",
+                    "background": "#f7f9fb",
+                    "on-background": "#191c1e",
+                    "surface-container-low": "#f2f4f6",
+                    "error-container": "#ffdad6",
+                    "on-surface-variant": "#5a4136",
+                    "on-tertiary-container": "#003357",
+                    "secondary-fixed": "#ffdbcc",
+                    "on-primary-container": "#572000",
+                    "surface": "#f7f9fb",
+                    "on-secondary-fixed-variant": "#783207",
+                    "outline": "#8e7164",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#e6e8ea",
+                    "on-secondary-fixed": "#351000",
+                    "error": "#ba1a1a",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary": "#96481e",
+                    "outline-variant": "#e2bfb0",
+                    "surface-bright": "#f7f9fb",
+                    "surface-container": "#eceef0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Public Sans"],
+                    "body": ["Public Sans"],
+                    "label": ["Public Sans"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; background-color: #f7f9fb; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .ghost-shadow { box-shadow: 0 12px 40px rgba(25, 28, 30, 0.06); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- SideNavBar -->
+<aside class="fixed inset-y-0 left-0 flex flex-col h-screen w-64 bg-slate-50 dark:bg-slate-900 font-public-sans text-sm font-medium z-50">
+<div class="p-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-on-surface-variant flex items-center justify-center rounded-lg">
+<span class="material-symbols-outlined text-surface" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div>
+<h1 class="text-lg font-bold text-slate-900 dark:text-slate-50 leading-tight">Barangay Nazareth</h1>
+<p class="text-[10px] uppercase tracking-widest text-slate-500">Internal Systems</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-0">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Resident Directory</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">gavel</span>
+<span>Lupon Registry</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">folder_open</span>
+<span>Case Files</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">description</span>
+<span>Ordinances</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-r-full font-semibold translate-x-1 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined">history</span>
+<span>System Logs</span>
+</a>
+</nav>
+<div class="p-6 mt-auto">
+<div class="p-4 bg-slate-200 dark:bg-slate-800 rounded-lg">
+<p class="text-xs text-slate-500 mb-1">Administrative Role</p>
+<p class="font-bold text-slate-900 dark:text-slate-50">System Admin</p>
+</div>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-64 h-16 flex justify-between items-center px-8 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-none">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="w-full bg-slate-100 border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-orange-500/20 outline-none" placeholder="Search system logs..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative text-slate-500 hover:text-orange-500 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-orange-600 rounded-full border-2 border-white"></span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l border-slate-200 dark:border-slate-800">
+<div class="text-right">
+<p class="text-xs font-bold text-slate-900 dark:text-slate-50">S. Gonzales</p>
+<p class="text-[10px] text-slate-500">Security Lead</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-lg">person</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 px-8 pb-12 min-h-screen">
+<!-- Header Section -->
+<div class="mb-8 flex justify-between items-end">
+<div>
+<span class="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-2 block">Governance Audit</span>
+<h2 class="text-[3.5rem] font-bold text-on-surface leading-none tracking-tight">System Audit Logs</h2>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-3 bg-surface-container-high text-on-surface text-sm font-semibold rounded-lg hover:bg-surface-container-highest transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-base">download</span> Export CSV
+                </button>
+<button class="px-6 py-3 bg-primary-container text-on-primary-container text-sm font-bold rounded-lg shadow-sm hover:opacity-90 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-base">refresh</span> Live Refresh
+                </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Filter Bar: Spans Full -->
+<section class="col-span-12 bg-white rounded-lg ghost-shadow p-6">
+<div class="grid grid-cols-4 gap-6 items-end">
+<div class="flex flex-col gap-2">
+<label class="text-[10px] font-bold uppercase text-slate-500">Date Range</label>
+<div class="flex items-center bg-surface-container-low rounded px-3 py-2 border-b-2 border-transparent focus-within:border-primary transition-all">
+<span class="material-symbols-outlined text-sm text-slate-400 mr-2">calendar_today</span>
+<input class="bg-transparent border-none p-0 text-sm w-full focus:ring-0" type="text" value="Oct 12, 2023 - Oct 19, 2023"/>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-[10px] font-bold uppercase text-slate-500">Action Type</label>
+<select class="bg-surface-container-low border-none rounded py-2.5 text-sm focus:ring-0 focus:border-primary border-b-2 border-transparent">
+<option>All Actions</option>
+<option>Updated Record</option>
+<option>Uploaded File</option>
+<option>Deleted Record</option>
+<option>Login/Logout</option>
+</select>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-[10px] font-bold uppercase text-slate-500">User Role</label>
+<select class="bg-surface-container-low border-none rounded py-2.5 text-sm focus:ring-0 focus:border-primary border-b-2 border-transparent">
+<option>All Roles</option>
+<option>Admin</option>
+<option>Staff</option>
+<option>Super User</option>
+</select>
+</div>
+<button class="bg-primary text-on-primary font-bold text-sm py-3 rounded hover:bg-on-primary-fixed-variant transition-colors flex justify-center items-center gap-2">
+                        Apply Filters
+                    </button>
+</div>
+</section>
+<!-- Record Mutations Chart & Critical Alerts -->
+<section class="col-span-12 md:col-span-8 bg-white rounded-lg ghost-shadow p-8 overflow-hidden relative">
+<div class="flex justify-between items-start mb-8">
+<div>
+<h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-1">Record Mutations</h3>
+<p class="text-2xl font-bold">Activity Over Time</p>
+</div>
+<div class="flex items-center gap-4 text-xs font-medium text-slate-500">
+<div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-orange-500"></span> Writes</div>
+<div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-slate-300"></span> Reads</div>
+</div>
+</div>
+<!-- Mock Chart using Tonal Blocks -->
+<div class="h-40 flex items-end gap-1">
+<div class="flex-1 bg-orange-100 h-[20%] rounded-t-sm"></div>
+<div class="flex-1 bg-orange-200 h-[35%] rounded-t-sm"></div>
+<div class="flex-1 bg-orange-300 h-[45%] rounded-t-sm"></div>
+<div class="flex-1 bg-orange-500 h-[80%] rounded-t-sm"></div>
+<div class="flex-1 bg-orange-400 h-[60%] rounded-t-sm"></div>
+<div class="flex-1 bg-orange-200 h-[30%] rounded-t-sm"></div>
+<div class="flex-1 bg-orange-100 h-[15%] rounded-t-sm"></div>
+<div class="flex-1 bg-orange-300 h-[40%] rounded-t-sm"></div>
+<div class="flex-1 bg-orange-600 h-[90%] rounded-t-sm"></div>
+<div class="flex-1 bg-orange-400 h-[55%] rounded-t-sm"></div>
+<div class="flex-1 bg-orange-200 h-[25%] rounded-t-sm"></div>
+<div class="flex-1 bg-orange-500 h-[75%] rounded-t-sm"></div>
+</div>
+</section>
+<section class="col-span-12 md:col-span-4 bg-on-surface text-surface rounded-lg ghost-shadow p-8 flex flex-col justify-center">
+<h3 class="text-[0.75rem] font-medium uppercase tracking-[0.2em] text-primary-container mb-4">Critical Alerts</h3>
+<div class="flex items-center gap-6 mb-2">
+<span class="text-[3.5rem] font-bold leading-none">0</span>
+<p class="text-lg font-medium leading-tight">Unusual Logins<br/>Detected</p>
+</div>
+<div class="mt-6 pt-6 border-t border-white/10">
+<div class="flex items-center gap-2 text-green-400 text-xs font-bold">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+                        SYSTEM HEALTH: NOMINAL
+                    </div>
+</div>
+</section>
+<!-- Logs Table -->
+<section class="col-span-12 bg-white rounded-lg ghost-shadow overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Timestamp</th>
+<th class="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">User</th>
+<th class="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Action</th>
+<th class="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Target Resource</th>
+<th class="px-8 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">IP Address</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5 font-medium text-slate-600">2023-10-19 14:22:05</td>
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-slate-500">person</span>
+</div>
+<span class="font-semibold text-slate-900">Admin_Mark</span>
+</div>
+</td>
+<td class="px-8 py-5">
+<span class="bg-primary-container/10 text-primary-container px-3 py-1 rounded text-[10px] font-bold uppercase">Updated Record</span>
+</td>
+<td class="px-8 py-5 text-slate-500 font-mono text-xs">Resident_ID: #88219</td>
+<td class="px-8 py-5 text-slate-400 font-mono text-xs">192.168.1.42</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5 font-medium text-slate-600">2023-10-19 13:45:12</td>
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-slate-500">person</span>
+</div>
+<span class="font-semibold text-slate-900">Staff_Jane</span>
+</div>
+</td>
+<td class="px-8 py-5">
+<span class="bg-tertiary-container/10 text-tertiary-container px-3 py-1 rounded text-[10px] font-bold uppercase">Uploaded File</span>
+</td>
+<td class="px-8 py-5 text-slate-500 font-mono text-xs">Ordinance_Annex_A.pdf</td>
+<td class="px-8 py-5 text-slate-400 font-mono text-xs">192.168.1.102</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5 font-medium text-slate-600">2023-10-19 12:01:44</td>
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-slate-500">person</span>
+</div>
+<span class="font-semibold text-slate-900">Security_Lead</span>
+</div>
+</td>
+<td class="px-8 py-5">
+<span class="bg-green-100 text-green-700 px-3 py-1 rounded text-[10px] font-bold uppercase">Logged In</span>
+</td>
+<td class="px-8 py-5 text-slate-500 font-mono text-xs">System Terminal 04</td>
+<td class="px-8 py-5 text-slate-400 font-mono text-xs">10.0.44.12</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5 font-medium text-slate-600">2023-10-19 11:30:22</td>
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-slate-500">person</span>
+</div>
+<span class="font-semibold text-slate-900">Admin_Mark</span>
+</div>
+</td>
+<td class="px-8 py-5">
+<span class="bg-error-container text-error px-3 py-1 rounded text-[10px] font-bold uppercase">Deleted Record</span>
+</td>
+<td class="px-8 py-5 text-slate-500 font-mono text-xs">Log_Buffer_Old.tmp</td>
+<td class="px-8 py-5 text-slate-400 font-mono text-xs">192.168.1.42</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-5 font-medium text-slate-600">2023-10-19 10:55:58</td>
+<td class="px-8 py-5">
+<div class="flex items-center gap-3">
+<div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-slate-500">person</span>
+</div>
+<span class="font-semibold text-slate-900">Secretary_V</span>
+</div>
+</td>
+<td class="px-8 py-5">
+<span class="bg-primary-container/10 text-primary-container px-3 py-1 rounded text-[10px] font-bold uppercase">Updated Record</span>
+</td>
+<td class="px-8 py-5 text-slate-500 font-mono text-xs">Case_File: #C-1004</td>
+<td class="px-8 py-5 text-slate-400 font-mono text-xs">192.168.1.15</td>
+</tr>
+</tbody>
+</table>
+<div class="p-6 bg-surface-container-low flex justify-between items-center border-t border-slate-200">
+<p class="text-xs text-slate-500 font-medium tracking-tight">Displaying 1 - 25 of 14,204 total events</p>
+<div class="flex gap-2">
+<button class="w-8 h-8 flex items-center justify-center rounded border border-slate-300 hover:bg-white text-slate-400">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded bg-primary text-on-primary text-xs font-bold">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded hover:bg-white text-slate-600 text-xs font-medium">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded hover:bg-white text-slate-600 text-xs font-medium">3</button>
+<button class="w-8 h-8 flex items-center justify-center rounded border border-slate-300 hover:bg-white text-slate-600">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer Identity Check -->
+<footer class="ml-64 py-6 px-8 border-t border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex justify-between items-center">
+<span>Barangay Nazareth Administrative Portal — Restricted Access Only</span>
+<span class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> System Encryption Active
+        </span>
+</footer>
+</body></html>
+
+<!-- Resident Internal Record View -->
