@@ -33,6 +33,7 @@ const visibilityWarnings = {
 
 const supportedTypes = new Set(["application/pdf", "image/jpeg", "image/png"]);
 const maxUploadBytes = 10 * 1024 * 1024;
+export const residentDocumentsPageSize = 5;
 
 export function formatDocumentFileSize(bytes) {
   if (!bytes) {
@@ -72,16 +73,118 @@ function formatDate(value) {
 
 function getInitialForm(defaultVisibilityScope) {
   return {
+    documentTitle: "",
     documentType: "birth_certificate",
     file: null,
     visibilityScope: defaultVisibilityScope
   };
 }
 
+function sortDocumentsLatestFirst(documents) {
+  return [...documents].sort((left, right) => {
+    const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
+    const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
+
+    return rightTime - leftTime;
+  });
+}
+
+export function getResidentDocumentPage(documents, page, pageSize = residentDocumentsPageSize) {
+  const totalPages = Math.max(1, Math.ceil(documents.length / pageSize));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const start = (safePage - 1) * pageSize;
+
+  return {
+    documents: documents.slice(start, start + pageSize),
+    page: safePage,
+    totalPages
+  };
+}
+
+export function getResidentDocumentViewState({
+  activeViewKey = "",
+  allowedScopes,
+  defaultVisibilityScope,
+  documentViews = []
+}) {
+  const views = documentViews
+    .map((view) => ({
+      ...view,
+      scopes: view.scopes.filter((scope) => allowedScopes.includes(scope)),
+      defaultVisibilityScope: view.defaultVisibilityScope ?? defaultVisibilityScope
+    }))
+    .filter((view) => view.scopes.length > 0);
+  const activeView = views.find((view) => view.key === activeViewKey) ?? views[0] ?? null;
+  const activeScopes = activeView?.scopes ?? allowedScopes;
+  const uploadDefaultVisibilityScope =
+    activeView?.defaultVisibilityScope && activeScopes.includes(activeView.defaultVisibilityScope)
+      ? activeView.defaultVisibilityScope
+      : activeScopes.includes(defaultVisibilityScope)
+        ? defaultVisibilityScope
+        : activeScopes[0];
+
+  return {
+    activeScopes,
+    activeView,
+    uploadDefaultVisibilityScope,
+    views
+  };
+}
+
+export function removeArchivedResidentDocument(documents, documentId) {
+  return documents.filter((document) => document.id !== documentId);
+}
+
+export function getDocumentDisplayTitle(document) {
+  const title = String(document?.documentTitle ?? "").trim();
+
+  if (document?.documentType === "other" && title) {
+    return `Other: ${title}`;
+  }
+
+  return title || getDocumentTypeLabel(document?.documentType);
+}
+
+export function shouldShowDocumentTitleField(documentType) {
+  return documentType === "other";
+}
+
+export function getResidentDocumentUploadPayload(form) {
+  return {
+    documentTitle: shouldShowDocumentTitleField(form.documentType)
+      ? String(form.documentTitle ?? "").trim()
+      : "",
+    documentType: form.documentType,
+    file: form.file,
+    visibilityScope: form.visibilityScope
+  };
+}
+
+export function validateResidentDocumentUploadForm(form) {
+  if (!form.file) {
+    return "Select a PDF, JPG, JPEG, or PNG document first.";
+  }
+
+  if (!supportedTypes.has(form.file.type)) {
+    return "Only PDF, JPG, JPEG, and PNG documents are supported.";
+  }
+
+  if (form.file.size > maxUploadBytes) {
+    return "Document file is too large.";
+  }
+
+  if (shouldShowDocumentTitleField(form.documentType) && !String(form.documentTitle ?? "").trim()) {
+    return "Enter a document title or description for Other documents.";
+  }
+
+  return "";
+}
+
 export default function ResidentDocumentPanel({
   allowedScopes = ["department_visible", "general_internal"],
   defaultVisibilityScope = "department_visible",
   description = "",
+  documentViews = [],
   initialDocuments = [],
   metadataOnly = false,
   residentId,
@@ -89,24 +192,77 @@ export default function ResidentDocumentPanel({
   showUpload = true,
   title = "Resident Documents"
 }) {
+  const initialActiveViewKey = documentViews[0]?.key ?? "";
+  const initialUploadDefaultVisibilityScope =
+    getResidentDocumentViewState({
+      activeViewKey: initialActiveViewKey,
+      allowedScopes,
+      defaultVisibilityScope,
+      documentViews
+    }).uploadDefaultVisibilityScope ?? defaultVisibilityScope;
   const [documents, setDocuments] = useState(initialDocuments);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [form, setForm] = useState(() => getInitialForm(defaultVisibilityScope));
+  const [form, setForm] = useState(() => getInitialForm(initialUploadDefaultVisibilityScope));
   const [fileInputKey, setFileInputKey] = useState(0);
   const [pendingArchive, setPendingArchive] = useState(null);
   const [pendingUpload, setPendingUpload] = useState(null);
+  const [activeViewKey, setActiveViewKey] = useState(initialActiveViewKey);
+  const [currentPage, setCurrentPage] = useState(1);
+  const viewState = useMemo(
+    () =>
+      getResidentDocumentViewState({
+        activeViewKey,
+        allowedScopes,
+        defaultVisibilityScope,
+        documentViews
+      }),
+    [activeViewKey, allowedScopes, defaultVisibilityScope, documentViews]
+  );
+  const { activeScopes, activeView, uploadDefaultVisibilityScope, views } = viewState;
+  const visibleDocuments = useMemo(
+    () =>
+      sortDocumentsLatestFirst(
+        documents.filter((document) => activeScopes.includes(document.visibilityScope))
+      ),
+    [activeScopes, documents]
+  );
+  const pagedDocuments = getResidentDocumentPage(visibleDocuments, currentPage);
   const scopeOptions = useMemo(
-    () => allowedScopes.filter((scope) => Object.prototype.hasOwnProperty.call(visibilityLabels, scope)),
-    [allowedScopes]
+    () => activeScopes.filter((scope) => Object.prototype.hasOwnProperty.call(visibilityLabels, scope)),
+    [activeScopes]
   );
 
   useEffect(() => {
-    setForm(getInitialForm(defaultVisibilityScope));
-  }, [defaultVisibilityScope, residentId]);
+    setForm(getInitialForm(uploadDefaultVisibilityScope));
+    setFileInputKey((current) => current + 1);
+  }, [uploadDefaultVisibilityScope, residentId]);
+
+  useEffect(() => {
+    if (views.length === 0) {
+      if (activeViewKey !== "") {
+        setActiveViewKey("");
+      }
+      return;
+    }
+
+    if (!views.some((view) => view.key === activeViewKey)) {
+      setActiveViewKey(views[0].key);
+    }
+  }, [activeViewKey, views]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeViewKey, residentId]);
+
+  useEffect(() => {
+    if (currentPage !== pagedDocuments.page) {
+      setCurrentPage(pagedDocuments.page);
+    }
+  }, [currentPage, pagedDocuments.page]);
 
   useEffect(() => {
     let isActive = true;
@@ -130,7 +286,9 @@ export default function ResidentDocumentPanel({
         }
 
         setDocuments(
-          loadedDocuments.filter((document) => allowedScopes.includes(document.visibilityScope))
+          sortDocumentsLatestFirst(
+            loadedDocuments.filter((document) => allowedScopes.includes(document.visibilityScope))
+          )
         );
       } catch (loadError) {
         if (!isActive) {
@@ -157,12 +315,26 @@ export default function ResidentDocumentPanel({
     };
   }, [allowedScopes, residentId]);
 
+  function handleViewChange(view) {
+    setActiveViewKey(view.key);
+    setCurrentPage(1);
+    setForm(
+      getInitialForm(
+        view.scopes.includes(view.defaultVisibilityScope) ? view.defaultVisibilityScope : view.scopes[0]
+      )
+    );
+    setFileInputKey((current) => current + 1);
+  }
+
   function handleFieldChange(event) {
     const { name, value } = event.target;
 
     setForm((current) => ({
       ...current,
-      [name]: value
+      [name]: value,
+      ...(name === "documentType" && !shouldShowDocumentTitleField(value)
+        ? { documentTitle: "" }
+        : {})
     }));
   }
 
@@ -178,26 +350,13 @@ export default function ResidentDocumentPanel({
     setError("");
     setMessage("");
 
-    if (!form.file) {
-      setError("Select a PDF, JPG, JPEG, or PNG document first.");
+    const validationError = validateResidentDocumentUploadForm(form);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    if (!supportedTypes.has(form.file.type)) {
-      setError("Only PDF, JPG, JPEG, and PNG documents are supported.");
-      return;
-    }
-
-    if (form.file.size > maxUploadBytes) {
-      setError("Document file is too large.");
-      return;
-    }
-
-    setPendingUpload({
-      documentType: form.documentType,
-      file: form.file,
-      visibilityScope: form.visibilityScope
-    });
+    setPendingUpload(getResidentDocumentUploadPayload(form));
   }
 
   async function confirmUpload() {
@@ -213,9 +372,9 @@ export default function ResidentDocumentPanel({
       const savedDocument = await uploadResidentDocument(residentId, pendingUpload);
 
       if (allowedScopes.includes(savedDocument.visibilityScope)) {
-        setDocuments((current) => [savedDocument, ...current]);
+        setDocuments((current) => sortDocumentsLatestFirst([savedDocument, ...current]));
       }
-      setForm(getInitialForm(defaultVisibilityScope));
+      setForm(getInitialForm(uploadDefaultVisibilityScope));
       setFileInputKey((current) => current + 1);
       setPendingUpload(null);
       setMessage("Document uploaded.");
@@ -237,7 +396,7 @@ export default function ResidentDocumentPanel({
 
     try {
       await archiveResidentDocument(pendingArchive.id);
-      setDocuments((current) => current.filter((document) => document.id !== pendingArchive.id));
+      setDocuments((current) => removeArchivedResidentDocument(current, pendingArchive.id));
       setPendingArchive(null);
       setMessage("Document archived.");
     } catch (archiveError) {
@@ -251,12 +410,33 @@ export default function ResidentDocumentPanel({
     <SectionCard>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <SectionHeader description={description} title={title} />
-        {documents.length > 0 ? (
+        {visibleDocuments.length > 0 ? (
           <span className="inline-flex w-fit rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-gov-700">
-            {documents.length} active
+            {visibleDocuments.length} active
           </span>
         ) : null}
       </div>
+
+      {views.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Document category">
+          {views.map((view) => (
+            <button
+              aria-selected={activeView?.key === view.key}
+              className={`rounded-2xl border px-4 py-2 text-sm font-semibold transition ${
+                activeView?.key === view.key
+                  ? "border-gov-700 bg-gov-700 text-white"
+                  : "border-orange-100 bg-white text-slate-700 hover:border-gov-300"
+              }`}
+              key={view.key}
+              onClick={() => handleViewChange(view)}
+              role="tab"
+              type="button"
+            >
+              {view.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {isLoading ? (
         <StateMessage className="mt-4" tone="info">
@@ -276,7 +456,7 @@ export default function ResidentDocumentPanel({
         </StateMessage>
       ) : null}
 
-      {!isLoading && documents.length === 0 ? (
+      {!isLoading && visibleDocuments.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-dashed border-orange-200 bg-orange-50/60 px-4 py-6">
           <p className="text-sm font-semibold text-slate-900">No active documents</p>
           <p className="mt-1 text-sm leading-6 text-slate-600">
@@ -285,9 +465,9 @@ export default function ResidentDocumentPanel({
         </div>
       ) : null}
 
-      {documents.length > 0 ? (
+      {visibleDocuments.length > 0 ? (
         <div className="mt-4 grid gap-3">
-          {documents.map((document) => (
+          {pagedDocuments.documents.map((document) => (
             <article
               className="rounded-2xl border border-orange-100 bg-white p-4"
               key={document.id}
@@ -296,7 +476,7 @@ export default function ResidentDocumentPanel({
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="break-words text-sm font-semibold text-slate-900">
-                      {getDocumentTypeLabel(document.documentType)}
+                      {getDocumentDisplayTitle(document)}
                     </p>
                     <span className="rounded-full bg-orange-50 px-2.5 py-1 text-xs font-semibold text-gov-700">
                       {getVisibilityLabel(document.visibilityScope)}
@@ -344,8 +524,34 @@ export default function ResidentDocumentPanel({
         </div>
       ) : null}
 
+      {visibleDocuments.length > residentDocumentsPageSize ? (
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-slate-600">
+            Page {pagedDocuments.page} of {pagedDocuments.totalPages}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              disabled={pagedDocuments.page === 1}
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              size="sm"
+              variant="secondary"
+            >
+              Previous
+            </Button>
+            <Button
+              disabled={pagedDocuments.page === pagedDocuments.totalPages}
+              onClick={() => setCurrentPage((page) => Math.min(pagedDocuments.totalPages, page + 1))}
+              size="sm"
+              variant="secondary"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       {showUpload && !metadataOnly ? (
-        <form className="mt-5 grid gap-4 border-t border-orange-100 pt-5 lg:grid-cols-[1fr_1fr_1fr_auto]" onSubmit={handleUpload}>
+        <form className="mt-5 grid gap-4 border-t border-orange-100 pt-5 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]" onSubmit={handleUpload}>
           <label className="space-y-2 text-sm font-semibold text-slate-700">
             Document type
             <select
@@ -361,6 +567,19 @@ export default function ResidentDocumentPanel({
               ))}
             </select>
           </label>
+
+          {shouldShowDocumentTitleField(form.documentType) ? (
+            <label className="space-y-2 text-sm font-semibold text-slate-700">
+              Document title
+              <input
+                className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                name="documentTitle"
+                onChange={handleFieldChange}
+                placeholder="Required for Other"
+                value={form.documentTitle}
+              />
+            </label>
+          ) : null}
 
           <label className="space-y-2 text-sm font-semibold text-slate-700">
             Visibility
@@ -411,6 +630,10 @@ export default function ResidentDocumentPanel({
                 <dd className="text-right text-slate-900">
                   {getDocumentTypeLabel(pendingUpload.documentType)}
                 </dd>
+              </div>
+              <div className="flex justify-between gap-4 border-b border-orange-100 pb-2">
+                <dt className="font-semibold text-slate-500">Document title</dt>
+                <dd className="text-right text-slate-900">{pendingUpload.documentTitle || "Not set"}</dd>
               </div>
               <div className="flex justify-between gap-4 border-b border-orange-100 pb-2">
                 <dt className="font-semibold text-slate-500">Visibility</dt>

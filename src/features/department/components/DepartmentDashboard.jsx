@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "../../../shared/components/Button";
 import MetricCard from "../../../shared/components/MetricCard";
 import Notice from "../../../shared/components/Notice";
+import PaginationControls from "../../../shared/components/PaginationControls";
 import RequestStatusBadge from "../../../shared/components/RequestStatusBadge";
 import SectionCard from "../../../shared/components/SectionCard";
 import SectionHeader from "../../../shared/components/SectionHeader";
@@ -23,6 +24,7 @@ import {
   RESIDENT_STATUS_FILTERS,
   searchResidents
 } from "../../../shared/lib/filterResidents";
+import { getNextPage, getPaginatedItems, getPreviousPage } from "../../../shared/lib/pagination";
 
 const statusFilterLabels = {
   all: "All",
@@ -43,6 +45,7 @@ const blankDocumentRequest = {
   status: "pending",
   processedBy: ""
 };
+const residentSearchPageSize = 5;
 
 export default function DepartmentDashboard({
   defaultProcessedBy = "",
@@ -64,10 +67,25 @@ export default function DepartmentDashboard({
 }) {
   const [isDocumentFormOpen, setIsDocumentFormOpen] = useState(false);
   const [documentForm, setDocumentForm] = useState(blankDocumentRequest);
+  const [residentPage, setResidentPage] = useState(1);
   const documentTypeCounts = countDocumentRequestsByType(documentRequests);
   const recentRequests = getRecentDocumentRequests(documentRequests, 4);
   const searchResidentList = residentSearchResidents ?? residents;
   const statusCounts = getResidentStatusCounts(searchResidents(query, searchResidentList));
+  const paginatedResults = getPaginatedItems(results, {
+    page: residentPage,
+    pageSize: residentSearchPageSize
+  });
+
+  useEffect(() => {
+    setResidentPage(1);
+  }, [query, statusFilter]);
+
+  useEffect(() => {
+    if (residentPage !== paginatedResults.page) {
+      setResidentPage(paginatedResults.page);
+    }
+  }, [paginatedResults.page, residentPage]);
 
   function getResidentName(residentId) {
     return residents.find((resident) => resident.id === residentId)?.name ?? residentId;
@@ -212,7 +230,7 @@ export default function DepartmentDashboard({
           ) : null}
 
           {!isResidentLoading && !residentError
-            ? results.map((resident) => (
+            ? paginatedResults.items.map((resident) => (
                 <div
                   className="grid grid-cols-1 gap-4 bg-white px-5 py-4 md:grid-cols-[1.4fr_1fr_auto]"
                   key={resident.id}
@@ -242,6 +260,20 @@ export default function DepartmentDashboard({
             </StateMessage>
           ) : null}
         </div>
+        <PaginationControls
+          className="border-t border-orange-100 bg-white px-5 py-4"
+          onNext={() =>
+            setResidentPage((page) =>
+              getNextPage({
+                page,
+                totalPages: paginatedResults.totalPages
+              })
+            )
+          }
+          onPrevious={() => setResidentPage((page) => getPreviousPage({ page }))}
+          page={paginatedResults.page}
+          totalPages={paginatedResults.totalPages}
+        />
       </SectionCard>
 
       <SectionCard>

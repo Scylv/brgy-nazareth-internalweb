@@ -59,6 +59,7 @@ function createResidentDocumentPool() {
         uploaded_by_profile_id: "dept-1",
         uploaded_by_name: "Elena Ledesma",
         document_type: "birth_certificate",
+        document_title: null,
         original_filename: "birth-certificate.pdf",
         stored_filename: "stored-general.pdf",
         mime_type: "application/pdf",
@@ -78,6 +79,7 @@ function createResidentDocumentPool() {
         uploaded_by_profile_id: "lupon-1",
         uploaded_by_name: "Juan Santos",
         document_type: "case_attachment",
+        document_title: null,
         original_filename: "case-general.pdf",
         stored_filename: "stored-case-general.pdf",
         mime_type: "application/pdf",
@@ -97,6 +99,7 @@ function createResidentDocumentPool() {
         uploaded_by_profile_id: "admin-1",
         uploaded_by_name: "Ricardo Morales",
         document_type: "admin_hold",
+        document_title: null,
         original_filename: "admin-only.pdf",
         stored_filename: "stored-admin.pdf",
         mime_type: "application/pdf",
@@ -116,6 +119,7 @@ function createResidentDocumentPool() {
         uploaded_by_profile_id: "lupon-1",
         uploaded_by_name: "Juan Santos",
         document_type: "mediation_evidence",
+        document_title: null,
         original_filename: "case-evidence.png",
         stored_filename: "stored-confidential.png",
         mime_type: "image/png",
@@ -135,6 +139,7 @@ function createResidentDocumentPool() {
         uploaded_by_profile_id: "dept-1",
         uploaded_by_name: "Elena Ledesma",
         document_type: "old_id",
+        document_title: null,
         original_filename: "old-id.jpg",
         stored_filename: "stored-archived.jpg",
         mime_type: "image/jpeg",
@@ -175,13 +180,14 @@ function createResidentDocumentPool() {
           uploaded_by_profile_id: params[2],
           uploaded_by_name: findProfile(params[2])?.display_name,
           document_type: params[3],
-          original_filename: params[4],
-          stored_filename: params[5],
-          mime_type: params[6],
-          file_size_bytes: params[7],
-          storage_path: params[8],
-          visibility_scope: params[9],
-          linked_case_id: params[10],
+          document_title: params[4],
+          original_filename: params[5],
+          stored_filename: params[6],
+          mime_type: params[7],
+          file_size_bytes: params[8],
+          storage_path: params[9],
+          visibility_scope: params[10],
+          linked_case_id: params[11],
           created_at: "2026-05-26T02:00:00.000Z",
           archived_at: null
         };
@@ -449,5 +455,105 @@ describe("resident documents", () => {
 
     expect(response.status).toBe(415);
     expect(pool.queries.some((query) => query.sql.includes("INSERT INTO resident_documents"))).toBe(false);
+  });
+
+  it("requires a title for Other resident document uploads", async () => {
+    const pool = createResidentDocumentPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const missingTitleResponse = await request(app)
+      .post(`/api/residents/${resident.id}/documents`)
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", "application/pdf")
+      .set("X-File-Name", "other.pdf")
+      .set("X-Document-Type", "other")
+      .set("X-Visibility-Scope", "general_internal")
+      .send(pdfBuffer);
+
+    expect(missingTitleResponse.status).toBe(400);
+    expect(pool.queries.some((query) => query.sql.includes("INSERT INTO resident_documents"))).toBe(false);
+  });
+
+  it("stores and returns custom titles for Other documents without exposing storage internals", async () => {
+    const pool = createResidentDocumentPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const uploadResponse = await request(app)
+      .post(`/api/residents/${resident.id}/documents`)
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", "application/pdf")
+      .set("X-File-Name", "other.pdf")
+      .set("X-Document-Type", "other")
+      .set("X-Document-Title", "Affidavit of Guardianship")
+      .set("X-Visibility-Scope", "general_internal")
+      .send(pdfBuffer);
+
+    expect(uploadResponse.status, JSON.stringify(uploadResponse.body)).toBe(201);
+    expect(uploadResponse.body.document).toMatchObject({
+      documentType: "other",
+      documentTitle: "Affidavit of Guardianship",
+      originalFilename: "other.pdf"
+    });
+    expect(JSON.stringify(uploadResponse.body)).not.toContain("storage_path");
+    expect(JSON.stringify(uploadResponse.body)).not.toContain("stored_filename");
+  });
+
+  it("allows Birth Certificate uploads without a document title", async () => {
+    const pool = createResidentDocumentPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const uploadResponse = await request(app)
+      .post(`/api/residents/${resident.id}/documents`)
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", "application/pdf")
+      .set("X-File-Name", "birth.pdf")
+      .set("X-Document-Type", "birth_certificate")
+      .set("X-Visibility-Scope", "department_visible")
+      .send(pdfBuffer);
+
+    expect(uploadResponse.status, JSON.stringify(uploadResponse.body)).toBe(201);
+    expect(uploadResponse.body.document).toMatchObject({
+      documentType: "birth_certificate",
+      documentTitle: "",
+      originalFilename: "birth.pdf"
+    });
+    const insertQuery = pool.queries.find((query) =>
+      query.sql.includes("INSERT INTO resident_documents")
+    );
+    expect(insertQuery.params[4]).toBeNull();
+  });
+
+  it("allows Birth Certificate uploads with a trimmed document title", async () => {
+    const pool = createResidentDocumentPool();
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const uploadResponse = await request(app)
+      .post(`/api/residents/${resident.id}/documents`)
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .set("Content-Type", "application/pdf")
+      .set("X-File-Name", "birth.pdf")
+      .set("X-Document-Type", "birth_certificate")
+      .set("X-Document-Title", "  Certified Birth Record  ")
+      .set("X-Visibility-Scope", "department_visible")
+      .send(pdfBuffer);
+
+    expect(uploadResponse.status, JSON.stringify(uploadResponse.body)).toBe(201);
+    expect(uploadResponse.body.document).toMatchObject({
+      documentType: "birth_certificate",
+      documentTitle: "Certified Birth Record",
+      originalFilename: "birth.pdf"
+    });
+    const insertQuery = pool.queries.find((query) =>
+      query.sql.includes("INSERT INTO resident_documents")
+    );
+    expect(insertQuery.params[4]).toBe("Certified Birth Record");
   });
 });

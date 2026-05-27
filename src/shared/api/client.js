@@ -30,14 +30,26 @@ async function parseResponse(response) {
 
 export async function apiFetch(path, options = {}) {
   const { headers, ...fetchOptions } = options;
-  const response = await fetch(getApiUrl(path), {
-    ...fetchOptions,
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      ...headers
-    }
-  });
+  let response;
+
+  try {
+    response = await fetch(getApiUrl(path), {
+      ...fetchOptions,
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+        ...headers
+      }
+    });
+  } catch (error) {
+    throw new ApiError(
+      "Network request failed. Check the backend connection and allowed request headers.",
+      {
+        body: { cause: error?.message ?? "fetch failed" }
+      }
+    );
+  }
+
   const body = await parseResponse(response);
 
   if (!response.ok) {
