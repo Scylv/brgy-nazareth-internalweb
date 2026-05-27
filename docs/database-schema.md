@@ -4,7 +4,8 @@ This document describes the PostgreSQL-compatible schema for the Barangay
 Nazareth Internal Web App database foundation. Milestone 3 staging flows use the
 backend API for authentication, Department resident verification, Department
 document requests, Lupon case display/status updates, resident edit persistence,
-and Admin profile listing.
+Admin profile management, Admin resident management, Excel import workflows,
+resident document metadata, and sanitized Admin audit review.
 
 The plan is not tied to a specific hosted database product. It should be
 deployable later on a local/internal PostgreSQL server or on an approved secure
@@ -18,8 +19,8 @@ hosted PostgreSQL server.
 - Store barangay document definitions for public and internal use.
 - Track resident clearance status changes.
 - Track document request status events.
-- Prepare attachment metadata for future approved file uploads.
-- Prepare audit logging and import tracking tables for future operations.
+- Store resident document metadata for approved local/staging uploads.
+- Store audit logging and import tracking records for administrative review and rollback evidence.
 - Store scrypt password hashes for synthetic internal seed users.
 
 ## Privacy Boundary
@@ -67,13 +68,17 @@ status fields only.
 | civil_status | text | Civil status. |
 | occupation | text | Occupation. |
 | address | text | Barangay address. |
+| exact_address | text | More specific address text when available. |
 | contact_number | text | Contact number. |
 | email | text | Email address. |
 | additional_information | text | Non-confidential resident notes. |
 | sectors | text[] | Sector classifications. |
 | registered_voter | boolean | Voter flag. |
 | precinct_number | text | Voter precinct number when applicable. |
+| sitio | text | Sitio or local area label when available. |
 | status_color | text | `green`, `yellow`, or `red`. |
+| archived_at | timestamptz | Soft archive timestamp for Admin resident management. |
+| archived_by_profile_id | text | Admin profile that archived the resident, if applicable. |
 | created_at | timestamptz | Creation timestamp. |
 | updated_at | timestamptz | Last update timestamp. |
 
@@ -163,8 +168,8 @@ Stores request timeline events and status changes.
 
 ### attachments
 
-Stores future file metadata only. Actual upload, storage, and download behavior
-are not implemented yet.
+Legacy/future generic attachment metadata table from the initial schema. Current
+resident document workflows use `resident_documents` instead.
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -177,6 +182,29 @@ are not implemented yet.
 | file_size_bytes | bigint | File size when known. |
 | uploaded_by_profile_id | text | Profile that uploaded the file. |
 | created_at | timestamptz | Creation timestamp. |
+
+### resident_documents
+
+Stores resident document metadata for approved local/staging upload and download
+workflows. Storage paths and stored filenames are server-side implementation
+details and must not be returned in list responses.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | text | Primary key. |
+| resident_id | text | Foreign key to `residents.id`. |
+| uploaded_by_profile_id | text | Profile that uploaded the file. |
+| document_type | text | Normalized document type. |
+| document_title | text | Custom title for Other document types. |
+| original_filename | text | Original uploaded file name for display where permitted. |
+| stored_filename | text | Server-side stored filename; do not expose in list/API summary responses. |
+| mime_type | text | File MIME type. |
+| file_size_bytes | bigint | File size in bytes. |
+| storage_path | text | Server-side storage path; do not expose in list/API summary responses. |
+| visibility_scope | text | `department_visible`, `general_internal`, `lupon_confidential`, or `admin_only`. |
+| linked_case_id | text | Optional related Lupon case ID. |
+| created_at | timestamptz | Creation timestamp. |
+| archived_at | timestamptz | Archive timestamp. |
 
 ### barangay_documents
 
@@ -196,7 +224,10 @@ Defines document types handled by the barangay.
 
 ### audit_logs
 
-Planned append-only audit trail for future write operations.
+Append-only audit trail for important backend write operations. Admin audit API
+responses expose a sanitized summary only and must not expose raw metadata,
+Lupon confidential summaries, Lupon notes, confidential document contents,
+storage paths, or stored filenames.
 
 | Column | Type | Notes |
 | --- | --- | --- |
@@ -264,8 +295,9 @@ Tracks row-level import results for review and correction.
 
 ## Future Implementation Notes
 
-- Resident creation, existing document request editing, Admin account mutations,
-  Excel import, and file uploads remain future work.
+- Existing document request editing, production user provisioning, database
+  backup automation, and hardened database-level access policies remain future
+  work.
 - Current authentication uses synthetic seed profiles with scrypt password hashes
   and signed HTTP-only cookies for local and staging verification.
 - Add production backup, audit review, and data privacy procedures before real

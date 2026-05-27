@@ -10,7 +10,7 @@ The main purpose of the system is to allow the Department Office to search for a
 - **Yellow** = refer to Lupon
 - **Red** = refer to Lupon
 
-Lupon Staff maintain resident records, encode RBI information, update statuses, add remarks, and manage resident-related case context. Admin can view database-backed staff profile listings; account creation, role edits, deactivation, and password reset remain planned.
+Lupon Staff maintain resident records, encode RBI information, update statuses, add remarks, and manage resident-related case context. Admin can manage database-backed staff profiles, review paginated resident registry records, create resident records manually, archive or restore residents, and review sanitized audit activity.
 
 ## User Roles
 
@@ -34,9 +34,11 @@ Lupon Staff maintain resident records, encode RBI information, update statuses, 
 
 ### Admin
 
-- View database-backed staff profile listings
-- Review users and roles
-- See planned account management actions
+- View, search, and paginate staff profile listings by role
+- Create staff accounts, deactivate/reactivate accounts, and reset temporary passwords
+- View, search, and paginate imported resident registry records
+- Create resident records manually and archive or restore existing residents
+- Review sanitized audit logs without raw confidential Lupon metadata
 
 ## Local Demo Accounts
 
@@ -190,6 +192,15 @@ GET  /api/lupon/cases
 POST /api/lupon/cases
 POST /api/lupon/cases/:id/notes
 GET  /api/admin/profiles
+POST /api/admin/profiles
+PATCH /api/admin/profiles/:id/status
+POST /api/admin/profiles/:id/reset-password
+GET  /api/admin/residents
+POST /api/admin/residents
+PATCH /api/admin/residents/:id
+POST /api/admin/residents/:id/archive
+POST /api/admin/residents/:id/restore
+GET  /api/admin/audit-logs
 ```
 
 The backend uses database-backed synthetic users, scrypt password hashes, and an HTTP-only session cookie:
@@ -204,7 +215,16 @@ Department routes do not expose `lupon_cases.confidential_summary` or `lupon_cas
 
 ## Frontend Database-Backed Flows
 
-The login flow, Department resident search/list and verification flow, Department document request metrics/history/create/status/archive flow, Lupon case display/status update flow, and Admin profile listing read or write through the backend API. The backend must be running for database-backed staging data to load in the React app.
+The login flow, Department resident search/list and verification flow, Department document request metrics/history/create/status/archive flow, Lupon case display/status update flow, and Admin staff/resident/audit workflows read or write through the backend API. The backend must be running for database-backed staging data to load in the React app.
+
+Current Admin database-backed workflows include:
+
+- Staff account listing, search, local UI pagination, creation, deactivation/reactivation, and temporary password reset.
+- Resident registry pagination backed by `page`, `pageSize`, total count, search, and active/archived filters.
+- Manual resident creation, resident editing, archive, and restore.
+- Sanitized audit log listing with backend-backed pagination and filters for actor/profile, role, action, entity type, and date range.
+
+Admin audit responses intentionally expose only timestamp, actor, role, action, entity type, entity reference, and safe details. They do not expose Lupon confidential summaries, Lupon notes, confidential document contents, storage paths, or stored filenames.
 
 The frontend uses:
 
@@ -320,10 +340,9 @@ Known staging limitations:
 - Logout clears the browser cookie, but the signed stateless token is not revoked
   server-side. A copied token remains valid until expiry; this is acceptable for
   synthetic-data staging, not final production.
-- Resident creation is not database-backed yet; edit existing residents for staging.
 - Department document request reads, creates, status transitions, releases, and archives are database-backed.
-- Admin profile listing is database-backed; account creation, role edits, deactivation, and password reset are planned.
-- File uploads, backups, production user provisioning, and hardened database-level access policies are not implemented yet.
+- Admin profile management, resident pagination/create/edit/archive/restore, and sanitized audit log review are database-backed.
+- Backups, production user provisioning, and hardened database-level access policies are not implemented yet.
 - Department users must not see Lupon confidential summaries or notes; this boundary is covered by backend tests and should be checked again during acceptance testing.
 
 ## Run On The Local Network
@@ -373,14 +392,14 @@ Notes for the LAN demo:
 8. Show the Lupon dashboard, resident status, and case context.
 9. Explain that Lupon confidential remarks and internal case context are hidden from Department users.
 10. Log out, then log in as Admin using `admin` / `admin123`.
-11. Show the database-backed Admin profile listing and planned account management actions.
+11. Show Admin staff management, paginated resident management, and sanitized audit logs.
 
 ## Prototype Notes
 
-- Database-backed staging flows include auth, Department resident verification, Department document request create/read/status/archive, Lupon case display, Lupon resident status updates, Lupon resident edit persistence, and Admin profile listing.
-- Resident creation, document request editing, Admin account mutations, Excel import, and file uploads are not implemented yet.
+- Database-backed staging flows include auth, Department resident verification, Department document request create/read/status/archive, Lupon case display, Lupon resident status updates, Lupon resident edit persistence, Admin staff management, Admin resident management, Excel import preview/commit, resident document metadata, and sanitized Admin audit logs.
+- Existing document request editing, production user provisioning, and hardened database-level access policies are not implemented yet.
 - The backend is a minimal database-backed foundation and does not replace all future production services yet.
-- There are no file uploads yet.
+- Resident document upload/storage support exists for approved local/staging workflows, with role-based visibility controls.
 - Document request tracking is transaction-based and linked to residents.
 - Department handles barangay-issued document requests.
 - Lupon case documents and records are separate and confidential.

@@ -46,12 +46,21 @@ Acceptance testing should cover:
 
 ## Known Limitations
 
+These limitations reflect the 2026-05-24 staging evidence. Some Admin items were
+superseded later on `feature/admin-readiness`.
+
 - Authentication uses synthetic seed accounts only.
 - Logout clears the browser cookie, but the signed stateless token is not revoked server-side.
 - Resident creation is not database-backed yet.
 - Department document request reads and creates are database-backed; editing existing requests is not database-backed yet.
 - Admin profile listing is database-backed; account creation, role edits, deactivation, and password reset are planned.
 - File uploads, backups, production user provisioning, and hardened database-level access policies are not implemented yet.
+
+Superseded after feature/admin-readiness:
+
+- Admin staff account management is database-backed for create, deactivate/reactivate, and temporary password reset.
+- Admin resident pagination, manual creation, edit, archive, and restore are database-backed.
+- Admin sanitized audit log review is database-backed.
 
 ## Manual Evidence Still Needed
 

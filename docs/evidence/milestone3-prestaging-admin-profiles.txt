@@ -12,6 +12,10 @@ Verified:
 - AdminPanel now loads profiles from /api/admin/profiles.
 - Full account creation, role edits, deactivation, and password reset remain planned features.
 
+Superseded after feature/admin-readiness:
+- Admin staff account creation, account status changes, and temporary password reset are now database-backed.
+- Admin resident pagination/create/edit/archive/restore and sanitized audit log review were added after this pre-staging smoke test.
+
 Automated verification:
 - npm test passed: 19 files / 104 tests.
 - npm run build passed.
