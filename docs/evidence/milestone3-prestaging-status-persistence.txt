@@ -1,0 +1,16 @@
+Milestone 3 Pre-Staging Persistence Smoke Test
+Branch: develop
+Date: 05/24/2026 12:08:45
+
+Verified:
+- Lupon login succeeded.
+- Lupon PATCH /api/residents/RBI-2024-0002 updated status successfully.
+- Department login succeeded.
+- Department GET /api/residents/RBI-2024-0002 showed the updated statusColor.
+- Department PATCH /api/residents/RBI-2024-0002 returned 403.
+- Lupon PATCH with invalid status returned 400.
+- Department response did not expose confidential Lupon case fields.
+
+Automated verification:
+- npm test passed: 14 files / 80 tests.
+- npm run build passed.

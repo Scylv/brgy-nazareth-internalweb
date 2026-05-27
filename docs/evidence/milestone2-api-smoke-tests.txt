@@ -1,0 +1,225 @@
+Milestone 2 API Smoke Test Evidence
+Branch: develop
+Backend: http://localhost:3001
+Database: brgy_nazareth_dev
+Date: 05/23/2026 12:07:22
+
+Superseded for Milestone 3:
+This evidence uses the old development-only x-user-role header flow. Milestone 3
+uses database-backed synthetic accounts and signed HTTP-only session cookies via
+POST /api/auth/login. Keep this file only as historical Milestone 2 evidence.
+
+
+=== Health Check: GET /api/health ===
+Command:
+Invoke-RestMethod "http://localhost:3001/api/health"
+
+Result:
+{
+  "ok": true
+}
+
+=== Department Resident List: GET /api/residents ===
+Command:
+Invoke-RestMethod "http://localhost:3001/api/residents" -Headers @{ "x-user-role" = "department" }
+
+Result:
+{
+  "residents": [
+    {
+      "id": "RBI-2024-0001",
+      "householdId": "HH-NAZ-1001",
+      "fullName": "Juan Dela Cruz",
+      "birthDate": "1988-03-13T16:00:00Z",
+      "gender": "Male",
+      "civilStatus": "Married",
+      "occupation": "Driver",
+      "address": "Purok 4-A, Upper Nazareth",
+      "contactNumber": "09171234567",
+      "email": "juan.delacruz@example.com",
+      "additionalInformation": "Resident for 18 years",
+      "sectors": [
+        "Registered Voter"
+      ],
+      "registeredVoter": true,
+      "precinctNumber": "0421A",
+      "statusColor": "green",
+      "createdAt": "2026-05-22T14:27:43.381Z",
+      "updatedAt": "2026-05-22T14:27:43.381Z"
+    },
+    {
+      "id": "RBI-2024-0002",
+      "householdId": "HH-NAZ-1034",
+      "fullName": "Maria Santos",
+      "birthDate": "1992-07-19T16:00:00Z",
+      "gender": "Female",
+      "civilStatus": "Single",
+      "occupation": "Vendor",
+      "address": "Purok 2, Lower Nazareth",
+      "contactNumber": "09181112222",
+      "email": "maria.santos@example.com",
+      "additionalInformation": "Needs address re-verification.",
+      "sectors": [
+        "Solo Parent",
+        "Registered Voter"
+      ],
+      "registeredVoter": true,
+      "precinctNumber": "0187B",
+      "statusColor": "yellow",
+      "createdAt": "2026-05-22T14:27:43.381Z",
+      "updatedAt": "2026-05-22T14:27:43.381Z"
+    },
+    {
+      "id": "RBI-2024-0003",
+      "householdId": "HH-NAZ-1090",
+      "fullName": "Pedro Bautista",
+      "birthDate": "1979-11-08T16:00:00Z",
+      "gender": "Male",
+      "civilStatus": "Married",
+      "occupation": "Construction Worker",
+      "address": "Purok 6, Nazareth",
+      "contactNumber": "09193334444",
+      "email": "pedro.bautista@example.com",
+      "additionalInformation": "Resident was referred by tanod desk.",
+      "sectors": [
+        "PWD"
+      ],
+      "registeredVoter": false,
+      "precinctNumber": "",
+      "statusColor": "red",
+      "createdAt": "2026-05-22T14:27:43.381Z",
+      "updatedAt": "2026-05-22T14:27:43.381Z"
+    }
+  ]
+}
+
+=== Department Resident Detail: GET /api/residents/RBI-2024-0002 ===
+Command:
+Invoke-RestMethod "http://localhost:3001/api/residents/RBI-2024-0002" -Headers @{ "x-user-role" = "department" }
+
+Expected:
+Response should only include top-level "resident" and should not include luponCases, luponCaseNotes, confidentialSummary, or noteBody.
+
+Result:
+{
+  "resident": {
+    "id": "RBI-2024-0002",
+    "householdId": "HH-NAZ-1034",
+    "fullName": "Maria Santos",
+    "birthDate": "1992-07-19T16:00:00Z",
+    "gender": "Female",
+    "civilStatus": "Single",
+    "occupation": "Vendor",
+    "address": "Purok 2, Lower Nazareth",
+    "contactNumber": "09181112222",
+    "email": "maria.santos@example.com",
+    "additionalInformation": "Needs address re-verification.",
+    "sectors": [
+      "Solo Parent",
+      "Registered Voter"
+    ],
+    "registeredVoter": true,
+    "precinctNumber": "0187B",
+    "statusColor": "yellow",
+    "createdAt": "2026-05-22T14:27:43.381Z",
+    "updatedAt": "2026-05-22T14:27:43.381Z"
+  }
+}
+
+Top-level properties:
+resident
+
+
+=== Department Blocked From Lupon Cases: GET /api/lupon/cases ===
+Command:
+Invoke-RestMethod "http://localhost:3001/api/lupon/cases" -Headers @{ "x-user-role" = "department" }
+
+Expected:
+403
+
+Result:
+403
+
+
+=== Lupon Allowed: GET /api/lupon/cases ===
+Command:
+Invoke-RestMethod "http://localhost:3001/api/lupon/cases" -Headers @{ "x-user-role" = "lupon" }
+
+Expected:
+Lupon case data should be returned, including confidentialSummary.
+
+Result:
+{
+  "luponCases": [
+    {
+      "id": "LC-2026-0001",
+      "residentId": "RBI-2024-0002",
+      "caseNumber": "LPN-2026-0001",
+      "caseType": "Address Verification",
+      "status": "under_mediation",
+      "priority": "normal",
+      "confidentialSummary": "Address mismatch reported during verification. Lupon clerk must confirm current residence.",
+      "openedAt": "2026-04-30T16:00:00Z",
+      "resolvedAt": null,
+      "assignedLuponProfileId": "lupon-1",
+      "createdByProfileId": "lupon-1",
+      "createdAt": "2026-05-22T14:27:43.381Z",
+      "updatedAt": "2026-05-22T14:27:43.381Z"
+    },
+    {
+      "id": "LC-2026-0002",
+      "residentId": "RBI-2024-0003",
+      "caseNumber": "LPN-2026-0002",
+      "caseType": "Community Dispute",
+      "status": "open",
+      "priority": "high",
+      "confidentialSummary": "Active community dispute under Lupon review. Clearance should remain on hold until action is complete.",
+      "openedAt": "2026-04-24T16:00:00Z",
+      "resolvedAt": null,
+      "assignedLuponProfileId": "lupon-1",
+      "createdByProfileId": "lupon-1",
+      "createdAt": "2026-05-22T14:27:43.381Z",
+      "updatedAt": "2026-05-22T14:27:43.381Z"
+    }
+  ]
+}
+
+=== Department Document Requests: GET /api/document-requests ===
+Command:
+Invoke-RestMethod "http://localhost:3001/api/document-requests" -Headers @{ "x-user-role" = "department" }
+
+Result:
+{
+  "documentRequests": [
+    {
+      "id": "DOC-2026-0001",
+      "residentId": "RBI-2024-0001",
+      "barangayDocumentId": "BDOC-001",
+      "barangayDocumentName": "Barangay Clearance",
+      "purpose": "Local employment requirement",
+      "status": "released",
+      "requestDate": "2026-05-01T16:00:00Z",
+      "releaseDate": "2026-05-03T16:00:00Z",
+      "expiryDate": "2026-11-03T16:00:00Z",
+      "processedByProfileId": "dept-1",
+      "processedByName": "Elena Ledesma",
+      "createdAt": "2026-05-22T14:27:43.381Z",
+      "updatedAt": "2026-05-22T14:27:43.381Z"
+    },
+    {
+      "id": "DOC-2026-0002",
+      "residentId": "RBI-2024-0002",
+      "barangayDocumentId": "BDOC-001",
+      "barangayDocumentName": "Barangay Clearance",
+      "purpose": "School enrollment",
+      "status": "processing",
+      "requestDate": "2026-04-30T16:00:00Z",
+      "releaseDate": null,
+      "expiryDate": "2026-07-31T16:00:00Z",
+      "processedByProfileId": "dept-1",
+      "processedByName": "Elena Ledesma",
+      "createdAt": "2026-05-22T14:27:43.381Z",
+      "updatedAt": "2026-05-22T14:27:43.381Z"
+    }
+  ]
+}

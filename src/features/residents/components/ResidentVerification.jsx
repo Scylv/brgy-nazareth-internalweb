@@ -1,5 +1,10 @@
+import Button from "../../../shared/components/Button";
+import ResidentDocumentPanel from "../../documents/components/ResidentDocumentPanel";
 import StatusBadge from "../../../shared/components/StatusBadge";
 import DocumentRequestHistory from "../../../shared/components/DocumentRequestHistory";
+import Notice from "../../../shared/components/Notice";
+import SectionCard from "../../../shared/components/SectionCard";
+import SectionHeader from "../../../shared/components/SectionHeader";
 import { getDocumentRequestsForResident } from "../../../shared/lib/documentRequests";
 import { getStatusAction } from "../../../shared/lib/status";
 
@@ -16,20 +21,13 @@ export default function ResidentVerification({ documentRequests, resident, onBac
 
   return (
     <div className="space-y-6">
-      <button
-        className="rounded-2xl border border-orange-200 px-4 py-2 text-sm font-medium text-gov-800 transition hover:bg-orange-50"
-        onClick={onBack}
-        type="button"
-      >
+      <Button onClick={onBack} variant="secondary">
         Back to dashboard
-      </button>
+      </Button>
 
       <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="rounded-[1.75rem] border border-orange-100 bg-orange-50 p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-gov-700">
-            Limited Resident Information
-          </p>
-          <h2 className="mt-3 text-3xl font-black text-slate-900">{resident.name}</h2>
+        <SectionCard variant="tinted">
+          <SectionHeader eyebrow="Limited Resident Information" title={resident.name} />
           <div className="mt-6 space-y-3 text-sm text-slate-700">
             <div className="flex justify-between gap-4 border-b border-orange-100 pb-3">
               <span className="font-medium text-slate-500">RBI ID</span>
@@ -52,13 +50,11 @@ export default function ResidentVerification({ documentRequests, resident, onBac
               <span>{resident.civilStatus}</span>
             </div>
           </div>
-        </section>
+        </SectionCard>
 
         <section className="space-y-6">
-          <div className="rounded-[1.75rem] border border-orange-100 bg-white p-6">
-            <p className="text-sm font-semibold uppercase tracking-[0.25em] text-gov-700">
-              Verification Result
-            </p>
+          <SectionCard>
+            <SectionHeader eyebrow="Verification Result" title="Clearance Status" />
             <div className="mt-4 flex flex-wrap items-center gap-4">
               <StatusBadge status={resident.status} />
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
@@ -73,26 +69,30 @@ export default function ResidentVerification({ documentRequests, resident, onBac
                 {getStatusAction(resident.status)}
               </h3>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                Department Office must not view confidential Lupon reasons or internal
-                remarks. If the status is yellow or red, refer the resident to the
-                Lupon office.
+                Use this status color for clearance handling only. Yellow or red means
+                the resident should be referred to Lupon without viewing confidential reasons.
               </p>
             </div>
-          </div>
+          </SectionCard>
 
-          <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
-              Privacy Notice
-            </p>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Case reasons, internal remarks, and confidential Lupon details are hidden
-              from Department Office accounts.
-            </p>
-          </div>
+          <Notice tone="neutral">
+            <span className="font-semibold text-slate-900">Privacy Notice: </span>
+            Case reasons, remarks, notes, evidence, and confidential Lupon details are hidden
+            from Department accounts.
+          </Notice>
         </section>
       </div>
 
       <DocumentRequestHistory requests={residentDocumentRequests} />
+
+      <ResidentDocumentPanel
+        allowedScopes={["department_visible", "general_internal"]}
+        defaultVisibilityScope="department_visible"
+        description="PDF and image files used for resident verification."
+        residentId={resident.id}
+        residentName={resident.name}
+        title="General / Vital Documents"
+      />
     </div>
   );
 }

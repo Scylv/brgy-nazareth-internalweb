@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { residents } from "../../data/residents";
+import { mapApiResidentToResident } from "../../features/residents/api/residentsApi";
 import {
   filterResidents,
   filterResidentsByStatus,
@@ -51,6 +52,34 @@ describe("resident filtering", () => {
         residents
       }).map((resident) => resident.name)
     ).toEqual(["Maria Santos"]);
+  });
+
+  it("searches and filters residents mapped from backend-shaped API objects", () => {
+    const databaseResidents = [
+      mapApiResidentToResident({
+        id: "RBI-2026-0100",
+        householdId: "HH-DB-0100",
+        fullName: "Database Resident",
+        statusColor: "green"
+      }),
+      mapApiResidentToResident({
+        id: "RBI-2026-0101",
+        householdId: "HH-DB-0101",
+        fullName: "For Lupon Review",
+        statusColor: "yellow"
+      })
+    ];
+
+    expect(
+      filterResidents({
+        query: "database",
+        statusFilter: "green",
+        residents: databaseResidents
+      }).map((resident) => resident.id)
+    ).toEqual(["RBI-2026-0100"]);
+    expect(searchResidents("HH-DB-0101", databaseResidents).map((resident) => resident.name)).toEqual([
+      "For Lupon Review"
+    ]);
   });
 
   it("returns no residents when search and status filters do not overlap", () => {
