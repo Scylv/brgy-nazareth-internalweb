@@ -29,8 +29,11 @@ import {
 } from "./features/auth/api/authApi";
 import LoginScreen from "./features/auth/components/LoginScreen";
 import {
+  archiveDocumentRequest,
   createDocumentRequest,
-  fetchDocumentRequests
+  fetchDocumentRequests,
+  markDocumentRequestProcessing,
+  markDocumentRequestReleased
 } from "./features/department/api/documentRequestsApi";
 import DepartmentDashboard from "./features/department/components/DepartmentDashboard";
 import {
@@ -690,8 +693,64 @@ export default function App() {
 
       setDocumentRequestList((current) => [savedRequest, ...current]);
       return savedRequest;
+    } catch (error) {
+      setDocumentRequestsError(
+        error?.message || "Document request save failed. Check the backend API and try again."
+      );
+      return false;
+    } finally {
+      setIsDocumentRequestsLoading(false);
+    }
+  }
+
+  async function handleDocumentRequestMarkProcessing(requestId) {
+    setIsDocumentRequestsLoading(true);
+    setDocumentRequestsError("");
+
+    try {
+      const updatedRequest = await markDocumentRequestProcessing(requestId);
+
+      setDocumentRequestList((current) =>
+        current.map((request) => (request.id === requestId ? updatedRequest : request))
+      );
+      return updatedRequest;
     } catch (_error) {
-      setDocumentRequestsError("Document request save failed. Check the backend API and try again.");
+      setDocumentRequestsError("Document request status update failed. Check the backend API and try again.");
+      return false;
+    } finally {
+      setIsDocumentRequestsLoading(false);
+    }
+  }
+
+  async function handleDocumentRequestMarkReleased(requestId) {
+    setIsDocumentRequestsLoading(true);
+    setDocumentRequestsError("");
+
+    try {
+      const updatedRequest = await markDocumentRequestReleased(requestId);
+
+      setDocumentRequestList((current) =>
+        current.map((request) => (request.id === requestId ? updatedRequest : request))
+      );
+      return updatedRequest;
+    } catch (_error) {
+      setDocumentRequestsError("Document request release failed. Check the backend API and try again.");
+      return false;
+    } finally {
+      setIsDocumentRequestsLoading(false);
+    }
+  }
+
+  async function handleDocumentRequestArchive(requestId, archiveDetails) {
+    setIsDocumentRequestsLoading(true);
+    setDocumentRequestsError("");
+
+    try {
+      await archiveDocumentRequest(requestId, archiveDetails);
+      setDocumentRequestList((current) => current.filter((request) => request.id !== requestId));
+      return true;
+    } catch (_error) {
+      setDocumentRequestsError("Document request archive failed. Check the backend API and try again.");
       return false;
     } finally {
       setIsDocumentRequestsLoading(false);
@@ -1118,6 +1177,9 @@ export default function App() {
           documentRequestError={documentRequestsError}
           documentRequests={documentRequestList}
           isDocumentRequestLoading={isDocumentRequestsLoading}
+          onDocumentRequestArchive={handleDocumentRequestArchive}
+          onDocumentRequestMarkProcessing={handleDocumentRequestMarkProcessing}
+          onDocumentRequestMarkReleased={handleDocumentRequestMarkReleased}
           onDocumentRequestSave={handleDocumentRequestSave}
           onQueryChange={setDepartmentSearchQuery}
           onSelectResident={openResidentVerification}

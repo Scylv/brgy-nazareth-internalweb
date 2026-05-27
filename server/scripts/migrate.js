@@ -8,7 +8,9 @@ const MIGRATIONS = [
   "004_resident_documents.sql",
   "005_resident_document_titles.sql",
   "006_lupon_case_titles.sql",
-  "007_lupon_case_resolution_tracking.sql"
+  "007_lupon_case_resolution_tracking.sql",
+  "008_document_request_archive_fields.sql",
+  "009_document_request_custom_title.sql"
 ];
 
 async function ensureMigrationTracking() {
