@@ -51,12 +51,84 @@ const importModeOptions = [
   ["createOnly", "Create only"],
   ["updateMatches", "Update matches"]
 ];
+const sectorOptions = [
+  "Registered Voter",
+  "Senior Citizen",
+  "Solo Parent",
+  "PWD",
+  "Indigent"
+];
+
+function createBlankAdminResidentForm() {
+  return {
+    mode: "create",
+    id: "",
+    householdId: "",
+    fullName: "",
+    gender: "",
+    address: "",
+    exactAddress: "",
+    precinctNumber: "",
+    birthDate: "",
+    civilStatus: "",
+    occupation: "",
+    contactNumber: "",
+    sitio: "",
+    sectors: [],
+    statusColor: "green",
+    additionalInformation: ""
+  };
+}
+
+function validateAdminResidentCreateForm(form) {
+  const errors = [];
+
+  if (!form.fullName?.trim()) {
+    errors.push("Full name");
+  }
+
+  if (!form.id?.trim()) {
+    errors.push("Resident ID");
+  }
+
+  if (!form.householdId?.trim()) {
+    errors.push("Household ID");
+  }
+
+  if (!form.gender?.trim()) {
+    errors.push("Gender");
+  }
+
+  if (!form.address?.trim()) {
+    errors.push("Address");
+  }
+
+  return errors;
+}
 
 export default function AdminPanel({
   actionError = "",
   actionMessage = "",
+  adminResidentPagination = {
+    page: 1,
+    pageSize: 25,
+    total: adminResidents.length,
+    totalPages: adminResidents.length > 0 ? 1 : 0,
+    hasNext: false,
+    hasPrevious: false
+  },
   adminResidentQuery = "",
+  adminResidentStatusFilter = "active",
   adminResidents = [],
+  auditLogPagination = {
+    page: 1,
+    pageSize: 25,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrevious: false
+  },
+  auditLogs = [],
   documentRequests,
   excelImportColumnMapping = {},
   excelImportCommitSummary = null,
@@ -68,7 +140,9 @@ export default function AdminPanel({
   excelImportSheetDefaults = {},
   excelImportSheetNames = [],
   includeArchivedResidents = false,
+  initialResidentFormMode = "",
   error = "",
+  isAdminAuditLogsLoading = false,
   isAdminResidentsLoading = false,
   isExcelImportCommitLoading = false,
   isExcelImportPreviewLoading = false,
@@ -76,8 +150,13 @@ export default function AdminPanel({
   isExcelImportUndoLoading = false,
   isLoading = false,
   isMutating = false,
+  onCreateResident,
+  onAdminResidentPageChange,
   onAdminResidentQueryChange,
+  onAdminResidentStatusFilterChange,
   onArchiveResident,
+  onAuditLogFilterChange,
+  onAuditLogPageChange,
   onCommitExcelImport,
   onCreateAccount,
   onExcelImportColumnMappingChange,
@@ -94,6 +173,7 @@ export default function AdminPanel({
   onUpdateResident,
   onUndoExcelImport,
   onSelectedExcelImportSheetChange,
+  residentFormError = "",
   residents,
   selectedExcelImportSheet = "",
   users
@@ -110,7 +190,10 @@ export default function AdminPanel({
   });
   const [selectedImportFile, setSelectedImportFile] = useState(null);
   const [previewedImportFile, setPreviewedImportFile] = useState(null);
-  const [residentForm, setResidentForm] = useState(null);
+  const [residentForm, setResidentForm] = useState(
+    initialResidentFormMode === "create" ? createBlankAdminResidentForm() : null
+  );
+  const [residentFormLocalError, setResidentFormLocalError] = useState(residentFormError);
   const [excelImportConfirmations, setExcelImportConfirmations] = useState({
     importConfirmed: false,
     backupConfirmed: false
@@ -277,9 +360,13 @@ export default function AdminPanel({
   }
 
   function openResidentForm(resident) {
+    setResidentFormLocalError("");
     setResidentForm({
+      mode: "edit",
       id: resident.id,
+      householdId: resident.householdId ?? "",
       fullName: resident.fullName ?? "",
+      gender: resident.gender ?? "",
       address: resident.address ?? "",
       exactAddress: resident.exactAddress ?? "",
       precinctNumber: resident.precinctNumber ?? "",
@@ -288,21 +375,54 @@ export default function AdminPanel({
       occupation: resident.occupation ?? "",
       contactNumber: resident.contactNumber ?? "",
       sitio: resident.sitio ?? "",
+      sectors: resident.sectors ?? [],
+      statusColor: resident.statusColor ?? resident.status ?? "green",
       additionalInformation: resident.additionalInformation ?? ""
     });
   }
 
+  function openCreateResidentForm() {
+    setResidentFormLocalError("");
+    setResidentForm(createBlankAdminResidentForm());
+  }
+
   function handleResidentFormChange(event) {
-    const { name, value } = event.target;
+    const { checked, name, type, value } = event.target;
 
     setResidentForm((current) => ({
       ...current,
-      [name]: value
+      [name]:
+        name === "sectors"
+          ? checked
+            ? Array.from(new Set([...(current.sectors ?? []), value]))
+            : (current.sectors ?? []).filter((sector) => sector !== value)
+          : type === "checkbox"
+            ? checked
+            : value
     }));
   }
 
   async function handleResidentFormSubmit(event) {
     event.preventDefault();
+
+    if (residentForm.mode === "create") {
+      const missingFields = validateAdminResidentCreateForm(residentForm);
+
+      if (missingFields.length > 0) {
+        setResidentFormLocalError(
+          "Resident ID, household ID, full name, gender, and address are required."
+        );
+        return;
+      }
+
+      const created = await onCreateResident?.(residentForm);
+
+      if (created) {
+        setResidentForm(null);
+      }
+
+      return;
+    }
 
     const updated = await onUpdateResident?.(residentForm.id, residentForm);
 
@@ -358,7 +478,14 @@ export default function AdminPanel({
 
       <SectionCard>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <SectionHeader eyebrow="Resident Management" title="Imported Residents" />
+          <div>
+            <SectionHeader eyebrow="Resident Management" title="Imported Residents" />
+            <p className="mt-2 text-sm font-semibold text-slate-600">
+              {adminResidentPagination.total} matching record
+              {adminResidentPagination.total === 1 ? "" : "s"}. Page size{" "}
+              {adminResidentPagination.pageSize}
+            </p>
+          </div>
 
           <div className="flex flex-col gap-3 md:flex-row md:items-end">
             <label className="space-y-2 text-sm font-semibold text-slate-700">
@@ -371,15 +498,22 @@ export default function AdminPanel({
               />
             </label>
 
-            <label className="flex items-center gap-3 rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-semibold text-slate-700">
-              <input
-                checked={includeArchivedResidents}
-                className="h-4 w-4 rounded border-orange-200 text-gov-700 focus:ring-gov-500"
-                onChange={(event) => onToggleIncludeArchivedResidents?.(event.target.checked)}
-                type="checkbox"
-              />
-              Show archived
+            <label className="space-y-2 text-sm font-semibold text-slate-700">
+              Status
+              <select
+                className="w-full rounded-2xl border border-orange-100 px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                onChange={(event) => onAdminResidentStatusFilterChange?.(event.target.value)}
+                value={adminResidentStatusFilter}
+              >
+                <option value="active">Active</option>
+                <option value="archived">Archived</option>
+                <option value="all">All</option>
+              </select>
             </label>
+
+            <Button onClick={openCreateResidentForm} size="lg">
+              Add Resident
+            </Button>
           </div>
         </div>
 
@@ -479,17 +613,51 @@ export default function AdminPanel({
             ) : null}
           </div>
 
+          <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-semibold text-slate-600">
+              Page {adminResidentPagination.page} of{" "}
+              {Math.max(adminResidentPagination.totalPages, 1)}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                disabled={!adminResidentPagination.hasPrevious}
+                onClick={() => onAdminResidentPageChange?.(adminResidentPagination.page - 1)}
+                size="sm"
+                variant="secondary"
+              >
+                Previous
+              </Button>
+              <Button
+                disabled={!adminResidentPagination.hasNext}
+                onClick={() => onAdminResidentPageChange?.(adminResidentPagination.page + 1)}
+                size="sm"
+                variant="secondary"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+
           {residentForm ? (
             <aside className="rounded-2xl border border-orange-100 bg-orange-50 p-5 xl:sticky xl:top-4">
               <form onSubmit={handleResidentFormSubmit}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <h3 className="text-lg font-black text-slate-900">Edit Resident</h3>
-                    <p className="mt-1 text-sm text-slate-600">{residentForm.id}</p>
+                    <h3 className="text-lg font-black text-slate-900">
+                      {residentForm.mode === "create" ? "Create Resident" : "Edit Resident"}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {residentForm.mode === "create"
+                        ? "Manual Admin registry entry"
+                        : residentForm.id}
+                    </p>
                   </div>
                   <Button
                     disabled={isMutating}
-                    onClick={() => setResidentForm(null)}
+                    onClick={() => {
+                      setResidentFormLocalError("");
+                      setResidentForm(null);
+                    }}
                     size="sm"
                     variant="secondary"
                   >
@@ -497,8 +665,21 @@ export default function AdminPanel({
                   </Button>
                 </div>
 
+                {residentFormLocalError ? (
+                  <StateMessage className="mt-4" tone="danger">
+                    {residentFormLocalError}
+                  </StateMessage>
+                ) : null}
+
                 <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-1">
                   {[
+                    ...(residentForm.mode === "create"
+                      ? [
+                          ["id", "Resident ID / RBI"],
+                          ["householdId", "Household ID"],
+                          ["gender", "Gender"]
+                        ]
+                      : []),
                     ["fullName", "Full name"],
                     ["address", "Address"],
                     ["exactAddress", "Exact address"],
@@ -515,12 +696,58 @@ export default function AdminPanel({
                         className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
                         name={name}
                         onChange={handleResidentFormChange}
-                        required={name === "fullName" || name === "address"}
+                        required={
+                          name === "fullName" ||
+                          name === "address" ||
+                          name === "id" ||
+                          name === "householdId" ||
+                          name === "gender"
+                        }
                         type={name === "birthDate" ? "date" : "text"}
                         value={residentForm[name]}
                       />
                     </label>
                   ))}
+
+                  {residentForm.mode === "create" ? (
+                    <label className="space-y-2 text-sm font-semibold text-slate-700">
+                      Status color
+                      <select
+                        className="w-full rounded-2xl border border-orange-100 bg-white px-4 py-2.5 text-sm font-normal text-slate-900 outline-none transition focus:border-gov-500 focus:ring-2 focus:ring-gov-100"
+                        name="statusColor"
+                        onChange={handleResidentFormChange}
+                        value={residentForm.statusColor}
+                      >
+                        <option value="green">Green</option>
+                        <option value="yellow">Yellow</option>
+                        <option value="red">Red</option>
+                      </select>
+                    </label>
+                  ) : null}
+
+                  {residentForm.mode === "create" ? (
+                    <fieldset className="space-y-2 text-sm font-semibold text-slate-700 md:col-span-2 xl:col-span-1">
+                      <legend>Sector flags</legend>
+                      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                        {sectorOptions.map((sector) => (
+                          <label
+                            className="flex items-center gap-2 rounded-2xl border border-orange-100 bg-white px-3 py-2 text-sm font-normal text-slate-700"
+                            key={sector}
+                          >
+                            <input
+                              checked={(residentForm.sectors ?? []).includes(sector)}
+                              className="h-4 w-4 rounded border-orange-200 text-gov-700 focus:ring-gov-500"
+                              name="sectors"
+                              onChange={handleResidentFormChange}
+                              type="checkbox"
+                              value={sector}
+                            />
+                            {sector}
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  ) : null}
 
                   <label className="space-y-2 text-sm font-semibold text-slate-700 md:col-span-2 xl:col-span-1">
                     Safe tag / remarks
@@ -534,26 +761,28 @@ export default function AdminPanel({
                 </div>
 
                 <Button className="mt-4" disabled={isMutating} type="submit">
-                  Save resident
+                  {residentForm.mode === "create" ? "Create resident" : "Save resident"}
                 </Button>
               </form>
 
-              <div className="mt-5">
-                <ResidentDocumentPanel
-                  allowedScopes={[
-                    "department_visible",
-                    "general_internal",
-                    "lupon_confidential",
-                    "admin_only"
-                  ]}
-                  defaultVisibilityScope="admin_only"
-                  metadataOnly
-                  residentId={residentForm.id}
-                  residentName={residentForm.fullName}
-                  showUpload={false}
-                  title="Document Metadata"
-                />
-              </div>
+              {residentForm.mode === "edit" ? (
+                <div className="mt-5">
+                  <ResidentDocumentPanel
+                    allowedScopes={[
+                      "department_visible",
+                      "general_internal",
+                      "lupon_confidential",
+                      "admin_only"
+                    ]}
+                    defaultVisibilityScope="admin_only"
+                    metadataOnly
+                    residentId={residentForm.id}
+                    residentName={residentForm.fullName}
+                    showUpload={false}
+                    title="Document Metadata"
+                  />
+                </div>
+              ) : null}
             </aside>
           ) : null}
         </div>

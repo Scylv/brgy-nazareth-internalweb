@@ -7,6 +7,7 @@ export function mapApiAdminResidentToResident(apiResident) {
     fullName: apiResident.fullName,
     name: apiResident.fullName,
     birthDate: apiResident.birthDate,
+    gender: apiResident.gender,
     civilStatus: apiResident.civilStatus,
     occupation: apiResident.occupation,
     address: apiResident.address,
@@ -15,6 +16,10 @@ export function mapApiAdminResidentToResident(apiResident) {
     contactNumber: apiResident.contactNumber,
     sitio: apiResident.sitio,
     additionalInformation: apiResident.additionalInformation,
+    sectors: apiResident.sectors ?? [],
+    registeredVoter: Boolean(apiResident.registeredVoter),
+    statusColor: apiResident.statusColor,
+    status: apiResident.statusColor,
     archived: Boolean(apiResident.archived),
     archivedAt: apiResident.archivedAt,
     createdAt: apiResident.createdAt,
@@ -22,21 +27,90 @@ export function mapApiAdminResidentToResident(apiResident) {
   };
 }
 
-export async function fetchAdminResidents({ query = "", includeArchived = false } = {}) {
+export function mapApiAdminResidentListResponse(data) {
+  const response = data && typeof data === "object" ? data : {};
+  const items = Array.isArray(response.items)
+    ? response.items
+    : Array.isArray(response.residents)
+      ? response.residents
+      : [];
+  const page = Number.isInteger(response.page) && response.page > 0 ? response.page : 1;
+  const pageSize =
+    Number.isInteger(response.pageSize) && response.pageSize > 0 ? response.pageSize : 25;
+  const total = Number.isInteger(response.total) && response.total >= 0 ? response.total : items.length;
+  const totalPages =
+    Number.isInteger(response.totalPages) && response.totalPages >= 0
+      ? response.totalPages
+      : total > 0
+        ? Math.ceil(total / pageSize)
+        : 0;
+
+  return {
+    items: items.map(mapApiAdminResidentToResident),
+    page,
+    pageSize,
+    total,
+    totalPages,
+    hasNext: Boolean(response.hasNext),
+    hasPrevious: Boolean(response.hasPrevious)
+  };
+}
+
+export async function fetchAdminResidents({
+  page = 1,
+  pageSize = 25,
+  query = "",
+  includeArchived = false,
+  status = ""
+} = {}) {
   const searchParams = new URLSearchParams();
+  const residentStatus = status || (includeArchived ? "all" : "active");
+
+  searchParams.set("page", String(page));
+  searchParams.set("pageSize", String(pageSize));
 
   if (query.trim()) {
-    searchParams.set("q", query.trim());
+    searchParams.set("search", query.trim());
   }
 
-  if (includeArchived) {
-    searchParams.set("includeArchived", "true");
-  }
+  searchParams.set("status", residentStatus);
+  searchParams.set("showArchived", String(residentStatus === "all"));
+  searchParams.set("archived", String(residentStatus === "archived"));
 
-  const suffix = searchParams.toString() ? `?${searchParams.toString()}` : "";
-  const data = await apiFetch(`/api/admin/residents${suffix}`);
+  const data = await apiFetch(`/api/admin/residents?${searchParams.toString()}`);
 
-  return (data.residents ?? []).map(mapApiAdminResidentToResident);
+  return mapApiAdminResidentListResponse(data);
+}
+
+export async function createAdminResident(resident) {
+  const data = await apiFetch("/api/admin/residents", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      id: resident.id,
+      householdId: resident.householdId,
+      fullName: resident.fullName,
+      gender: resident.gender,
+      address: resident.address,
+      exactAddress: resident.exactAddress,
+      sitio: resident.sitio,
+      precinctNumber: resident.precinctNumber,
+      contactNumber: resident.contactNumber,
+      birthDate: resident.birthDate,
+      civilStatus: resident.civilStatus,
+      occupation: resident.occupation,
+      sectors: resident.sectors ?? [],
+      statusColor: resident.statusColor ?? resident.status ?? "green",
+      additionalInformation: resident.additionalInformation
+    })
+  });
+
+  return {
+    resident: mapApiAdminResidentToResident(data.resident),
+    warnings: data.warnings ?? []
+  };
 }
 
 export async function updateAdminResident(residentId, resident) {

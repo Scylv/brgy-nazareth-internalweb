@@ -38,6 +38,7 @@ export function toAdminResidentResponse(row) {
     householdId: row.household_id,
     fullName: row.full_name,
     birthDate: row.birth_date,
+    gender: row.gender,
     civilStatus: row.civil_status,
     occupation: row.occupation,
     address: row.address,

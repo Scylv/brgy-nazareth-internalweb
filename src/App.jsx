@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { residents as initialResidents } from "./data/residents";
 import {
   archiveAdminResident,
+  createAdminResident,
   fetchAdminResidents,
   restoreAdminResident,
   updateAdminResident
 } from "./features/admin/api/adminResidentsApi";
+import { fetchAdminAuditLogs } from "./features/admin/api/adminAuditLogsApi";
 import {
   createAdminProfile,
   fetchAdminProfiles,
@@ -72,6 +74,14 @@ const DEFAULT_EXCEL_IMPORT_SHEET_DEFAULTS = {
   voterStatus: ""
 };
 const DEFAULT_EXCEL_IMPORT_MODE = "skipDuplicates";
+const DEFAULT_PAGINATION = {
+  page: 1,
+  pageSize: 25,
+  total: 0,
+  totalPages: 0,
+  hasNext: false,
+  hasPrevious: false
+};
 
 function toDepartmentResident(resident) {
   return {
@@ -104,10 +114,21 @@ export default function App() {
   const [adminProfileActionError, setAdminProfileActionError] = useState("");
   const [adminProfileActionMessage, setAdminProfileActionMessage] = useState("");
   const [adminResidentList, setAdminResidentList] = useState([]);
+  const [adminResidentPagination, setAdminResidentPagination] = useState(DEFAULT_PAGINATION);
   const [adminResidentQuery, setAdminResidentQuery] = useState("");
+  const [adminResidentStatusFilter, setAdminResidentStatusFilter] = useState("active");
   const [adminIncludeArchivedResidents, setAdminIncludeArchivedResidents] = useState(false);
   const [isAdminResidentsLoading, setIsAdminResidentsLoading] = useState(false);
   const [isAdminResidentMutating, setIsAdminResidentMutating] = useState(false);
+  const [adminAuditLogs, setAdminAuditLogs] = useState([]);
+  const [adminAuditLogPagination, setAdminAuditLogPagination] = useState(DEFAULT_PAGINATION);
+  const [adminAuditLogFilters, setAdminAuditLogFilters] = useState({
+    actor: "",
+    role: "",
+    action: "",
+    entityType: ""
+  });
+  const [isAdminAuditLogsLoading, setIsAdminAuditLogsLoading] = useState(false);
   const [excelImportPreview, setExcelImportPreview] = useState(null);
   const [excelImportCommitSummary, setExcelImportCommitSummary] = useState(null);
   const [excelImportError, setExcelImportError] = useState("");
@@ -231,10 +252,21 @@ export default function App() {
       setAdminProfileActionError("");
       setAdminProfileActionMessage("");
       setAdminResidentList([]);
+      setAdminResidentPagination(DEFAULT_PAGINATION);
       setAdminResidentQuery("");
+      setAdminResidentStatusFilter("active");
       setAdminIncludeArchivedResidents(false);
       setIsAdminResidentsLoading(false);
       setIsAdminResidentMutating(false);
+      setAdminAuditLogs([]);
+      setAdminAuditLogPagination(DEFAULT_PAGINATION);
+      setAdminAuditLogFilters({
+        actor: "",
+        role: "",
+        action: "",
+        entityType: ""
+      });
+      setIsAdminAuditLogsLoading(false);
       setExcelImportPreview(null);
       setExcelImportCommitSummary(null);
       setExcelImportError("");
@@ -263,8 +295,10 @@ export default function App() {
         const [profiles, adminResidents] = await Promise.all([
           fetchAdminProfiles(),
           fetchAdminResidents({
+            page: adminResidentPagination.page,
+            pageSize: adminResidentPagination.pageSize,
             query: adminResidentQuery,
-            includeArchived: adminIncludeArchivedResidents
+            status: adminResidentStatusFilter
           })
         ]);
 
@@ -273,7 +307,7 @@ export default function App() {
         }
 
         setAdminProfileList(profiles);
-        setAdminResidentList(adminResidents);
+        setAdminResidentPageData(adminResidents);
       } catch (error) {
         if (!isActive) {
           return;
@@ -281,6 +315,7 @@ export default function App() {
 
         setAdminProfileList([]);
         setAdminResidentList([]);
+        setAdminResidentPagination(DEFAULT_PAGINATION);
         setAdminProfilesError(
           error?.status === 403
             ? "Only Admin accounts can load database profiles."
@@ -299,7 +334,71 @@ export default function App() {
     return () => {
       isActive = false;
     };
-  }, [adminIncludeArchivedResidents, adminResidentQuery, currentUser]);
+  }, [
+    adminResidentPagination.page,
+    adminResidentPagination.pageSize,
+    adminResidentQuery,
+    adminResidentStatusFilter,
+    currentUser
+  ]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (currentUser?.role !== "admin") {
+      return () => {
+        isActive = false;
+      };
+    }
+
+    async function loadAdminAuditLogs() {
+      setIsAdminAuditLogsLoading(true);
+
+      try {
+        const auditLogPage = await fetchAdminAuditLogs({
+          ...adminAuditLogFilters,
+          page: adminAuditLogPagination.page,
+          pageSize: adminAuditLogPagination.pageSize
+        });
+
+        if (!isActive) {
+          return;
+        }
+
+        setAdminAuditLogs(auditLogPage.items);
+        setAdminAuditLogPagination({
+          page: auditLogPage.page,
+          pageSize: auditLogPage.pageSize,
+          total: auditLogPage.total,
+          totalPages: auditLogPage.totalPages,
+          hasNext: auditLogPage.hasNext,
+          hasPrevious: auditLogPage.hasPrevious
+        });
+      } catch (_error) {
+        if (!isActive) {
+          return;
+        }
+
+        setAdminAuditLogs([]);
+        setAdminAuditLogPagination(DEFAULT_PAGINATION);
+      } finally {
+        if (isActive) {
+          setIsAdminAuditLogsLoading(false);
+        }
+      }
+    }
+
+    loadAdminAuditLogs();
+
+    return () => {
+      isActive = false;
+    };
+  }, [
+    adminAuditLogFilters,
+    adminAuditLogPagination.page,
+    adminAuditLogPagination.pageSize,
+    currentUser
+  ]);
 
   useEffect(() => {
     let isActive = true;
@@ -502,10 +601,21 @@ export default function App() {
     setAdminProfileActionError("");
     setAdminProfileActionMessage("");
     setAdminResidentList([]);
+    setAdminResidentPagination(DEFAULT_PAGINATION);
     setAdminResidentQuery("");
+    setAdminResidentStatusFilter("active");
     setAdminIncludeArchivedResidents(false);
     setIsAdminResidentsLoading(false);
     setIsAdminResidentMutating(false);
+    setAdminAuditLogs([]);
+    setAdminAuditLogPagination(DEFAULT_PAGINATION);
+    setAdminAuditLogFilters({
+      actor: "",
+      role: "",
+      action: "",
+      entityType: ""
+    });
+    setIsAdminAuditLogsLoading(false);
     setExcelImportPreview(null);
     setExcelImportCommitSummary(null);
     setExcelImportError("");
@@ -839,6 +949,85 @@ export default function App() {
     }
   }
 
+  function setAdminResidentPageData(pageData) {
+    setAdminResidentList(pageData.items);
+    setAdminResidentPagination({
+      page: pageData.page,
+      pageSize: pageData.pageSize,
+      total: pageData.total,
+      totalPages: pageData.totalPages,
+      hasNext: pageData.hasNext,
+      hasPrevious: pageData.hasPrevious
+    });
+  }
+
+  function resetAdminResidentPage() {
+    setAdminResidentPagination((current) => ({
+      ...current,
+      page: 1
+    }));
+  }
+
+  function handleAdminResidentQueryChange(query) {
+    setAdminResidentQuery(query);
+    resetAdminResidentPage();
+  }
+
+  function handleAdminResidentStatusFilterChange(status) {
+    const nextStatus = status || "active";
+
+    setAdminResidentStatusFilter(nextStatus);
+    setAdminIncludeArchivedResidents(nextStatus === "all");
+    resetAdminResidentPage();
+  }
+
+  function handleToggleIncludeArchivedResidents(includeArchived) {
+    handleAdminResidentStatusFilterChange(includeArchived ? "all" : "active");
+  }
+
+  function handleAdminResidentPageChange(page) {
+    setAdminResidentPagination((current) => ({
+      ...current,
+      page: Math.max(1, page)
+    }));
+  }
+
+  async function handleCreateAdminResident(resident) {
+    setIsAdminResidentMutating(true);
+    setAdminProfileActionError("");
+    setAdminProfileActionMessage("");
+
+    try {
+      const { resident: createdResident, warnings } = await createAdminResident(resident);
+
+      setDatabaseResidentList((current) =>
+        current.some((item) => item.id === createdResident.id)
+          ? current
+          : [...current, createdResident]
+      );
+
+      const refreshedResidents = await fetchAdminResidents({
+        page: 1,
+        pageSize: adminResidentPagination.pageSize,
+        query: adminResidentQuery,
+        status: adminResidentStatusFilter
+      });
+
+      setAdminResidentPageData(refreshedResidents);
+      setAdminProfileActionMessage(
+        warnings.length > 0
+          ? `Resident created. ${warnings[0]}`
+          : "Resident created."
+      );
+      return createdResident;
+    } catch (error) {
+      setAdminProfileActionError(error?.message ?? "Resident creation failed.");
+      return null;
+    } finally {
+      setIsAdminResidentMutating(false);
+    }
+  }
+
   async function handleUpdateAdminResident(residentId, resident) {
     setIsAdminResidentMutating(true);
     setAdminProfileActionError("");
@@ -888,7 +1077,7 @@ export default function App() {
       const archivedResident = await archiveAdminResident(residentId);
 
       setAdminResidentList((current) =>
-        adminIncludeArchivedResidents
+        adminResidentStatusFilter === "all" || adminResidentStatusFilter === "archived"
           ? current.map((item) => (item.id === residentId ? archivedResident : item))
           : current.filter((item) => item.id !== residentId)
       );
@@ -1081,11 +1270,13 @@ export default function App() {
 
       try {
         const adminResidents = await fetchAdminResidents({
+          page: adminResidentPagination.page,
+          pageSize: adminResidentPagination.pageSize,
           query: adminResidentQuery,
-          includeArchived: adminIncludeArchivedResidents
+          status: adminResidentStatusFilter
         });
 
-        setAdminResidentList(adminResidents);
+        setAdminResidentPageData(adminResidents);
       } catch (_error) {
         setExcelImportError(
           "Import committed, but Admin resident search could not refresh. Reload Admin to verify the latest records."
@@ -1126,13 +1317,15 @@ export default function App() {
       const [residents, adminResidents] = await Promise.all([
         fetchResidents(),
         fetchAdminResidents({
+          page: adminResidentPagination.page,
+          pageSize: adminResidentPagination.pageSize,
           query: adminResidentQuery,
-          includeArchived: adminIncludeArchivedResidents
+          status: adminResidentStatusFilter
         })
       ]);
 
       setDatabaseResidentList(residents);
-      setAdminResidentList(adminResidents);
+      setAdminResidentPageData(adminResidents);
       return result.summary;
     } catch (error) {
       setExcelImportError(error?.message ?? "Import undo failed.");
@@ -1265,13 +1458,28 @@ export default function App() {
           isLoading={isAdminProfilesLoading}
           isMutating={isAdminProfileMutating || isAdminResidentMutating}
           adminResidentQuery={adminResidentQuery}
+          adminResidentPagination={adminResidentPagination}
+          adminResidentStatusFilter={adminResidentStatusFilter}
           adminResidents={adminResidentList}
+          auditLogPagination={adminAuditLogPagination}
+          auditLogs={adminAuditLogs}
           includeArchivedResidents={adminIncludeArchivedResidents}
+          isAdminAuditLogsLoading={isAdminAuditLogsLoading}
           isAdminResidentsLoading={isAdminResidentsLoading}
-          onAdminResidentQueryChange={setAdminResidentQuery}
+          onAdminResidentPageChange={handleAdminResidentPageChange}
+          onAdminResidentQueryChange={handleAdminResidentQueryChange}
+          onAdminResidentStatusFilterChange={handleAdminResidentStatusFilterChange}
           onArchiveResident={handleArchiveAdminResident}
+          onAuditLogFilterChange={setAdminAuditLogFilters}
+          onAuditLogPageChange={(page) =>
+            setAdminAuditLogPagination((current) => ({
+              ...current,
+              page: Math.max(1, page)
+            }))
+          }
           onCommitExcelImport={handleCommitExcelImport}
           onCreateAccount={handleCreateAdminProfile}
+          onCreateResident={handleCreateAdminResident}
           onExcelImportColumnMappingChange={handleExcelImportColumnMappingChange}
           onExcelImportModeChange={handleExcelImportModeChange}
           onExcelImportSheetDefaultChange={handleExcelImportSheetDefaultChange}
@@ -1282,7 +1490,7 @@ export default function App() {
           onRestoreResident={handleRestoreAdminResident}
           onResetPassword={handleResetAdminProfilePassword}
           onToggleAccountStatus={handleToggleAdminProfileStatus}
-          onToggleIncludeArchivedResidents={setAdminIncludeArchivedResidents}
+          onToggleIncludeArchivedResidents={handleToggleIncludeArchivedResidents}
           onUpdateResident={handleUpdateAdminResident}
           onUndoExcelImport={handleUndoExcelImport}
           onSelectedExcelImportSheetChange={setSelectedExcelImportSheet}
