@@ -133,12 +133,17 @@ Tracks department document request workflow records.
 | id | text | Primary key, current DOC-style request ID. |
 | resident_id | text | Foreign key to `residents.id`. |
 | barangay_document_id | text | Foreign key to `barangay_documents.id`. |
+| custom_document_title | text | Optional custom title when the requested document type is Other. |
 | purpose | text | Request purpose. |
 | status | text | `pending`, `processing`, `released`, `cancelled`, or `expired`. |
 | request_date | date | Date requested. |
 | release_date | date | Date released, if applicable. |
 | expiry_date | date | Expiry date, if applicable. |
 | processed_by_profile_id | text | Department profile processing the request. |
+| archived_at | timestamptz | Archive timestamp for mistaken or removed active requests. |
+| archived_by_profile_id | text | Profile that archived the request. |
+| archive_reason | text | Required archive reason label from the Department workflow. |
+| archive_note | text | Optional archive note. |
 | created_at | timestamptz | Creation timestamp. |
 | updated_at | timestamptz | Last update timestamp. |
 

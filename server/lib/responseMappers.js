@@ -61,7 +61,7 @@ export function toDocumentRequestResponse(row) {
     return null;
   }
 
-  return {
+  const response = {
     id: row.id,
     residentId: row.resident_id,
     barangayDocumentId: row.barangay_document_id,
@@ -76,6 +76,24 @@ export function toDocumentRequestResponse(row) {
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
+
+  if (row.resident_name !== undefined) {
+    response.residentName = row.resident_name;
+  }
+
+  if (row.custom_document_title !== undefined) {
+    response.customDocumentTitle = row.custom_document_title;
+  }
+
+  if (row.archived_at !== undefined) {
+    response.archived = Boolean(row.archived_at);
+    response.archivedAt = row.archived_at;
+    response.archivedByProfileId = row.archived_by_profile_id;
+    response.archiveReason = row.archive_reason;
+    response.archiveNote = row.archive_note;
+  }
+
+  return response;
 }
 
 export function toLuponCaseResponse(row) {

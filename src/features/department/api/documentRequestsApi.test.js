@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  archiveDocumentRequest,
   createDocumentRequest,
   fetchDocumentRequests,
+  markDocumentRequestProcessing,
+  markDocumentRequestReleased,
   mapApiDocumentRequestToDocumentRequest,
   toDocumentRequestCreatePayload
 } from "./documentRequestsApi";
@@ -19,6 +22,8 @@ describe("department document request API", () => {
       residentId: "RBI-2024-0001",
       barangayDocumentId: "BDOC-001",
       barangayDocumentName: "Barangay Clearance",
+      residentName: "Ana Reyes",
+      customDocumentTitle: null,
       purpose: "Local employment requirement",
       status: "processing",
       requestDate: "2026-05-18",
@@ -31,15 +36,22 @@ describe("department document request API", () => {
     expect(request).toEqual({
       id: "DOC-2026-0007",
       residentId: "RBI-2024-0001",
+      residentName: "Ana Reyes",
       barangayDocumentId: "BDOC-001",
       documentType: "Barangay Clearance",
+      displayDocumentType: "Barangay Clearance",
+      customDocumentTitle: "",
       purpose: "Local employment requirement",
       requestDate: "2026-05-18",
       releaseDate: "",
       expiryDate: "2026-11-18",
       status: "processing",
       processedBy: "Elena Ledesma",
-      processedByProfileId: "dept-1"
+      processedByProfileId: "dept-1",
+      archived: false,
+      archivedAt: "",
+      archiveReason: "",
+      archiveNote: ""
     });
   });
 
@@ -97,6 +109,7 @@ describe("department document request API", () => {
     ).toEqual({
       residentId: "RBI-2024-0001",
       barangayDocumentId: "BDOC-001",
+      customDocumentTitle: null,
       purpose: "Local employment requirement",
       requestDate: "2026-05-19",
       releaseDate: null,
@@ -115,6 +128,7 @@ describe("department document request API", () => {
       expect(JSON.parse(options.body)).toEqual({
         residentId: "RBI-2024-0001",
         barangayDocumentId: "BDOC-001",
+        customDocumentTitle: null,
         purpose: "Local employment requirement",
         requestDate: "2026-05-19",
         releaseDate: null,
@@ -173,5 +187,156 @@ describe("department document request API", () => {
         status: "pending"
       })
     ).toThrow("Unknown barangay document type");
+  });
+
+  it("maps Other document requests to a custom display title and payload", () => {
+    expect(
+      mapApiDocumentRequestToDocumentRequest({
+        id: "DOC-OTHER-1",
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-OTHER",
+        barangayDocumentName: "Other",
+        customDocumentTitle: "Travel Certification",
+        purpose: "Custom certification",
+        status: "pending",
+        requestDate: "2026-05-27"
+      })
+    ).toMatchObject({
+      documentType: "Other",
+      displayDocumentType: "Other: Travel Certification",
+      customDocumentTitle: "Travel Certification"
+    });
+
+    expect(
+      toDocumentRequestCreatePayload({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-OTHER",
+        customDocumentTitle: "  Travel Certification  ",
+        purpose: "Custom certification",
+        requestDate: "2026-05-27",
+        status: "pending"
+      })
+    ).toMatchObject({
+      barangayDocumentId: "BDOC-OTHER",
+      customDocumentTitle: "Travel Certification"
+    });
+  });
+
+  it("rejects invalid create date combinations before posting", () => {
+    expect(() =>
+      toDocumentRequestCreatePayload({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-27",
+        releaseDate: "2026-05-19",
+        status: "pending"
+      })
+    ).toThrow("Release date cannot be before request date");
+  });
+
+  it("marks document requests processing through the authenticated API", async () => {
+    const fetchMock = vi.fn(async (_url, options) => {
+      expect(_url).toContain("/api/document-requests/DOC-1/mark-processing");
+      expect(options.method).toBe("POST");
+
+      return new Response(
+        JSON.stringify({
+          documentRequest: {
+            id: "DOC-1",
+            residentId: "RBI-2024-0001",
+            barangayDocumentId: "BDOC-001",
+            barangayDocumentName: "Barangay Clearance",
+            purpose: "Local employment",
+            status: "processing",
+            requestDate: "2026-05-20",
+            releaseDate: null,
+            expiryDate: null
+          }
+        }),
+        { headers: { "content-type": "application/json" } }
+      );
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(markDocumentRequestProcessing("DOC-1")).resolves.toMatchObject({
+      id: "DOC-1",
+      status: "processing"
+    });
+  });
+
+  it("marks document requests released through the authenticated API", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url, options) => {
+        expect(_url).toContain("/api/document-requests/DOC-1/mark-released");
+        expect(options.method).toBe("POST");
+
+        return new Response(
+          JSON.stringify({
+            documentRequest: {
+              id: "DOC-1",
+              residentId: "RBI-2024-0001",
+              barangayDocumentId: "BDOC-001",
+              barangayDocumentName: "Barangay Clearance",
+              purpose: "Local employment",
+              status: "released",
+              requestDate: "2026-05-20",
+              releaseDate: "2026-05-27",
+              expiryDate: null
+            }
+          }),
+          { headers: { "content-type": "application/json" } }
+        );
+      })
+    );
+
+    await expect(markDocumentRequestReleased("DOC-1")).resolves.toMatchObject({
+      id: "DOC-1",
+      status: "released",
+      releaseDate: "2026-05-27"
+    });
+  });
+
+  it("archives document requests with a reason payload", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url, options) => {
+        expect(_url).toContain("/api/document-requests/DOC-1/archive");
+        expect(options.method).toBe("POST");
+        expect(JSON.parse(options.body)).toEqual({
+          reason: "Duplicate request",
+          note: "Encoded twice."
+        });
+
+        return new Response(
+          JSON.stringify({
+            documentRequest: {
+              id: "DOC-1",
+              residentId: "RBI-2024-0001",
+              barangayDocumentId: "BDOC-001",
+              barangayDocumentName: "Barangay Clearance",
+              purpose: "Local employment",
+              status: "released",
+              requestDate: "2026-05-20",
+              releaseDate: "2026-05-27",
+              expiryDate: null,
+              archived: true,
+              archiveReason: "Duplicate request"
+            }
+          }),
+          { headers: { "content-type": "application/json" } }
+        );
+      })
+    );
+
+    await expect(
+      archiveDocumentRequest("DOC-1", { reason: "Duplicate request", note: "Encoded twice." })
+    ).resolves.toMatchObject({
+      id: "DOC-1",
+      archived: true,
+      archiveReason: "Duplicate request"
+    });
   });
 });

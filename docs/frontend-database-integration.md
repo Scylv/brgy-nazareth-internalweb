@@ -31,6 +31,9 @@ and new-request creation are connected to:
 ```text
 GET  /api/document-requests
 POST /api/document-requests
+POST /api/document-requests/:id/mark-processing
+POST /api/document-requests/:id/mark-released
+POST /api/document-requests/:id/archive
 ```
 
 Lupon case display and resident edit/status persistence are connected to:
@@ -169,7 +172,7 @@ curl.exe -b .\.tmp-cookies.txt http://localhost:3001/api/lupon/cases
 
 Expected result:
 
-- Department can access residents and document request create/read routes.
+- Department can access residents and document request create/read/status/archive routes.
 - Department cannot access Lupon case routes.
 - Department responses do not include `confidentialSummary` or `noteBody`.
 
@@ -178,6 +181,6 @@ Expected result:
 - Authentication uses synthetic seed accounts only.
 - Logout clears the browser cookie, but the signed stateless token is not revoked server-side.
 - Resident creation is not database-backed yet.
-- Department document request reads and creates are database-backed; editing existing requests is not database-backed yet.
+- Department document request reads, creates, status transitions, releases, and archives are database-backed.
 - Admin profile listing is database-backed; account creation, role edits, deactivation, and password reset are planned.
 - Excel import and file uploads are not implemented yet.

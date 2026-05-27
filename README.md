@@ -183,6 +183,9 @@ GET  /api/residents/:id
 PATCH /api/residents/:id
 GET  /api/document-requests
 POST /api/document-requests
+POST /api/document-requests/:id/mark-processing
+POST /api/document-requests/:id/mark-released
+POST /api/document-requests/:id/archive
 GET  /api/lupon/cases
 POST /api/lupon/cases
 POST /api/lupon/cases/:id/notes
@@ -201,7 +204,7 @@ Department routes do not expose `lupon_cases.confidential_summary` or `lupon_cas
 
 ## Frontend Database-Backed Flows
 
-The login flow, Department resident search/list and verification flow, Department document request metrics/history/create flow, Lupon case display/status update flow, and Admin profile listing read or write through the backend API. The backend must be running for database-backed staging data to load in the React app.
+The login flow, Department resident search/list and verification flow, Department document request metrics/history/create/status/archive flow, Lupon case display/status update flow, and Admin profile listing read or write through the backend API. The backend must be running for database-backed staging data to load in the React app.
 
 The frontend uses:
 
@@ -318,7 +321,7 @@ Known staging limitations:
   server-side. A copied token remains valid until expiry; this is acceptable for
   synthetic-data staging, not final production.
 - Resident creation is not database-backed yet; edit existing residents for staging.
-- Department document request reads and creates are database-backed; editing existing requests is not database-backed yet.
+- Department document request reads, creates, status transitions, releases, and archives are database-backed.
 - Admin profile listing is database-backed; account creation, role edits, deactivation, and password reset are planned.
 - File uploads, backups, production user provisioning, and hardened database-level access policies are not implemented yet.
 - Department users must not see Lupon confidential summaries or notes; this boundary is covered by backend tests and should be checked again during acceptance testing.
@@ -374,7 +377,7 @@ Notes for the LAN demo:
 
 ## Prototype Notes
 
-- Database-backed staging flows include auth, Department resident verification, Department document request create/read, Lupon case display, Lupon resident status updates, Lupon resident edit persistence, and Admin profile listing.
+- Database-backed staging flows include auth, Department resident verification, Department document request create/read/status/archive, Lupon case display, Lupon resident status updates, Lupon resident edit persistence, and Admin profile listing.
 - Resident creation, document request editing, Admin account mutations, Excel import, and file uploads are not implemented yet.
 - The backend is a minimal database-backed foundation and does not replace all future production services yet.
 - There are no file uploads yet.

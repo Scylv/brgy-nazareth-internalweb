@@ -1207,6 +1207,7 @@ describe("authentication and role-based API access", () => {
     expect(documentRequestInsert.params.slice(1)).toEqual([
       "RBI-2024-0001",
       "BDOC-001",
+      null,
       "Local employment requirement",
       "pending",
       "2026-05-19",
@@ -1230,6 +1231,216 @@ describe("authentication and role-based API access", () => {
       barangayDocumentId: "BDOC-001",
       status: "pending"
     });
+  });
+
+  it("rejects pending document requests when release date is before request date", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-27",
+        releaseDate: "2026-05-19",
+        status: "pending"
+      });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error).toContain("Release date cannot be before request date");
+    expect(pool.queries.some((query) => query.sql.includes("INSERT INTO document_requests"))).toBe(false);
+  });
+
+  it("rejects document requests when expiry date is before request date", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-27",
+        expiryDate: "2026-05-19",
+        status: "pending"
+      });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error).toContain("Expiry date cannot be before request date");
+    expect(pool.queries.some((query) => query.sql.includes("INSERT INTO document_requests"))).toBe(false);
+  });
+
+  it("allows valid pending document requests without a release date", async () => {
+    const pool = createPool([
+      [profileRows.department],
+      [profileRows.department],
+      [
+        {
+          id: "DOC-2026-0015",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-001",
+          barangay_document_name: "Barangay Clearance",
+          purpose: "Local employment requirement",
+          status: "pending",
+          request_date: "2026-05-27",
+          release_date: null,
+          expiry_date: "2026-06-27",
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          created_at: "2026-05-27T00:00:00.000Z",
+          updated_at: "2026-05-27T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-27",
+        expiryDate: "2026-06-27",
+        status: "pending"
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.documentRequest).toMatchObject({
+      id: "DOC-2026-0015",
+      status: "pending",
+      releaseDate: null
+    });
+  });
+
+  it("allows released document requests with a valid release date", async () => {
+    const pool = createPool([
+      [profileRows.department],
+      [profileRows.department],
+      [
+        {
+          id: "DOC-2026-0016",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-001",
+          barangay_document_name: "Barangay Clearance",
+          purpose: "Local employment requirement",
+          status: "released",
+          request_date: "2026-05-19",
+          release_date: "2026-05-27",
+          expiry_date: "2026-06-27",
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          created_at: "2026-05-27T00:00:00.000Z",
+          updated_at: "2026-05-27T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-001",
+        purpose: "Local employment requirement",
+        requestDate: "2026-05-19",
+        releaseDate: "2026-05-27",
+        expiryDate: "2026-06-27",
+        status: "released"
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.documentRequest).toMatchObject({
+      status: "released",
+      releaseDate: "2026-05-27"
+    });
+  });
+
+  it("rejects Other document requests without a custom title", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-OTHER",
+        purpose: "Custom certification",
+        requestDate: "2026-05-27",
+        customDocumentTitle: "   "
+      });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error).toContain("Custom document title is required");
+    expect(pool.queries.some((query) => query.sql.includes("INSERT INTO document_requests"))).toBe(false);
+  });
+
+  it("allows Other document requests with a trimmed custom title", async () => {
+    const pool = createPool([
+      [profileRows.department],
+      [profileRows.department],
+      [
+        {
+          id: "DOC-2026-0017",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-OTHER",
+          barangay_document_name: "Other",
+          custom_document_title: "Travel Certification",
+          purpose: "Custom certification",
+          status: "pending",
+          request_date: "2026-05-27",
+          release_date: null,
+          expiry_date: null,
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          created_at: "2026-05-27T00:00:00.000Z",
+          updated_at: "2026-05-27T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0001",
+        barangayDocumentId: "BDOC-OTHER",
+        customDocumentTitle: "  Travel Certification  ",
+        purpose: "Custom certification",
+        requestDate: "2026-05-27"
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.documentRequest).toMatchObject({
+      barangayDocumentId: "BDOC-OTHER",
+      barangayDocumentName: "Other",
+      customDocumentTitle: "Travel Certification"
+    });
+    const documentRequestInsert = pool.queries.find((query) =>
+      query.sql.includes("INSERT INTO document_requests")
+    );
+    expect(documentRequestInsert.params).toContain("Travel Certification");
   });
 
   it("rejects missing document request fields before writing to the database", async () => {
@@ -1269,6 +1480,233 @@ describe("authentication and role-based API access", () => {
 
     expect(response.status).toBe(403);
     expect(pool.queries).toHaveLength(2);
+  });
+
+  it("allows Department users to mark pending document requests as processing", async () => {
+    const pool = createPool([
+      [profileRows.department],
+      [profileRows.department],
+      [
+        {
+          id: "DOC-2026-0010",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-001",
+          barangay_document_name: "Barangay Clearance",
+          purpose: "Local employment requirement",
+          status: "pending",
+          request_date: "2026-05-20",
+          release_date: null,
+          expiry_date: null,
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          created_at: "2026-05-20T00:00:00.000Z",
+          updated_at: "2026-05-20T00:00:00.000Z"
+        }
+      ],
+      [
+        {
+          id: "DOC-2026-0010",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-001",
+          barangay_document_name: "Barangay Clearance",
+          purpose: "Local employment requirement",
+          status: "processing",
+          request_date: "2026-05-20",
+          release_date: null,
+          expiry_date: null,
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          created_at: "2026-05-20T00:00:00.000Z",
+          updated_at: "2026-05-21T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests/DOC-2026-0010/mark-processing")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({});
+
+    expect(response.status).toBe(200);
+    expect(response.body.documentRequest.status).toBe("processing");
+    const updateQuery = pool.queries.find((query) => query.sql.includes("UPDATE document_requests"));
+    expect(updateQuery.params).toContain("DOC-2026-0010");
+    expect(updateQuery.params).toContain("dept-1");
+  });
+
+  it("allows Department users to mark pending or processing requests as released and sets a missing release date", async () => {
+    const pool = createPool([
+      [profileRows.department],
+      [profileRows.department],
+      [
+        {
+          id: "DOC-2026-0011",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-003",
+          barangay_document_name: "Barangay Indigency",
+          purpose: "Medical assistance",
+          status: "processing",
+          request_date: "2026-05-20",
+          release_date: null,
+          expiry_date: null,
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          created_at: "2026-05-20T00:00:00.000Z",
+          updated_at: "2026-05-20T00:00:00.000Z"
+        }
+      ],
+      [
+        {
+          id: "DOC-2026-0011",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-003",
+          barangay_document_name: "Barangay Indigency",
+          purpose: "Medical assistance",
+          status: "released",
+          request_date: "2026-05-20",
+          release_date: "2026-05-27",
+          expiry_date: null,
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          created_at: "2026-05-20T00:00:00.000Z",
+          updated_at: "2026-05-27T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests/DOC-2026-0011/mark-released")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({});
+
+    expect(response.status).toBe(200);
+    expect(response.body.documentRequest).toMatchObject({
+      id: "DOC-2026-0011",
+      status: "released",
+      releaseDate: "2026-05-27"
+    });
+    const updateQuery = pool.queries.find((query) => query.sql.includes("UPDATE document_requests"));
+    expect(updateQuery.sql).toContain("COALESCE(release_date, CURRENT_DATE)");
+  });
+
+  it("allows Department users to archive requests with a reason instead of deleting them", async () => {
+    const pool = createPool([
+      [profileRows.department],
+      [profileRows.department],
+      [
+        {
+          id: "DOC-2026-0012",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-004",
+          barangay_document_name: "Barangay ID",
+          purpose: "ID replacement",
+          status: "released",
+          request_date: "2026-05-20",
+          release_date: "2026-05-21",
+          expiry_date: null,
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          created_at: "2026-05-20T00:00:00.000Z",
+          updated_at: "2026-05-21T00:00:00.000Z"
+        }
+      ],
+      [
+        {
+          id: "DOC-2026-0012",
+          resident_id: "RBI-2024-0001",
+          barangay_document_id: "BDOC-004",
+          barangay_document_name: "Barangay ID",
+          purpose: "ID replacement",
+          status: "released",
+          request_date: "2026-05-20",
+          release_date: "2026-05-21",
+          expiry_date: null,
+          processed_by_profile_id: "dept-1",
+          processed_by_name: "Elena Ledesma",
+          archived_at: "2026-05-27T00:00:00.000Z",
+          archived_by_profile_id: "dept-1",
+          archive_reason: "Duplicate request",
+          archive_note: "Same request encoded twice.",
+          created_at: "2026-05-20T00:00:00.000Z",
+          updated_at: "2026-05-27T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests/DOC-2026-0012/archive")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({ reason: "Duplicate request", note: "Same request encoded twice." });
+
+    expect(response.status).toBe(200);
+    expect(response.body.documentRequest).toMatchObject({
+      id: "DOC-2026-0012",
+      archived: true,
+      archiveReason: "Duplicate request"
+    });
+    const updateQuery = pool.queries.find((query) => query.sql.includes("UPDATE document_requests"));
+    expect(updateQuery.sql).toContain("archived_at = now()");
+    expect(updateQuery.sql).not.toContain("DELETE FROM document_requests");
+    expect(updateQuery.params).toContain("Duplicate request");
+  });
+
+  it("hides archived document requests from active lists by default", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department], []]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app).get("/api/document-requests").set("Cookie", cookie);
+
+    expect(response.status).toBe(200);
+    const listQuery = pool.queries.find((query) => query.sql.includes("FROM document_requests"));
+    expect(listQuery.sql).toContain("requests.archived_at IS NULL");
+  });
+
+  it("rejects invalid document request status transitions", async () => {
+    const pool = createPool([
+      [profileRows.department],
+      [profileRows.department],
+      [
+        {
+          id: "DOC-2026-0013",
+          status: "released",
+          release_date: "2026-05-21",
+          archived_at: null
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/document-requests/DOC-2026-0013/mark-processing")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({});
+
+    expect(response.status).toBe(409);
+    expect(response.body.error).toContain("Invalid document request status transition");
+    expect(pool.queries.some((query) => query.sql.includes("UPDATE document_requests"))).toBe(false);
+  });
+
+  it("rejects unauthenticated document request updates", async () => {
+    const app = createApp(createPool());
+
+    const response = await request(app)
+      .post("/api/document-requests/DOC-2026-0014/mark-released")
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({});
+
+    expect(response.status).toBe(401);
   });
 
   it("allows Lupon users to update resident status and non-confidential fields", async () => {
