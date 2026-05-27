@@ -1,14 +1,17 @@
+import { useEffect, useState } from "react";
 import Button from "../../../shared/components/Button";
 import ResidentDocumentPanel from "../../documents/components/ResidentDocumentPanel";
 import StatusBadge from "../../../shared/components/StatusBadge";
 import DocumentRequestHistory from "../../../shared/components/DocumentRequestHistory";
 import MetricCard from "../../../shared/components/MetricCard";
 import Notice from "../../../shared/components/Notice";
+import PaginationControls from "../../../shared/components/PaginationControls";
 import SectionCard from "../../../shared/components/SectionCard";
 import SectionHeader from "../../../shared/components/SectionHeader";
 import StateMessage from "../../../shared/components/StateMessage";
 import { getDocumentRequestsForResident } from "../../../shared/lib/documentRequests";
 import { RESIDENT_STATUS_FILTERS } from "../../../shared/lib/filterResidents";
+import { getNextPage, getPaginatedItems, getPreviousPage } from "../../../shared/lib/pagination";
 import { getResidentLuponCaseDisplay } from "../lib/luponCaseDisplay";
 
 const statusFilterLabels = {
@@ -17,6 +20,22 @@ const statusFilterLabels = {
   yellow: "Yellow",
   red: "Red"
 };
+const residentListPageSize = 5;
+const luponDocumentScopes = ["department_visible", "general_internal", "lupon_confidential"];
+const luponDocumentViews = [
+  {
+    key: "general",
+    label: "General / Vital",
+    scopes: ["department_visible", "general_internal"],
+    defaultVisibilityScope: "general_internal"
+  },
+  {
+    key: "confidential",
+    label: "Lupon Confidential",
+    scopes: ["lupon_confidential"],
+    defaultVisibilityScope: "lupon_confidential"
+  }
+];
 
 export default function LuponDashboard({
   documentRequests,
@@ -28,15 +47,29 @@ export default function LuponDashboard({
   selectedResident,
   selectedResidentId,
   onQueryChange,
-  onAddResident,
   onSelectResident,
   onOpenForm,
   onStatusFilterChange,
   statusFilter
 }) {
+  const [residentPage, setResidentPage] = useState(1);
   const selectedResidentDocumentRequests = selectedResident
     ? getDocumentRequestsForResident(selectedResident.id, documentRequests)
     : [];
+  const paginatedResidents = getPaginatedItems(residents, {
+    page: residentPage,
+    pageSize: residentListPageSize
+  });
+
+  useEffect(() => {
+    setResidentPage(1);
+  }, [query, statusFilter]);
+
+  useEffect(() => {
+    if (residentPage !== paginatedResidents.page) {
+      setResidentPage(paginatedResidents.page);
+    }
+  }, [paginatedResidents.page, residentPage]);
 
   return (
     <div className="space-y-6">
@@ -59,9 +92,6 @@ export default function LuponDashboard({
           <div className="rounded-2xl bg-white px-4 py-3 text-sm text-slate-600">
             {residents.length} resident{residents.length === 1 ? "" : "s"} shown
           </div>
-          <Button onClick={onAddResident} size="lg">
-            Add resident
-          </Button>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -124,7 +154,7 @@ export default function LuponDashboard({
             <span>Edit</span>
           </div>
 
-          {residents.map((resident) => {
+          {paginatedResidents.items.map((resident) => {
             const caseDisplay = getResidentLuponCaseDisplay(resident, luponCases);
 
             return (
@@ -170,6 +200,20 @@ export default function LuponDashboard({
             </StateMessage>
           ) : null}
         </div>
+        <PaginationControls
+          className="border-t border-orange-100 bg-white px-5 py-4"
+          onNext={() =>
+            setResidentPage((page) =>
+              getNextPage({
+                page,
+                totalPages: paginatedResidents.totalPages
+              })
+            )
+          }
+          onPrevious={() => setResidentPage((page) => getPreviousPage({ page }))}
+          page={paginatedResidents.page}
+          totalPages={paginatedResidents.totalPages}
+        />
       </SectionCard>
 
       {selectedResident ? (
@@ -180,21 +224,13 @@ export default function LuponDashboard({
           />
 
           <ResidentDocumentPanel
-            allowedScopes={["department_visible", "general_internal"]}
+            allowedScopes={luponDocumentScopes}
             defaultVisibilityScope="general_internal"
-            description="Shared resident PDF and image files available for internal verification."
+            description="Shared resident files and Lupon-only case documents for this resident."
+            documentViews={luponDocumentViews}
             residentId={selectedResident.id}
             residentName={selectedResident.name}
-            title="General / Vital Documents"
-          />
-
-          <ResidentDocumentPanel
-            allowedScopes={["lupon_confidential"]}
-            defaultVisibilityScope="lupon_confidential"
-            description="Lupon-only case-related PDFs and images."
-            residentId={selectedResident.id}
-            residentName={selectedResident.name}
-            title="Lupon Confidential Documents"
+            title="Documents"
           />
         </section>
       ) : null}

@@ -356,6 +356,7 @@ describe("authentication and role-based API access", () => {
     expect(response.headers["access-control-allow-origin"]).toBe("http://localhost:5173");
     expect(response.headers["access-control-allow-credentials"]).toBe("true");
     expect(response.headers["access-control-allow-headers"]).toContain("Content-Type");
+    expect(response.headers["access-control-allow-headers"]).toContain("X-Document-Title");
   });
 
   it("allows configured staging frontend origins from CORS_ORIGINS", async () => {
@@ -390,6 +391,7 @@ describe("authentication and role-based API access", () => {
     expect(JSON.stringify(response.body)).not.toContain("luponCases");
     expect(JSON.stringify(response.body)).not.toContain("luponCaseNotes");
     expect(JSON.stringify(response.body)).not.toContain("confidentialSummary");
+    expect(JSON.stringify(response.body)).not.toContain("caseTitle");
     expect(JSON.stringify(response.body)).not.toContain("noteBody");
     expect(pool.queries).toHaveLength(2);
     expect(pool.queries.at(-1).sql).not.toContain("FROM lupon_cases");
@@ -503,6 +505,7 @@ describe("authentication and role-based API access", () => {
           id: "LC-2026-0001",
           resident_id: "RBI-2024-0002",
           case_number: "LPN-2026-0001",
+          case_title: "Imported resident verification",
           case_type: "Address Verification",
           status: "under_mediation",
           priority: "normal",
@@ -522,6 +525,7 @@ describe("authentication and role-based API access", () => {
     const response = await request(app).get("/api/lupon/cases").set("Cookie", cookie);
 
     expect(response.status).toBe(200);
+    expect(response.body.luponCases[0].caseTitle).toBe("Imported resident verification");
     expect(response.body.luponCases[0].confidentialSummary).toContain("Address mismatch");
     expect(JSON.stringify(response.body)).not.toContain("noteBody");
   });
@@ -531,11 +535,13 @@ describe("authentication and role-based API access", () => {
     const pool = createPool([
       [profileRows.lupon],
       [profileRows.lupon],
+      [residentRow],
       [
         {
           id: "LC-2026-0003",
           resident_id: "RBI-2024-0002",
           case_number: "LPN-2026-0003",
+          case_title: "Address Verification",
           case_type: "Address Verification",
           status: "open",
           priority: "high",
@@ -587,6 +593,244 @@ describe("authentication and role-based API access", () => {
       priority: "high"
     });
     expect(JSON.stringify(metadata)).not.toContain(confidentialSummary);
+  });
+
+  it("lets Lupon create a case for a resident with no active case", async () => {
+    const confidentialSummary = "Verify the imported resident record before clearance.";
+    const pool = createPool([
+      [profileRows.lupon],
+      [profileRows.lupon],
+      [residentRow],
+      [
+        {
+          id: "LC-2026-0004",
+          resident_id: "RBI-2024-0002",
+          case_number: "LPN-2026-0004",
+          case_title: "Imported resident verification",
+          case_type: "Resident Record Case",
+          status: "open",
+          priority: "normal",
+          confidential_summary: confidentialSummary,
+          opened_at: "2026-05-27",
+          resolved_at: null,
+          assigned_lupon_profile_id: "lupon-1",
+          created_by_profile_id: "lupon-1",
+          created_at: "2026-05-27T00:00:00.000Z",
+          updated_at: "2026-05-27T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .post("/api/lupon/cases")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0002",
+        caseTitle: "Imported resident verification",
+        confidentialSummary
+      });
+
+    expect(response.status, JSON.stringify(response.body)).toBe(201);
+    expect(response.body.luponCase).toMatchObject({
+      residentId: "RBI-2024-0002",
+      caseTitle: "Imported resident verification",
+      caseType: "Resident Record Case",
+      confidentialSummary
+    });
+
+    const [auditQuery] = findAuditQueries(pool);
+    const metadata = getAuditMetadata(auditQuery);
+
+    expect(metadata).toMatchObject({
+      actorRole: "lupon",
+      residentId: "RBI-2024-0002",
+      caseTitle: "Imported resident verification",
+      caseType: "Resident Record Case",
+      status: "open"
+    });
+    expect(JSON.stringify(metadata)).not.toContain(confidentialSummary);
+  });
+
+  it("lets Lupon update a case title and summary without storing confidential text in audit metadata", async () => {
+    const updatedSummary = "Updated confidential summary must not be audited.";
+    const pool = createPool([
+      [profileRows.lupon],
+      [profileRows.lupon],
+      [
+        {
+          id: "LC-2026-0003",
+          resident_id: "RBI-2024-0002",
+          case_number: "LPN-2026-0003",
+          case_title: "Updated case title",
+          case_type: "Address Verification",
+          status: "open",
+          priority: "high",
+          confidential_summary: updatedSummary,
+          opened_at: "2026-05-21",
+          resolved_at: null,
+          assigned_lupon_profile_id: "lupon-1",
+          created_by_profile_id: "lupon-1",
+          created_at: "2026-05-21T00:00:00.000Z",
+          updated_at: "2026-05-22T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .patch("/api/lupon/cases/LC-2026-0003")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        caseTitle: "Updated case title",
+        confidentialSummary: updatedSummary
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.luponCase.caseTitle).toBe("Updated case title");
+    expect(response.body.luponCase.confidentialSummary).toBe(updatedSummary);
+
+    const [auditQuery] = findAuditQueries(pool);
+    const metadata = getAuditMetadata(auditQuery);
+
+    expect(auditQuery.params.slice(1, 5)).toEqual([
+      "lupon-1",
+      "lupon_case.details_updated",
+      "lupon_case",
+      "LC-2026-0003"
+    ]);
+    expect(metadata).toMatchObject({
+      actorRole: "lupon",
+      changedFields: ["caseTitle", "confidentialSummary"],
+      caseTitle: "Updated case title"
+    });
+    expect(JSON.stringify(metadata)).not.toContain(updatedSummary);
+  });
+
+  it("lets Lupon resolve an open case while preserving confidential case history", async () => {
+    const confidentialSummary = "Resolved confidential history must remain stored.";
+    const pool = createPool([
+      [profileRows.lupon],
+      [profileRows.lupon],
+      [
+        {
+          id: "LC-2026-0003",
+          resident_id: "RBI-2024-0002",
+          case_number: "LPN-2026-0003",
+          case_title: "Noise complaint",
+          case_type: "Community Dispute",
+          status: "resolved",
+          priority: "normal",
+          confidential_summary: confidentialSummary,
+          opened_at: "2026-05-21",
+          resolved_at: "2026-05-27",
+          resolved_by_profile_id: "lupon-1",
+          assigned_lupon_profile_id: "lupon-1",
+          created_by_profile_id: "lupon-1",
+          created_at: "2026-05-21T00:00:00.000Z",
+          updated_at: "2026-05-27T00:00:00.000Z"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .post("/api/lupon/cases/LC-2026-0003/resolve")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({});
+
+    expect(response.status, JSON.stringify(response.body)).toBe(200);
+    expect(response.body.luponCase).toMatchObject({
+      id: "LC-2026-0003",
+      caseTitle: "Noise complaint",
+      caseNumber: "LPN-2026-0003",
+      status: "resolved",
+      confidentialSummary,
+      resolvedAt: "2026-05-27",
+      resolvedByProfileId: "lupon-1"
+    });
+
+    const updateQuery = pool.queries.find((query) => query.sql.includes("UPDATE lupon_cases"));
+    expect(updateQuery.sql).toContain("status = 'resolved'");
+    expect(updateQuery.sql).toContain("resolved_at");
+    expect(updateQuery.sql).toContain("resolved_by_profile_id");
+
+    const [auditQuery] = findAuditQueries(pool);
+    const metadata = getAuditMetadata(auditQuery);
+
+    expect(auditQuery.params.slice(1, 5)).toEqual([
+      "lupon-1",
+      "lupon_case.resolved",
+      "lupon_case",
+      "LC-2026-0003"
+    ]);
+    expect(metadata).toMatchObject({
+      actorRole: "lupon",
+      status: "resolved",
+      caseTitle: "Noise complaint",
+      caseNumber: "LPN-2026-0003"
+    });
+    expect(JSON.stringify(metadata)).not.toContain(confidentialSummary);
+  });
+
+  it("does not allow Department to update Lupon case summaries", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .patch("/api/lupon/cases/LC-2026-0003")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        confidentialSummary: "Department must not save this."
+      });
+
+    expect(response.status).toBe(403);
+    expect(JSON.stringify(response.body)).not.toContain("Department must not save this.");
+    expect(pool.queries.some((query) => query.sql.includes("UPDATE lupon_cases"))).toBe(false);
+  });
+
+  it("does not allow Department to resolve Lupon cases", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/lupon/cases/LC-2026-0003/resolve")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({});
+
+    expect(response.status).toBe(403);
+    expect(JSON.stringify(response.body)).not.toContain("confidential");
+    expect(pool.queries.some((query) => query.sql.includes("UPDATE lupon_cases"))).toBe(false);
+  });
+
+  it("does not allow Department to create Lupon cases", async () => {
+    const pool = createPool([[profileRows.department], [profileRows.department]]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "department", "dept123");
+
+    const response = await request(app)
+      .post("/api/lupon/cases")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0002",
+        caseTitle: "Department must not create this",
+        confidentialSummary: "Department must not send this."
+      });
+
+    expect(response.status).toBe(403);
+    expect(JSON.stringify(response.body)).not.toContain("Department must not");
+    expect(pool.queries.some((query) => query.sql.includes("INSERT INTO lupon_cases"))).toBe(false);
   });
 
   it("writes a safe audit record when Lupon creates a confidential note", async () => {
@@ -702,6 +946,31 @@ describe("authentication and role-based API access", () => {
     expect(response.status).toBe(200);
     expect(response.body.luponCases[0].confidentialSummary).toContain("Address mismatch");
     expect(response.body.luponCaseNotes[0].noteBody).toContain("Pending review");
+  });
+
+  it("does not return resolved cases as active resident case context", async () => {
+    const pool = createPool([
+      [profileRows.lupon],
+      [profileRows.lupon],
+      [residentRow],
+      [],
+      []
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .get("/api/residents/RBI-2024-0002")
+      .set("Cookie", cookie);
+
+    expect(response.status).toBe(200);
+    expect(response.body.luponCases).toEqual([]);
+    expect(response.body.luponCaseNotes).toEqual([]);
+    const luponCaseQuery = pool.queries.find((query) =>
+      query.sql.includes("FROM lupon_cases")
+    );
+    expect(luponCaseQuery.sql).toContain("status IN ('open', 'under_mediation')");
+    expect(JSON.stringify(response.body)).not.toContain("Resolved confidential history");
   });
 
   it("rejects invalid document request statuses before writing to the database", async () => {

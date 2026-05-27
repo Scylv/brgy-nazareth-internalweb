@@ -23,6 +23,7 @@ const CORS_ALLOWED_HEADERS = [
   "X-Import-Confirmed",
   "X-Backup-Confirmed",
   "X-Document-Type",
+  "X-Document-Title",
   "X-Visibility-Scope",
   "X-Linked-Case-Id"
 ].join(", ");

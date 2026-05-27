@@ -66,6 +66,53 @@ describe("Lupon case display mapping", () => {
     });
   });
 
+  it("uses case title as the Lupon list subject when present", () => {
+    expect(
+      getResidentLuponCaseDisplay(
+        { id: "RBI-2024-0002" },
+        [
+          {
+            id: "LC-2026-0001",
+            residentId: "RBI-2024-0002",
+            caseNumber: "LPN-2026-0001",
+            caseTitle: "Imported resident verification",
+            caseType: "Address Verification",
+            status: "open",
+            confidentialSummary: "Verify imported resident details.",
+            openedAt: "2026-05-01"
+          }
+        ]
+      )
+    ).toMatchObject({
+      caseLine: "Imported resident verification (LPN-2026-0001)",
+      summary: "Verify imported resident details."
+    });
+  });
+
+  it("does not treat resolved cases as active dashboard case context", () => {
+    const display = getResidentLuponCaseDisplay(
+      { id: "RBI-2024-0002" },
+      [
+        {
+          id: "LC-2026-0001",
+          residentId: "RBI-2024-0002",
+          caseNumber: "LPN-2026-0001",
+          caseTitle: "Resolved dispute",
+          caseType: "Community Dispute",
+          status: "resolved",
+          confidentialSummary: "Resolved confidential history remains stored.",
+          openedAt: "2026-05-01"
+        }
+      ]
+    );
+
+    expect(display).toEqual({
+      caseLine: "No active Lupon case",
+      statusLabel: "",
+      summary: "No confidential case summary"
+    });
+  });
+
   it("does not fall back to legacy resident remarks or case reasons", () => {
     const display = getResidentLuponCaseDisplay(
       {

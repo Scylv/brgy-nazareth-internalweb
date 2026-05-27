@@ -5,7 +5,10 @@ const MIGRATIONS = [
   "001_initial_schema.sql",
   "002_admin_resident_management_fields.sql",
   "003_import_batch_undo_fields.sql",
-  "004_resident_documents.sql"
+  "004_resident_documents.sql",
+  "005_resident_document_titles.sql",
+  "006_lupon_case_titles.sql",
+  "007_lupon_case_resolution_tracking.sql"
 ];
 
 async function ensureMigrationTracking() {

@@ -5,6 +5,15 @@ const luponCaseStatusLabels = {
   dismissed: "Dismissed",
   referred: "Referred"
 };
+const activeLuponCaseStatuses = new Set(["open", "under_mediation"]);
+
+export function isActiveLuponCase(luponCase) {
+  if (!luponCase?.status) {
+    return true;
+  }
+
+  return activeLuponCaseStatuses.has(luponCase.status);
+}
 
 function getCaseDateValue(luponCase) {
   const timestamp = Date.parse(luponCase.openedAt || luponCase.createdAt || "");
@@ -13,7 +22,7 @@ function getCaseDateValue(luponCase) {
 }
 
 function formatCaseLine(luponCase) {
-  const caseType = luponCase.caseType || "Lupon Case";
+  const caseType = luponCase.caseTitle || luponCase.caseType || "Lupon Case";
 
   if (!luponCase.caseNumber) {
     return caseType;
@@ -28,7 +37,7 @@ export function getLuponCasesForResident(residentId, luponCases = []) {
   }
 
   return luponCases
-    .filter((luponCase) => luponCase.residentId === residentId)
+    .filter((luponCase) => luponCase.residentId === residentId && isActiveLuponCase(luponCase))
     .sort((left, right) => getCaseDateValue(right) - getCaseDateValue(left));
 }
 

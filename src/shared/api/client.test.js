@@ -45,4 +45,18 @@ describe("apiFetch", () => {
     });
     await expect(apiFetch("/api/lupon/cases")).rejects.toBeInstanceOf(ApiError);
   });
+
+  it("throws a useful ApiError when fetch fails before a server response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("NetworkError when attempting to fetch resource.");
+      })
+    );
+
+    await expect(apiFetch("/api/residents/RBI-1/documents")).rejects.toMatchObject({
+      name: "ApiError",
+      message: "Network request failed. Check the backend connection and allowed request headers."
+    });
+  });
 });

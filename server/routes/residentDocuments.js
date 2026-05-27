@@ -10,7 +10,9 @@ import {
   canViewResidentDocument,
   getResidentDocumentMaxBytes,
   getStoredFilename,
+  isDocumentTitleRequired,
   isSupportedResidentDocumentUpload,
+  normalizeDocumentTitle,
   normalizeDocumentType,
   normalizeVisibilityScope,
   sanitizeOriginalFilename,
@@ -81,6 +83,7 @@ async function loadResidentDocument(pool, documentId) {
       documents.uploaded_by_profile_id,
       profiles.display_name AS uploaded_by_name,
       documents.document_type,
+      documents.document_title,
       documents.original_filename,
       documents.stored_filename,
       documents.mime_type,
@@ -124,6 +127,7 @@ export function createResidentDocumentCollectionRouter(pool) {
             documents.uploaded_by_profile_id,
             profiles.display_name AS uploaded_by_name,
             documents.document_type,
+            documents.document_title,
             documents.original_filename,
             documents.mime_type,
             documents.file_size_bytes,
@@ -157,6 +161,7 @@ export function createResidentDocumentCollectionRouter(pool) {
     async (req, res, next) => {
       const originalFilename = sanitizeOriginalFilename(getHeaderValue(req, "x-file-name"));
       const documentType = normalizeDocumentType(getHeaderValue(req, "x-document-type"));
+      const documentTitle = normalizeDocumentTitle(getHeaderValue(req, "x-document-title"));
       const visibilityScope = normalizeVisibilityScope(
         getHeaderValue(req, "x-visibility-scope"),
         req.user.role
@@ -167,6 +172,10 @@ export function createResidentDocumentCollectionRouter(pool) {
 
       if (!documentType) {
         return res.status(400).json({ error: "Document type is required." });
+      }
+
+      if (isDocumentTitleRequired(documentType) && !documentTitle) {
+        return res.status(400).json({ error: "Document title is required for Other documents." });
       }
 
       if (!fileBuffer.length) {
@@ -206,6 +215,7 @@ export function createResidentDocumentCollectionRouter(pool) {
             resident_id,
             uploaded_by_profile_id,
             document_type,
+            document_title,
             original_filename,
             stored_filename,
             mime_type,
@@ -214,13 +224,14 @@ export function createResidentDocumentCollectionRouter(pool) {
             visibility_scope,
             linked_case_id
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
           RETURNING
             id,
             resident_id,
             uploaded_by_profile_id,
             NULL AS uploaded_by_name,
             document_type,
+            document_title,
             original_filename,
             stored_filename,
             mime_type,
@@ -235,6 +246,7 @@ export function createResidentDocumentCollectionRouter(pool) {
             req.params.residentId,
             req.user.profileId,
             documentType,
+            documentTitle || null,
             originalFilename,
             storedFilename,
             mimeType,
@@ -335,6 +347,7 @@ export function createResidentDocumentFilesRouter(pool) {
             uploaded_by_profile_id,
             NULL AS uploaded_by_name,
             document_type,
+            document_title,
             original_filename,
             mime_type,
             file_size_bytes,
@@ -353,6 +366,7 @@ export function createResidentDocumentFilesRouter(pool) {
           metadata: {
             residentId: document.resident_id,
             documentType: document.document_type,
+            documentTitle: document.document_title,
             visibilityScope: document.visibility_scope,
             linkedCaseId: document.linked_case_id
           }

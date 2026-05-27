@@ -51,6 +51,17 @@ export function normalizeDocumentType(value) {
     .replace(/^_+|_+$/g, "");
 }
 
+export function normalizeDocumentTitle(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 160);
+}
+
+export function isDocumentTitleRequired(documentType) {
+  return normalizeDocumentType(documentType) === "other";
+}
+
 export function normalizeVisibilityScope(value, role) {
   const scope = String(value ?? "").trim();
 
@@ -160,6 +171,7 @@ export function toResidentDocumentMetadata(row) {
     uploadedByProfileId: row.uploaded_by_profile_id,
     uploadedByName: row.uploaded_by_name ?? null,
     documentType: row.document_type,
+    documentTitle: row.document_title ?? "",
     originalFilename: row.original_filename,
     mimeType: row.mime_type,
     fileSizeBytes: Number(row.file_size_bytes ?? 0),
