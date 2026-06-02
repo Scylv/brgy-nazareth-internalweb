@@ -1,0 +1,44 @@
+*   e310574 (HEAD -> develop, tag: v0.1.0-develop-baseline) Merge branch 'develop' of https://github.com/Scylv/brgy-nazareth-internalweb into develop
+|\  
+| * 727c42c (origin/develop) Delete screens directory (leftover ui design mockup)
+* |   9112956 Merge remote-tracking branch 'origin/main' into develop
+|\ \  
+| |/  
+|/|   
+| *   0789eed (origin/main, origin/HEAD) Merge pull request #1 from Scylv/feature/resident-search
+| |\  
+| | * eaef090 (origin/feature/resident-search) Add test for mixed-case and whitespace queries
+| | * 47f2a49 Refactor searchResident logic
+| * |   2f6ae85 Merge pull request #2 from Scylv/feature/Document-Request
+| |\ \  
+| | |/  
+| |/|   
+| | * 7b03472 (origin/feature/Document-Request) Milestone 1 updates
+| | * 5c430cb Mletone 1 updates
+| | * f9e4d16 milestone 1 updates
+* | |   ea0f64c Merge pull request #3 from Scylv/feature/database-foundation
+|\ \ \  
+| * | | dec96ab (origin/feature/database-foundation, feature/database-foundation) Connect department resident view to database API
+| * | | f45464d Add database-backed backend foundation
+| * | | 88da160 (origin/database-schema-planning, origin/database-implementation, database-schema-planning) Add initial PostgreSQL database schema planning
+| * | | c371a8b Add initial database schema planning
+| |/ /  
+* | / 3cc660e milestone 1 updates
+| |/  
+|/|   
+* | b01d84c milestone 1 updates
+|/  
+| * 2aec96c (origin/feature/resident-form-validation) Add milestone 1 updates
+|/  
+* ed0f252 (main) Added department dashboard status summary
+* 15a37ec Updated README.md for lan demo
+* de280d2 Updated admin acc management mock
+* abfa9dd Add Department document request management
+* 463659b Add Lupon resident add and edit flow
+* 48c5e76 Add resident search and status filtering
+* 1f45e52 Add registered voter precinct field
+* 3d0129e Ignore local prompt files
+* 51cde94 Ignore local prompt files
+* e21b659 Ignore local Codex prompt files
+* e5c8624 Refactor app into features and shared modules
+* 0a66299 Delete instructions.md

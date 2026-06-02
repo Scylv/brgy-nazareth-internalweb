@@ -1,3 +1,8 @@
+import RequestStatusBadge from "./RequestStatusBadge";
+import SectionCard from "./SectionCard";
+import SectionHeader from "./SectionHeader";
+import StateMessage from "./StateMessage";
+
 function formatDate(date) {
   if (!date) {
     return "Not set";
@@ -12,10 +17,12 @@ function formatDate(date) {
 
 export default function DocumentRequestHistory({ requests, title = "Document History" }) {
   return (
-    <section className="overflow-hidden rounded-[1.75rem] border border-orange-100 bg-white">
+    <SectionCard className="overflow-hidden" padding="none">
       <div className="border-b border-orange-100 bg-orange-50 px-5 py-4">
-        <h3 className="text-lg font-black text-slate-900">{title}</h3>
-        <p className="mt-1 text-sm text-slate-600">Linked through resident ID</p>
+        <SectionHeader
+          description="Linked through resident ID for staff reference."
+          title={title}
+        />
       </div>
 
       {requests.length > 0 ? (
@@ -42,15 +49,17 @@ export default function DocumentRequestHistory({ requests, title = "Document His
               <span className="text-slate-600">{formatDate(request.releaseDate)}</span>
               <span className="text-slate-600">{formatDate(request.expiryDate)}</span>
               <span className="text-slate-600">{request.processedBy || "Unassigned"}</span>
-              <span className="font-semibold text-slate-700">{request.status}</span>
+              <span>
+                <RequestStatusBadge status={request.status} />
+              </span>
             </div>
           ))}
         </div>
       ) : (
-        <div className="px-5 py-8 text-center text-sm text-slate-500">
+        <StateMessage className="rounded-none border-0 bg-white px-5 py-8 text-center" tone="neutral">
           No document requests are linked to this resident yet.
-        </div>
+        </StateMessage>
       )}
-    </section>
+    </SectionCard>
   );
 }
