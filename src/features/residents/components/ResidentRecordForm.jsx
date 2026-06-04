@@ -1,3 +1,9 @@
+import { useState } from "react";
+import Button from "../../../shared/components/Button";
+import SectionCard from "../../../shared/components/SectionCard";
+import StateMessage from "../../../shared/components/StateMessage";
+import ResidentDocumentPanel from "../../documents/components/ResidentDocumentPanel";
+
 const statusOptions = [
   { value: "green", label: "Green" },
   { value: "yellow", label: "Yellow" },
@@ -6,10 +12,10 @@ const statusOptions = [
 
 function Section({ title, children }) {
   return (
-    <section className="rounded-[1.75rem] border border-orange-100 bg-white p-6">
-      <h3 className="text-xl font-black text-slate-900">{title}</h3>
+    <SectionCard>
+      <h3 className="text-lg font-black text-slate-900">{title}</h3>
       <div className="mt-5 grid gap-4 md:grid-cols-2">{children}</div>
-    </section>
+    </SectionCard>
   );
 }
 
@@ -25,33 +31,139 @@ function Field({ label, error, children }) {
 
 const inputClassName =
   "w-full rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 outline-none transition focus:border-gov-500 focus:bg-white";
+const readOnlyInputClassName =
+  "w-full cursor-not-allowed rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600 outline-none";
+const luponDocumentScopes = ["department_visible", "general_internal", "lupon_confidential"];
+const luponDocumentViews = [
+  {
+    key: "general",
+    label: "General / Vital",
+    scopes: ["department_visible", "general_internal"],
+    defaultVisibilityScope: "general_internal"
+  },
+  {
+    key: "confidential",
+    label: "Lupon Confidential",
+    scopes: ["lupon_confidential"],
+    defaultVisibilityScope: "lupon_confidential"
+  }
+];
+const luponCaseStatusLabels = {
+  open: "Open",
+  under_mediation: "Under Mediation",
+  resolved: "Resolved",
+  dismissed: "Dismissed",
+  referred: "Referred"
+};
+const activeLuponCaseStatuses = new Set(["open", "under_mediation"]);
+
+function getLuponCaseStatusLabel(status) {
+  return luponCaseStatusLabels[status] ?? "Open";
+}
+
+function canResolveLuponCase(luponCase, isCreating) {
+  return Boolean(
+    luponCase?.id &&
+      !isCreating &&
+      activeLuponCaseStatuses.has(luponCase.status ?? "open")
+  );
+}
+
+function isActiveLuponCase(luponCase) {
+  return activeLuponCaseStatuses.has(luponCase?.status ?? "open");
+}
+
+function formatCaseDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  return String(value).slice(0, 10);
+}
 
 export default function ResidentRecordForm({
+  activeLuponCase = null,
   formData,
   errors,
+  luponCase = null,
+  luponCases = [],
+  luponCaseDraft = {
+    caseTitle: "",
+    confidentialSummary: "",
+    isCreating: false
+  },
   mode = "edit",
   onChange,
-  onDocumentInputChange,
+  onLuponCaseDraftChange,
+  onResolveLuponCase,
+  onSelectLuponCase,
+  isResolveConfirmationOpen,
+  onStartLuponCaseCreate,
   onSave,
   onCancel
 }) {
+  const [localResolveConfirmationOpen, setLocalResolveConfirmationOpen] = useState(false);
+  const isEditMode = mode === "edit";
+  const currentActiveLuponCase = activeLuponCase ?? (isActiveLuponCase(luponCase) ? luponCase : null);
+  const caseHistory = Array.isArray(luponCases) ? luponCases : [];
+  const showLuponCaseFields = Boolean(luponCase || luponCaseDraft.isCreating);
+  const showResolveConfirmation =
+    isResolveConfirmationOpen ?? localResolveConfirmationOpen;
+  const showResolveAction = canResolveLuponCase(luponCase, luponCaseDraft.isCreating);
+  const canCreateActiveLuponCase = !currentActiveLuponCase && !luponCaseDraft.isCreating;
+
+  if (mode === "add") {
+    return (
+      <SectionCard>
+        <StateMessage tone="info">
+          New resident records are managed through Admin import/registry tools.
+        </StateMessage>
+        <div className="mt-4">
+          <Button onClick={onCancel} size="lg" type="button" variant="quiet">
+            Back to Lupon dashboard
+          </Button>
+        </div>
+      </SectionCard>
+    );
+  }
+
+  function handleLuponCaseDraftChange(field, value) {
+    onLuponCaseDraftChange?.({
+      ...luponCaseDraft,
+      [field]: value,
+      isCreating: luponCaseDraft.isCreating || !luponCase
+    });
+  }
+
+  function setResolveConfirmationOpen(isOpen) {
+    setLocalResolveConfirmationOpen(isOpen);
+  }
+
+  async function handleConfirmResolveCase() {
+    const didResolve = await onResolveLuponCase?.(luponCase);
+
+    if (didResolve !== false) {
+      setResolveConfirmationOpen(false);
+    }
+  }
+
   return (
+    <>
     <form className="space-y-6" onSubmit={onSave}>
       <div className="flex flex-wrap gap-3">
-        <button
-          className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300"
-          onClick={onCancel}
-          type="button"
-        >
+        <Button onClick={onCancel} size="lg" variant="quiet">
           Back to Lupon dashboard
-        </button>
-        <button
-          className="rounded-2xl bg-gov-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gov-800"
-          type="submit"
-        >
-          {mode === "add" ? "Add resident record" : "Save resident record"}
-        </button>
+        </Button>
+        <Button size="lg" type="submit">
+          Save resident record
+        </Button>
       </div>
+
+      {errors.form ? (
+        <StateMessage tone="danger">
+          {errors.form}
+        </StateMessage>
+      ) : null}
 
       <Section title="Personal Information">
         <Field error={errors.name} label="Full Name">
@@ -59,7 +171,19 @@ export default function ResidentRecordForm({
         </Field>
 
         <Field error={errors.id} label="Resident ID">
-          <input className={inputClassName} name="id" onChange={onChange} value={formData.id} />
+          <input
+            aria-readonly={isEditMode}
+            className={isEditMode ? readOnlyInputClassName : inputClassName}
+            name="id"
+            onChange={isEditMode ? undefined : onChange}
+            readOnly={isEditMode}
+            value={formData.id}
+          />
+          {isEditMode ? (
+            <span className="mt-2 block text-xs text-slate-500">
+              Resident ID is locked to preserve record consistency.
+            </span>
+          ) : null}
         </Field>
 
         <Field error={errors.householdId} label="Household ID">
@@ -191,39 +315,187 @@ export default function ResidentRecordForm({
               </option>
             ))}
           </select>
+          <span className="mt-2 block text-xs leading-5 text-slate-500">
+            Green: Cleared - proceed. Yellow: Needs Lupon review. Red: Hold - Lupon required.
+          </span>
         </Field>
 
-        <Field label="Documents (comma-separated)">
-          <input
-            className={inputClassName}
-            onChange={onDocumentInputChange}
-            value={formData.documents.join(", ")}
-          />
-          {errors.documents ? <span className="mt-2 block text-sm text-rose-600">{errors.documents}</span> : null}
-        </Field>
+        <div className="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-semibold text-amber-900">Lupon case details</p>
+          {canCreateActiveLuponCase ? (
+            <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm leading-6 text-amber-800">No active Lupon case</p>
+              <Button
+                onClick={() =>
+                  onStartLuponCaseCreate?.() ??
+                  onLuponCaseDraftChange?.({
+                    caseTitle: "",
+                    confidentialSummary: "",
+                    isCreating: true
+                  })
+                }
+                size="sm"
+                type="button"
+                variant="secondary"
+              >
+                Create Lupon Case
+              </Button>
+            </div>
+          ) : null}
 
-        <div className="md:col-span-2">
-          <Field label="Lupon Remarks">
-            <textarea
-              className={`${inputClassName} min-h-28`}
-              name="remarks"
-              onChange={onChange}
-              value={formData.remarks}
-            />
-          </Field>
-        </div>
+          {showLuponCaseFields ? (
+            <div className="mt-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-900">
+                {luponCase?.caseNumber || "New Lupon Case"}
+              </p>
+              {luponCase ? (
+                <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-900">
+                      Case status
+                    </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {getLuponCaseStatusLabel(luponCase.status)}
+                  </p>
+                  {luponCase.resolvedAt ? (
+                    <p className="mt-1 text-xs text-slate-500">
+                      Resolved {formatCaseDate(luponCase.resolvedAt)}
+                    </p>
+                  ) : null}
+                </div>
+                {showResolveAction ? (
+                  <Button
+                      onClick={() => setResolveConfirmationOpen(true)}
+                      size="sm"
+                      type="button"
+                      variant="secondary"
+                    >
+                      Resolve case
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
+              <label className="mt-3 block">
+                <span className="mb-2 block text-sm font-medium text-amber-900">Case title</span>
+                <input
+                  className="w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-gov-500"
+                  name="luponCaseTitle"
+                  onChange={(event) => handleLuponCaseDraftChange("caseTitle", event.target.value)}
+                  value={luponCaseDraft.caseTitle}
+                />
+              </label>
+              <label className="mt-3 block">
+                <span className="mb-2 block text-sm font-medium text-amber-900">
+                  Confidential case summary
+                </span>
+                <textarea
+                  className="min-h-28 w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-gov-500"
+                  name="luponCaseSummary"
+                  onChange={(event) =>
+                    handleLuponCaseDraftChange("confidentialSummary", event.target.value)
+                  }
+                  placeholder="No confidential case summary"
+                value={luponCaseDraft.confidentialSummary}
+              />
+            </label>
+            </div>
+          ) : null}
 
-        <div className="md:col-span-2">
-          <Field label="Confidential Lupon Details">
-            <textarea
-              className={`${inputClassName} min-h-28`}
-              name="caseReason"
-              onChange={onChange}
-              value={formData.caseReason}
-            />
-          </Field>
+          {caseHistory.length > 0 ? (
+            <div className="mt-4 border-t border-amber-200 pt-4">
+              <p className="text-sm font-semibold text-amber-900">Case history</p>
+              <div className="mt-3 grid gap-3">
+                {caseHistory.map((item) => {
+                  const isSelected = luponCase?.id === item.id;
+
+                  return (
+                    <div
+                      className="rounded-2xl border border-amber-200 bg-white px-4 py-3"
+                      key={item.id}
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {item.caseTitle || item.caseType || "Lupon Case"}
+                          </p>
+                          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            {item.caseNumber || item.id} - {getLuponCaseStatusLabel(item.status)}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Opened {formatCaseDate(item.openedAt) || "date not set"}
+                            {item.resolvedAt ? ` - Resolved ${formatCaseDate(item.resolvedAt)}` : ""}
+                          </p>
+                        </div>
+                        <Button
+                          disabled={isSelected}
+                          onClick={() => onSelectLuponCase?.(item.id)}
+                          size="sm"
+                          type="button"
+                          variant="secondary"
+                        >
+                          {isSelected ? "Selected" : "Edit case"}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
       </Section>
     </form>
+    <div className="mt-6">
+      <ResidentDocumentPanel
+        allowedScopes={luponDocumentScopes}
+        defaultVisibilityScope="general_internal"
+        description="Shared resident files and Lupon-only case documents for this resident."
+        documentViews={luponDocumentViews}
+        residentId={formData.id}
+        residentName={formData.name ?? formData.fullName}
+        title="Documents"
+      />
+    </div>
+    {showResolveConfirmation && luponCase ? (
+      <div
+        aria-modal="true"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4"
+        role="dialog"
+      >
+        <div className="w-full max-w-lg rounded-2xl border border-orange-100 bg-white p-5 shadow-xl">
+          <h3 className="text-lg font-black text-slate-900">Resolve Lupon case?</h3>
+          <div className="mt-4 space-y-3 text-sm text-slate-700">
+            <p>
+              <span className="font-semibold text-slate-900">Resident:</span>{" "}
+              {formData.name ?? formData.fullName}
+            </p>
+            <p>
+              <span className="font-semibold text-slate-900">Case title:</span>{" "}
+              {luponCase.caseTitle || luponCase.caseType || "Lupon Case"}
+            </p>
+            <p>
+              <span className="font-semibold text-slate-900">Case number:</span>{" "}
+              {luponCase.caseNumber || luponCase.id}
+            </p>
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
+              This will close the active Lupon case but preserve its history.
+            </p>
+          </div>
+          <div className="mt-5 flex flex-wrap justify-end gap-3">
+            <Button
+              onClick={() => setResolveConfirmationOpen(false)}
+              type="button"
+              variant="quiet"
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmResolveCase} type="button" variant="secondary">
+              Confirm resolve
+            </Button>
+          </div>
+        </div>
+      </div>
+    ) : null}
+    </>
   );
 }

@@ -1,20 +1,20 @@
 const STATUS_MAP = {
   green: {
     label: "Green",
-    summary: "Cleared",
-    action: "Proceed with clearance",
+    summary: "Cleared - proceed",
+    action: "Cleared - proceed",
     badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-200"
   },
   yellow: {
     label: "Yellow",
-    summary: "For Review",
-    action: "Refer to Lupon office",
+    summary: "Needs Lupon review",
+    action: "Needs Lupon review",
     badgeClass: "bg-amber-100 text-amber-800 border-amber-200"
   },
   red: {
     label: "Red",
-    summary: "Refer to Lupon",
-    action: "Refer to Lupon office",
+    summary: "Hold - Lupon required",
+    action: "Hold - Lupon required",
     badgeClass: "bg-rose-100 text-rose-800 border-rose-200"
   }
 };
