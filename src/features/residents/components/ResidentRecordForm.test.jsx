@@ -148,6 +148,18 @@ describe("ResidentRecordForm", () => {
   it("shows no active case after a resolved case is removed from the active form state", () => {
     const markup = renderForm({
       luponCase: null,
+      luponCases: [
+        {
+          id: "LC-2026-0009",
+          caseNumber: "LPN-2026-0009",
+          caseTitle: "Resolved dispute",
+          caseType: "Community Dispute",
+          status: "resolved",
+          confidentialSummary: "Resolved confidential history.",
+          openedAt: "2026-05-01",
+          resolvedAt: "2026-05-08"
+        }
+      ],
       luponCaseDraft: {
         caseTitle: "",
         confidentialSummary: "",
@@ -157,6 +169,48 @@ describe("ResidentRecordForm", () => {
 
     expect(markup).toContain("No active Lupon case");
     expect(markup).toContain("Create Lupon Case");
+    expect(markup).toContain("Case history");
+    expect(markup).toContain("Resolved dispute");
+    expect(markup).toContain("Resolved");
+    expect(markup).toContain("Edit case");
+    expect(markup).not.toContain("Resolve case");
+  });
+
+  it("shows selected resolved case details without a resolve action", () => {
+    const markup = renderForm({
+      activeLuponCase: null,
+      luponCase: {
+        id: "LC-2026-0009",
+        caseNumber: "LPN-2026-0009",
+        caseTitle: "Resolved dispute",
+        caseType: "Community Dispute",
+        status: "resolved",
+        confidentialSummary: "Resolved confidential history.",
+        openedAt: "2026-05-01",
+        resolvedAt: "2026-05-08"
+      },
+      luponCases: [
+        {
+          id: "LC-2026-0009",
+          caseNumber: "LPN-2026-0009",
+          caseTitle: "Resolved dispute",
+          caseType: "Community Dispute",
+          status: "resolved",
+          confidentialSummary: "Resolved confidential history.",
+          openedAt: "2026-05-01",
+          resolvedAt: "2026-05-08"
+        }
+      ],
+      luponCaseDraft: {
+        caseTitle: "Resolved dispute",
+        confidentialSummary: "Resolved confidential history.",
+        isCreating: false
+      }
+    });
+
+    expect(markup).toContain("Resolved dispute");
+    expect(markup).toContain("Resolved confidential history.");
+    expect(markup).toContain("LPN-2026-0009");
     expect(markup).not.toContain("Resolve case");
   });
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getActiveLuponCasesForResident,
   getLuponCasesForResident,
   getResidentLuponCaseDisplay
 } from "./luponCaseDisplay";
@@ -36,6 +37,38 @@ describe("Lupon case display mapping", () => {
     expect(getLuponCasesForResident("RBI-2024-0002", cases).map((item) => item.id)).toEqual([
       "LC-NEW",
       "LC-OLD"
+    ]);
+  });
+
+  it("keeps resolved cases in resident case history while active helpers filter them out", () => {
+    const cases = [
+      {
+        id: "LC-RESOLVED",
+        residentId: "RBI-2024-0002",
+        caseNumber: "LPN-2026-0001",
+        caseTitle: "Resolved dispute",
+        status: "resolved",
+        openedAt: "2026-05-01",
+        resolvedAt: "2026-05-08",
+        confidentialSummary: "Resolved confidential history."
+      },
+      {
+        id: "LC-ACTIVE",
+        residentId: "RBI-2024-0002",
+        caseNumber: "LPN-2026-0002",
+        caseTitle: "Active referral",
+        status: "open",
+        openedAt: "2026-05-10",
+        confidentialSummary: "Active confidential summary."
+      }
+    ];
+
+    expect(getLuponCasesForResident("RBI-2024-0002", cases).map((item) => item.id)).toEqual([
+      "LC-ACTIVE",
+      "LC-RESOLVED"
+    ]);
+    expect(getActiveLuponCasesForResident("RBI-2024-0002", cases).map((item) => item.id)).toEqual([
+      "LC-ACTIVE"
     ]);
   });
 

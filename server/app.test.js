@@ -613,6 +613,22 @@ describe("authentication and role-based API access", () => {
           created_by_profile_id: "lupon-1",
           created_at: "2026-05-01T00:00:00.000Z",
           updated_at: "2026-05-01T00:00:00.000Z"
+        },
+        {
+          id: "LC-2026-0002",
+          resident_id: "RBI-2024-0002",
+          case_number: "LPN-2026-0002",
+          case_title: "Resolved community dispute",
+          case_type: "Community Dispute",
+          status: "resolved",
+          priority: "normal",
+          confidential_summary: "Resolved case history remains available to Lupon.",
+          opened_at: "2026-04-01",
+          resolved_at: "2026-04-12",
+          assigned_lupon_profile_id: "lupon-1",
+          created_by_profile_id: "lupon-1",
+          created_at: "2026-04-01T00:00:00.000Z",
+          updated_at: "2026-04-12T00:00:00.000Z"
         }
       ]
     ]);
@@ -622,7 +638,9 @@ describe("authentication and role-based API access", () => {
     const response = await request(app).get("/api/lupon/cases").set("Cookie", cookie);
 
     expect(response.status).toBe(200);
+    expect(response.body.luponCases).toHaveLength(2);
     expect(response.body.luponCases[0].caseTitle).toBe("Imported resident verification");
+    expect(response.body.luponCases[1].caseTitle).toBe("Resolved community dispute");
     expect(response.body.luponCases[0].confidentialSummary).toContain("Address mismatch");
     expect(JSON.stringify(response.body)).not.toContain("noteBody");
   });
@@ -633,6 +651,7 @@ describe("authentication and role-based API access", () => {
       [profileRows.lupon],
       [profileRows.lupon],
       [residentRow],
+      [],
       [
         {
           id: "LC-2026-0003",
@@ -698,6 +717,7 @@ describe("authentication and role-based API access", () => {
       [profileRows.lupon],
       [profileRows.lupon],
       [residentRow],
+      [],
       [
         {
           id: "LC-2026-0004",
@@ -749,6 +769,37 @@ describe("authentication and role-based API access", () => {
       status: "open"
     });
     expect(JSON.stringify(metadata)).not.toContain(confidentialSummary);
+  });
+
+  it("blocks Lupon from creating a second active case for the same resident", async () => {
+    const pool = createPool([
+      [profileRows.lupon],
+      [profileRows.lupon],
+      [residentRow],
+      [
+        {
+          id: "LC-2026-0005",
+          case_number: "LPN-2026-0005"
+        }
+      ]
+    ]);
+    const app = createApp(pool);
+    const cookie = await loginAs(app, "lupon", "lupon123");
+
+    const response = await request(app)
+      .post("/api/lupon/cases")
+      .set("Cookie", cookie)
+      .set("Origin", TRUSTED_ORIGIN)
+      .send({
+        residentId: "RBI-2024-0002",
+        caseTitle: "Second active case",
+        confidentialSummary: "This should not be inserted."
+      });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error).toContain("active Lupon case");
+    expect(pool.queries.some((query) => query.sql.includes("INSERT INTO lupon_cases"))).toBe(false);
+    expect(JSON.stringify(response.body)).not.toContain("This should not be inserted");
   });
 
   it("lets Lupon update a case title and summary without storing confidential text in audit metadata", async () => {
@@ -1000,7 +1051,7 @@ describe("authentication and role-based API access", () => {
     expect(pool.queries).toHaveLength(3);
   });
 
-  it("allows Lupon users to read confidential case context", async () => {
+  it("allows Lupon users to read confidential case history", async () => {
     const pool = createPool([
       [profileRows.lupon],
       [profileRows.lupon],
@@ -1020,6 +1071,22 @@ describe("authentication and role-based API access", () => {
           created_by_profile_id: "lupon-1",
           created_at: "2026-05-01T00:00:00.000Z",
           updated_at: "2026-05-01T00:00:00.000Z"
+        },
+        {
+          id: "LC-2026-0002",
+          resident_id: "RBI-2024-0002",
+          case_number: "LPN-2026-0002",
+          case_type: "Community Dispute",
+          status: "resolved",
+          priority: "normal",
+          confidential_summary: "Resolved confidential history remains stored.",
+          opened_at: "2026-04-01",
+          resolved_at: "2026-04-12",
+          resolved_by_profile_id: "lupon-1",
+          assigned_lupon_profile_id: "lupon-1",
+          created_by_profile_id: "lupon-1",
+          created_at: "2026-04-01T00:00:00.000Z",
+          updated_at: "2026-04-12T00:00:00.000Z"
         }
       ],
       [
@@ -1041,16 +1108,36 @@ describe("authentication and role-based API access", () => {
       .set("Cookie", cookie);
 
     expect(response.status).toBe(200);
+    expect(response.body.luponCases).toHaveLength(2);
     expect(response.body.luponCases[0].confidentialSummary).toContain("Address mismatch");
+    expect(response.body.luponCases[1].confidentialSummary).toContain("Resolved confidential");
     expect(response.body.luponCaseNotes[0].noteBody).toContain("Pending review");
   });
 
-  it("does not return resolved cases as active resident case context", async () => {
+  it("returns resolved cases as Lupon-only resident case history", async () => {
     const pool = createPool([
       [profileRows.lupon],
       [profileRows.lupon],
       [residentRow],
-      [],
+      [
+        {
+          id: "LC-2026-0003",
+          resident_id: "RBI-2024-0002",
+          case_number: "LPN-2026-0003",
+          case_title: "Resolved dispute",
+          case_type: "Community Dispute",
+          status: "resolved",
+          priority: "normal",
+          confidential_summary: "Resolved confidential history remains stored.",
+          opened_at: "2026-05-01",
+          resolved_at: "2026-05-27",
+          resolved_by_profile_id: "lupon-1",
+          assigned_lupon_profile_id: "lupon-1",
+          created_by_profile_id: "lupon-1",
+          created_at: "2026-05-01T00:00:00.000Z",
+          updated_at: "2026-05-27T00:00:00.000Z"
+        }
+      ],
       []
     ]);
     const app = createApp(pool);
@@ -1061,13 +1148,17 @@ describe("authentication and role-based API access", () => {
       .set("Cookie", cookie);
 
     expect(response.status).toBe(200);
-    expect(response.body.luponCases).toEqual([]);
+    expect(response.body.luponCases).toHaveLength(1);
+    expect(response.body.luponCases[0]).toMatchObject({
+      caseTitle: "Resolved dispute",
+      status: "resolved",
+      confidentialSummary: "Resolved confidential history remains stored."
+    });
     expect(response.body.luponCaseNotes).toEqual([]);
     const luponCaseQuery = pool.queries.find((query) =>
       query.sql.includes("FROM lupon_cases")
     );
-    expect(luponCaseQuery.sql).toContain("status IN ('open', 'under_mediation')");
-    expect(JSON.stringify(response.body)).not.toContain("Resolved confidential history");
+    expect(luponCaseQuery.sql).not.toContain("status IN ('open', 'under_mediation')");
   });
 
   it("rejects invalid document request statuses before writing to the database", async () => {

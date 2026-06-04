@@ -37,12 +37,16 @@ export function getLuponCasesForResident(residentId, luponCases = []) {
   }
 
   return luponCases
-    .filter((luponCase) => luponCase.residentId === residentId && isActiveLuponCase(luponCase))
+    .filter((luponCase) => luponCase.residentId === residentId)
     .sort((left, right) => getCaseDateValue(right) - getCaseDateValue(left));
 }
 
+export function getActiveLuponCasesForResident(residentId, luponCases = []) {
+  return getLuponCasesForResident(residentId, luponCases).filter(isActiveLuponCase);
+}
+
 export function getResidentLuponCaseDisplay(resident, luponCases = []) {
-  const [latestCase] = getLuponCasesForResident(resident?.id, luponCases);
+  const [latestCase] = getActiveLuponCasesForResident(resident?.id, luponCases);
 
   if (!latestCase) {
     return {

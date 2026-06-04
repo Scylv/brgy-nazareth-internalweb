@@ -21,6 +21,10 @@ function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function isActiveLuponCaseStatus(status) {
+  return ["open", "under_mediation"].includes(status);
+}
+
 async function ensureResidentExists(pool, residentId) {
   const result = await pool.query(
     `SELECT id
@@ -97,6 +101,26 @@ export function createLuponCasesRouter(pool) {
 
       if (!(await ensureResidentExists(pool, residentId))) {
         return res.status(404).json({ error: "Resident not found." });
+      }
+
+      if (isActiveLuponCaseStatus(status)) {
+        const activeCaseResult = await pool.query(
+          `SELECT id,
+            case_number
+          FROM lupon_cases
+          WHERE resident_id = $1
+            AND status IN ('open', 'under_mediation')
+          LIMIT 1`,
+          [residentId]
+        );
+
+        if (activeCaseResult.rowCount > 0) {
+          return res.status(409).json({
+            error: "Resident already has an active Lupon case.",
+            luponCaseId: activeCaseResult.rows[0].id,
+            caseNumber: activeCaseResult.rows[0].case_number
+          });
+        }
       }
 
       const result = await pool.query(
