@@ -1,4 +1,8 @@
-import { apiFetch, getApiBaseUrl } from "../../../shared/api/client";
+import { ApiError, apiFetch, getApiBaseUrl } from "../../../shared/api/client";
+
+function getResidentDocumentFileUrl(documentId) {
+  return `${getApiBaseUrl()}/api/resident-documents/${encodeURIComponent(documentId)}`;
+}
 
 export function mapApiResidentDocumentToResidentDocument(apiDocument = {}) {
   const id = apiDocument.id ?? "";
@@ -17,8 +21,59 @@ export function mapApiResidentDocumentToResidentDocument(apiDocument = {}) {
     linkedCaseId: apiDocument.linkedCaseId ?? null,
     createdAt: apiDocument.createdAt ?? "",
     archivedAt: apiDocument.archivedAt ?? null,
-    viewUrl: `${getApiBaseUrl()}/api/resident-documents/${encodeURIComponent(id)}`
+    viewUrl: getResidentDocumentFileUrl(id)
   };
+}
+
+async function parseDocumentFileError(response) {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    const body = await response.json();
+
+    return {
+      body,
+      message:
+        body && typeof body === "object" && "error" in body
+          ? body.error
+          : `Document could not be opened with status ${response.status}.`
+    };
+  }
+
+  const body = await response.text();
+
+  return {
+    body,
+    message: body || `Document could not be opened with status ${response.status}.`
+  };
+}
+
+export async function fetchResidentDocumentFile(documentId) {
+  let response;
+
+  try {
+    response = await fetch(getResidentDocumentFileUrl(documentId), {
+      credentials: "include",
+      headers: {
+        Accept: "application/pdf,image/jpeg,image/png,*/*"
+      }
+    });
+  } catch (error) {
+    throw new ApiError("Network request failed while opening the document.", {
+      body: { cause: error?.message ?? "fetch failed" }
+    });
+  }
+
+  if (!response.ok) {
+    const { body, message } = await parseDocumentFileError(response);
+
+    throw new ApiError(message, {
+      status: response.status,
+      body
+    });
+  }
+
+  return response.blob();
 }
 
 export async function fetchResidentDocuments(residentId) {

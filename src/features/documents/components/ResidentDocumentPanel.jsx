@@ -6,6 +6,7 @@ import StateMessage from "../../../shared/components/StateMessage";
 import {
   archiveResidentDocument,
   fetchResidentDocuments,
+  fetchResidentDocumentFile,
   uploadResidentDocument
 } from "../api/residentDocumentsApi";
 
@@ -205,6 +206,7 @@ export default function ResidentDocumentPanel({
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [openingDocumentId, setOpeningDocumentId] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [form, setForm] = useState(() => getInitialForm(initialUploadDefaultVisibilityScope));
   const [fileInputKey, setFileInputKey] = useState(0);
@@ -406,6 +408,30 @@ export default function ResidentDocumentPanel({
     }
   }
 
+  async function handleOpenDocument(document) {
+    setOpeningDocumentId(document.id);
+    setError("");
+    setMessage("");
+
+    try {
+      const fileBlob = await fetchResidentDocumentFile(document.id);
+      const fileUrl = URL.createObjectURL(fileBlob);
+      const openedWindow = window.open(fileUrl, "_blank", "noopener,noreferrer");
+
+      if (!openedWindow) {
+        URL.revokeObjectURL(fileUrl);
+        setError("Document could not be opened. Allow pop-ups for this site, then try again.");
+        return;
+      }
+
+      window.setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
+    } catch (openError) {
+      setError(openError?.message ?? "Document could not be opened. Check access and try again.");
+    } finally {
+      setOpeningDocumentId("");
+    }
+  }
+
   return (
     <SectionCard>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -499,14 +525,14 @@ export default function ResidentDocumentPanel({
                     </span>
                   ) : (
                     <>
-                      <a
-                        className="inline-flex items-center justify-center rounded-2xl border border-orange-200 bg-white px-3 py-1.5 text-xs font-semibold text-gov-800 transition hover:border-gov-300 hover:bg-orange-50"
-                        href={document.viewUrl}
-                        rel="noreferrer"
-                        target="_blank"
+                      <Button
+                        disabled={openingDocumentId === document.id}
+                        onClick={() => handleOpenDocument(document)}
+                        size="sm"
+                        variant="secondary"
                       >
-                        Open
-                      </a>
+                        {openingDocumentId === document.id ? "Opening" : "Open"}
+                      </Button>
                       <Button
                         disabled={isArchiving}
                         onClick={() => setPendingArchive(document)}
