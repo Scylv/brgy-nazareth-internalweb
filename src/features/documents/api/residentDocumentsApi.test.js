@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   archiveResidentDocument,
+  fetchResidentDocumentFile,
   mapApiResidentDocumentToResidentDocument,
   uploadResidentDocument
 } from "./residentDocumentsApi";
@@ -85,6 +86,31 @@ describe("residentDocumentsApi", () => {
       }
     );
     expect(archivedDocument.archivedAt).toBe("2026-05-26T00:00:00.000Z");
+  });
+
+  it("fetches resident document files with browser credentials", async () => {
+    const fileBlob = new Blob(["%PDF-1.7"], { type: "application/pdf" });
+    const fetchMock = vi.fn(async () =>
+      new Response(fileBlob, {
+        headers: { "content-type": "application/pdf" },
+        status: 200
+      })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const openedFile = await fetchResidentDocumentFile("RDOC-1");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:3001/api/resident-documents/RDOC-1",
+      {
+        credentials: "include",
+        headers: {
+          Accept: "application/pdf,image/jpeg,image/png,*/*"
+        }
+      }
+    );
+    expect(openedFile).toBeInstanceOf(Blob);
+    expect(openedFile.type).toBe("application/pdf");
   });
 
   it("sends custom document titles during upload using the backend title header", async () => {

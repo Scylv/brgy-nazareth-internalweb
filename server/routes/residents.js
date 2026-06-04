@@ -146,7 +146,6 @@ export function createResidentsRouter(pool) {
           updated_at
         FROM lupon_cases
         WHERE resident_id = $1
-          AND status IN ('open', 'under_mediation')
         ORDER BY opened_at DESC`,
         [req.params.id]
       );
@@ -162,7 +161,6 @@ export function createResidentsRouter(pool) {
         FROM lupon_case_notes notes
         INNER JOIN lupon_cases cases ON cases.id = notes.lupon_case_id
         WHERE cases.resident_id = $1
-          AND cases.status IN ('open', 'under_mediation')
         ORDER BY notes.created_at DESC`,
         [req.params.id]
       );

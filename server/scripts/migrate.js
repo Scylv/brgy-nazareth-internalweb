@@ -10,7 +10,8 @@ const MIGRATIONS = [
   "006_lupon_case_titles.sql",
   "007_lupon_case_resolution_tracking.sql",
   "008_document_request_archive_fields.sql",
-  "009_document_request_custom_title.sql"
+  "009_document_request_custom_title.sql",
+  "010_lupon_one_active_case_per_resident.sql"
 ];
 
 async function ensureMigrationTracking() {

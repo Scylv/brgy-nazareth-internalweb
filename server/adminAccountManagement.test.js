@@ -152,7 +152,10 @@ function createAccountPool(seedProfiles = Object.values(profileSeeds)) {
 }
 
 async function loginAs(app, username, password) {
-  const response = await request(app).post("/api/auth/login").send({ username, password });
+  const response = await request(app)
+    .post("/api/auth/login")
+    .set("Origin", TRUSTED_ORIGIN)
+    .send({ username, password });
 
   expect(response.status, JSON.stringify(response.body)).toBe(200);
 
@@ -320,6 +323,7 @@ describe("admin account management", () => {
 
     const blockedLogin = await request(app)
       .post("/api/auth/login")
+      .set("Origin", TRUSTED_ORIGIN)
       .send({ username: "department", password: "dept123" });
 
     expect(blockedLogin.status).toBe(401);
@@ -335,6 +339,7 @@ describe("admin account management", () => {
 
     const restoredLogin = await request(app)
       .post("/api/auth/login")
+      .set("Origin", TRUSTED_ORIGIN)
       .send({ username: "department", password: "dept123" });
 
     expect(restoredLogin.status).toBe(200);
@@ -361,9 +366,11 @@ describe("admin account management", () => {
 
     const oldLogin = await request(app)
       .post("/api/auth/login")
+      .set("Origin", TRUSTED_ORIGIN)
       .send({ username: "department", password: "dept123" });
     const newLogin = await request(app)
       .post("/api/auth/login")
+      .set("Origin", TRUSTED_ORIGIN)
       .send({ username: "department", password: "new-temporary-123" });
 
     expect(oldLogin.status).toBe(401);
@@ -443,9 +450,11 @@ describe("admin account management", () => {
 
     const oldLogin = await request(app)
       .post("/api/auth/login")
+      .set("Origin", TRUSTED_ORIGIN)
       .send({ username: "department", password: "dept123" });
     const newLogin = await request(app)
       .post("/api/auth/login")
+      .set("Origin", TRUSTED_ORIGIN)
       .send({ username: "department", password: "changed-dept-123" });
 
     expect(oldLogin.status).toBe(401);

@@ -45,7 +45,10 @@ import {
   updateLuponCaseDetails
 } from "./features/lupon/api/luponCasesApi";
 import LuponDashboard from "./features/lupon/components/LuponDashboard";
-import { getLuponCasesForResident } from "./features/lupon/lib/luponCaseDisplay";
+import {
+  getActiveLuponCasesForResident,
+  getLuponCasesForResident
+} from "./features/lupon/lib/luponCaseDisplay";
 import { fetchResidents, updateResident } from "./features/residents/api/residentsApi";
 import ResidentRecordForm from "./features/residents/components/ResidentRecordForm";
 import ResidentVerification from "./features/residents/components/ResidentVerification";
@@ -167,6 +170,7 @@ export default function App() {
     confidentialSummary: "",
     isCreating: false
   });
+  const [selectedLuponCaseId, setSelectedLuponCaseId] = useState("");
 
   useEffect(() => {
     let isActive = true;
@@ -537,7 +541,20 @@ export default function App() {
     departmentResidentRecords.find((resident) => resident.id === selectedResidentId) ??
     departmentResidentRecords[0] ??
     null;
-  const selectedLuponCase = getLuponCasesForResident(selectedResidentId, luponCaseList)[0] ?? null;
+  const selectedResidentLuponCases = getLuponCasesForResident(selectedResidentId, luponCaseList);
+  const selectedActiveLuponCase =
+    getActiveLuponCasesForResident(selectedResidentId, luponCaseList)[0] ?? null;
+  const selectedLuponCase =
+    selectedResidentLuponCases.find((luponCase) => luponCase.id === selectedLuponCaseId) ??
+    selectedActiveLuponCase;
+
+  function getLuponCaseDraftFromCase(luponCase) {
+    return {
+      caseTitle: luponCase?.caseTitle ?? luponCase?.caseType ?? "",
+      confidentialSummary: luponCase?.confidentialSummary ?? "",
+      isCreating: false
+    };
+  }
 
   function getLandingPage(role) {
     if (role === "department") {
@@ -635,6 +652,7 @@ export default function App() {
     setLuponCasesError("");
     setFormErrors({});
     setSelectedResidentId(defaultResident.id);
+    setSelectedLuponCaseId("");
     setFormMode("edit");
     setFormData(cloneResident(defaultResident));
   }
@@ -653,12 +671,9 @@ export default function App() {
     setSelectedResidentId(residentId);
     setFormMode("edit");
     setFormData(cloneResident(resident));
-    const latestLuponCase = getLuponCasesForResident(residentId, luponCaseList)[0] ?? null;
-    setLuponCaseDraft({
-      caseTitle: latestLuponCase?.caseTitle ?? latestLuponCase?.caseType ?? "",
-      confidentialSummary: latestLuponCase?.confidentialSummary ?? "",
-      isCreating: false
-    });
+    const activeLuponCase = getActiveLuponCasesForResident(residentId, luponCaseList)[0] ?? null;
+    setSelectedLuponCaseId(activeLuponCase?.id ?? "");
+    setLuponCaseDraft(getLuponCaseDraftFromCase(activeLuponCase));
     setFormErrors({});
     setCurrentPage("form");
   }
@@ -666,7 +681,30 @@ export default function App() {
   function closeResidentForm() {
     setFormErrors({});
     setFormMode("edit");
+    setSelectedLuponCaseId("");
     setCurrentPage("lupon");
+  }
+
+  function handleSelectLuponCase(luponCaseId) {
+    const luponCase = selectedResidentLuponCases.find((item) => item.id === luponCaseId);
+
+    if (!luponCase) {
+      return;
+    }
+
+    setSelectedLuponCaseId(luponCase.id);
+    setLuponCaseDraft(getLuponCaseDraftFromCase(luponCase));
+    setFormErrors({});
+  }
+
+  function handleStartLuponCaseCreate() {
+    setSelectedLuponCaseId("");
+    setLuponCaseDraft({
+      caseTitle: "",
+      confidentialSummary: "",
+      isCreating: true
+    });
+    setFormErrors({});
   }
 
   function handleFormChange(event) {
@@ -718,22 +756,24 @@ export default function App() {
 
     try {
       const savedResident = await updateResident(selectedResidentId, formData);
-      const latestLuponCase = getLuponCasesForResident(selectedResidentId, luponCaseList)[0] ?? null;
+      const editableLuponCase = selectedLuponCase;
+      const activeLuponCase = selectedActiveLuponCase;
       let savedLuponCase = null;
 
       if (
         currentUser.role === "lupon" &&
-        latestLuponCase &&
-        (luponCaseDraft.caseTitle !== (latestLuponCase.caseTitle ?? latestLuponCase.caseType ?? "") ||
-          luponCaseDraft.confidentialSummary !== (latestLuponCase.confidentialSummary ?? ""))
+        editableLuponCase &&
+        !luponCaseDraft.isCreating &&
+        (luponCaseDraft.caseTitle !== (editableLuponCase.caseTitle ?? editableLuponCase.caseType ?? "") ||
+          luponCaseDraft.confidentialSummary !== (editableLuponCase.confidentialSummary ?? ""))
       ) {
-        savedLuponCase = await updateLuponCaseDetails(latestLuponCase.id, {
+        savedLuponCase = await updateLuponCaseDetails(editableLuponCase.id, {
           caseTitle: luponCaseDraft.caseTitle,
           confidentialSummary: luponCaseDraft.confidentialSummary
         });
       }
 
-      if (currentUser.role === "lupon" && !latestLuponCase && luponCaseDraft.isCreating) {
+      if (currentUser.role === "lupon" && !activeLuponCase && luponCaseDraft.isCreating) {
         savedLuponCase = await createLuponCaseForResident({
           residentId: selectedResidentId,
           caseTitle: luponCaseDraft.caseTitle,
@@ -752,14 +792,19 @@ export default function App() {
               )
             : [savedLuponCase, ...current]
         );
+        setSelectedLuponCaseId(savedLuponCase.id);
+        setLuponCaseDraft(getLuponCaseDraftFromCase(savedLuponCase));
       }
       setSelectedResidentId(savedResident.id);
       setFormMode("edit");
       setFormErrors({});
       setCurrentPage("lupon");
-    } catch (_error) {
+    } catch (error) {
       setFormErrors({
-        form: "Resident database save failed. Check the backend API and try again."
+        form:
+          error?.status === 409
+            ? "This resident already has an active Lupon case. Resolve it before creating another."
+            : "Resident database save failed. Check the backend API and try again."
       });
     }
   }
@@ -775,6 +820,7 @@ export default function App() {
       setLuponCaseList((current) =>
         current.map((item) => (item.id === resolvedCase.id ? resolvedCase : item))
       );
+      setSelectedLuponCaseId("");
       setLuponCaseDraft({
         caseTitle: "",
         confidentialSummary: "",
@@ -1424,9 +1470,11 @@ export default function App() {
 
       {currentPage === "form" && canEditRecord(currentUser.role) ? (
         <ResidentRecordForm
+          activeLuponCase={selectedActiveLuponCase}
           errors={formErrors}
           formData={formData}
           luponCase={selectedLuponCase}
+          luponCases={selectedResidentLuponCases}
           luponCaseDraft={luponCaseDraft}
           mode={formMode}
           onCancel={closeResidentForm}
@@ -1434,6 +1482,8 @@ export default function App() {
           onLuponCaseDraftChange={setLuponCaseDraft}
           onResolveLuponCase={handleResolveLuponCase}
           onSave={handleFormSave}
+          onSelectLuponCase={handleSelectLuponCase}
+          onStartLuponCaseCreate={handleStartLuponCaseCreate}
         />
       ) : null}
 

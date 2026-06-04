@@ -69,10 +69,24 @@ function canResolveLuponCase(luponCase, isCreating) {
   );
 }
 
+function isActiveLuponCase(luponCase) {
+  return activeLuponCaseStatuses.has(luponCase?.status ?? "open");
+}
+
+function formatCaseDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  return String(value).slice(0, 10);
+}
+
 export default function ResidentRecordForm({
+  activeLuponCase = null,
   formData,
   errors,
   luponCase = null,
+  luponCases = [],
   luponCaseDraft = {
     caseTitle: "",
     confidentialSummary: "",
@@ -82,6 +96,7 @@ export default function ResidentRecordForm({
   onChange,
   onLuponCaseDraftChange,
   onResolveLuponCase,
+  onSelectLuponCase,
   isResolveConfirmationOpen,
   onStartLuponCaseCreate,
   onSave,
@@ -89,10 +104,13 @@ export default function ResidentRecordForm({
 }) {
   const [localResolveConfirmationOpen, setLocalResolveConfirmationOpen] = useState(false);
   const isEditMode = mode === "edit";
+  const currentActiveLuponCase = activeLuponCase ?? (isActiveLuponCase(luponCase) ? luponCase : null);
+  const caseHistory = Array.isArray(luponCases) ? luponCases : [];
   const showLuponCaseFields = Boolean(luponCase || luponCaseDraft.isCreating);
   const showResolveConfirmation =
     isResolveConfirmationOpen ?? localResolveConfirmationOpen;
   const showResolveAction = canResolveLuponCase(luponCase, luponCaseDraft.isCreating);
+  const canCreateActiveLuponCase = !currentActiveLuponCase && !luponCaseDraft.isCreating;
 
   if (mode === "add") {
     return (
@@ -304,8 +322,8 @@ export default function ResidentRecordForm({
 
         <div className="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
           <p className="text-sm font-semibold text-amber-900">Lupon case details</p>
-          {!showLuponCaseFields ? (
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {canCreateActiveLuponCase ? (
+            <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm leading-6 text-amber-800">No active Lupon case</p>
               <Button
                 onClick={() =>
@@ -323,7 +341,9 @@ export default function ResidentRecordForm({
                 Create Lupon Case
               </Button>
             </div>
-          ) : (
+          ) : null}
+
+          {showLuponCaseFields ? (
             <div className="mt-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-900">
                 {luponCase?.caseNumber || "New Lupon Case"}
@@ -334,12 +354,17 @@ export default function ResidentRecordForm({
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-900">
                       Case status
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
-                      {getLuponCaseStatusLabel(luponCase.status)}
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {getLuponCaseStatusLabel(luponCase.status)}
+                  </p>
+                  {luponCase.resolvedAt ? (
+                    <p className="mt-1 text-xs text-slate-500">
+                      Resolved {formatCaseDate(luponCase.resolvedAt)}
                     </p>
-                  </div>
-                  {showResolveAction ? (
-                    <Button
+                  ) : null}
+                </div>
+                {showResolveAction ? (
+                  <Button
                       onClick={() => setResolveConfirmationOpen(true)}
                       size="sm"
                       type="button"
@@ -370,11 +395,53 @@ export default function ResidentRecordForm({
                     handleLuponCaseDraftChange("confidentialSummary", event.target.value)
                   }
                   placeholder="No confidential case summary"
-                  value={luponCaseDraft.confidentialSummary}
-                />
-              </label>
+                value={luponCaseDraft.confidentialSummary}
+              />
+            </label>
             </div>
-          )}
+          ) : null}
+
+          {caseHistory.length > 0 ? (
+            <div className="mt-4 border-t border-amber-200 pt-4">
+              <p className="text-sm font-semibold text-amber-900">Case history</p>
+              <div className="mt-3 grid gap-3">
+                {caseHistory.map((item) => {
+                  const isSelected = luponCase?.id === item.id;
+
+                  return (
+                    <div
+                      className="rounded-2xl border border-amber-200 bg-white px-4 py-3"
+                      key={item.id}
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {item.caseTitle || item.caseType || "Lupon Case"}
+                          </p>
+                          <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            {item.caseNumber || item.id} - {getLuponCaseStatusLabel(item.status)}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Opened {formatCaseDate(item.openedAt) || "date not set"}
+                            {item.resolvedAt ? ` - Resolved ${formatCaseDate(item.resolvedAt)}` : ""}
+                          </p>
+                        </div>
+                        <Button
+                          disabled={isSelected}
+                          onClick={() => onSelectLuponCase?.(item.id)}
+                          size="sm"
+                          type="button"
+                          variant="secondary"
+                        >
+                          {isSelected ? "Selected" : "Edit case"}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
       </Section>
     </form>

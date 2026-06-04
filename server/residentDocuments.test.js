@@ -228,7 +228,10 @@ function createResidentDocumentPool() {
 }
 
 async function loginAs(app, username, password) {
-  const response = await request(app).post("/api/auth/login").send({ username, password });
+  const response = await request(app)
+    .post("/api/auth/login")
+    .set("Origin", TRUSTED_ORIGIN)
+    .send({ username, password });
 
   expect(response.status, JSON.stringify(response.body)).toBe(200);
 

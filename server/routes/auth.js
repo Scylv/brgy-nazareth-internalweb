@@ -88,8 +88,9 @@ export function createAuthRouter(pool, { requireTrustedOrigin } = {}) {
   const router = Router();
   const requireAuth = createAuthMiddleware(pool);
   const loginRateLimiter = createLoginRateLimiter();
+  const trustedOriginMiddleware = requireTrustedOrigin ? [requireTrustedOrigin] : [];
 
-  router.post("/login", async (req, res, next) => {
+  router.post("/login", trustedOriginMiddleware, async (req, res, next) => {
     const username = normalizeUsername(req.body?.username);
     const password = req.body?.password;
 
@@ -134,6 +135,9 @@ export function createAuthRouter(pool, { requireTrustedOrigin } = {}) {
   });
 
   const protectedPasswordMiddleware = requireTrustedOrigin
+    ? [requireAuth, requireTrustedOrigin]
+    : [requireAuth];
+  const protectedLogoutMiddleware = requireTrustedOrigin
     ? [requireAuth, requireTrustedOrigin]
     : [requireAuth];
 
@@ -188,7 +192,7 @@ export function createAuthRouter(pool, { requireTrustedOrigin } = {}) {
     }
   });
 
-  router.post("/logout", (_req, res) => {
+  router.post("/logout", protectedLogoutMiddleware, (_req, res) => {
     clearSessionCookie(res);
     res.json({ ok: true });
   });
