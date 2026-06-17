@@ -1,6 +1,5 @@
 import Button from "../../../shared/components/Button";
 import StateMessage from "../../../shared/components/StateMessage";
-import barangayIcon from "../../../../brgy-icon.jpg";
 
 export default function LoginScreen({ onLogin, error }) {
   return (
@@ -13,9 +12,9 @@ export default function LoginScreen({ onLogin, error }) {
           <div className="relative mx-auto flex max-w-lg flex-col items-center text-center">
             <div className="mb-5 flex h-28 w-28 items-center justify-center rounded-[1.75rem] border-4 border-white/80 bg-orange-50 p-3 shadow-2xl sm:h-32 sm:w-32 sm:p-3.5 lg:h-28 lg:w-28 lg:p-3">
               <img
-                alt="Barangay Nazareth"
+                alt="Barangay Nazareth logo"
                 className="h-full w-full rounded-2xl object-contain"
-                src={barangayIcon}
+                src="/brgy-icon.jpg"
               />
             </div>
 
